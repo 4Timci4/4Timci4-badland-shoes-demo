@@ -1,0 +1,7 @@
+{
+  "name": "bandland-shoes-phpp",
+  "description": "Bandland Shoes e-commerce website",
+  "require": {
+    "php": ">=7.4"
+  }
+}
