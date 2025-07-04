@@ -20,7 +20,7 @@
                         <h3 class="font-semibold text-secondary mb-2"><?php echo $p['name']; ?></h3>
                         <div class="text-xl font-bold text-secondary">₺ <?php echo number_format($p['base_price'], 2); ?></div>
                         <a href="/product-details.php?id=<?php echo $p['id']; ?>"
-                           class="inline-block mt-3 bg-primary text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors mx-auto text-center w-full">
+                           class="inline-block mt-3 bg-brand text-secondary px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all duration-300 mx-auto text-center w-full">
                             Ürün Detayı
                         </a>
                     </div>

@@ -157,7 +157,7 @@ $post = $blog_posts[$blog_id];
             </div>
             <div class="author-info">
                 <h3><?php echo $post['author']; ?></h3>
-                <p>Schön markasının deneyimli yazarlarından biri olan <?php echo $post['author']; ?>, ayakkabı dünyasındaki trendler ve yenilikler hakkında düzenli olarak içerikler üretmektedir.</p>
+                <p>Bandland Shoes markasının deneyimli yazarlarından biri olan <?php echo $post['author']; ?>, ayakkabı dünyasındaki trendler ve yenilikler hakkında düzenli olarak içerikler üretmektedir.</p>
                 <div class="author-social">
                     <a href="#"><i class="fab fa-twitter"></i></a>
                     <a href="#"><i class="fab fa-linkedin-in"></i></a>

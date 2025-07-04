@@ -1,7 +1,7 @@
 <!-- Aksiyon Butonları -->
 <div class="action-buttons space-y-3 mt-4">
     <button id="add-to-cart" 
-            class="w-1/2 bg-primary text-white py-3 rounded text-sm font-bold hover:bg-opacity-90 hover:shadow-md transition duration-300 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
+            class="w-1/2 bg-brand text-secondary py-3 rounded text-sm font-bold hover:bg-opacity-80 transition-all duration-300 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
             disabled
             aria-label="Ürünü sepete ekle" 
             aria-describedby="cart-button-description"

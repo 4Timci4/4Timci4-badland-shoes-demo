@@ -2,7 +2,7 @@
 <div class="mt-16 max-w-6xl mx-auto px-5">
     <div class="border-b border-gray-200">
         <nav class="flex space-x-8">
-            <button class="tab-button py-4 px-1 border-b-2 border-primary text-primary font-medium" data-tab="description">
+            <button class="tab-button py-4 px-1 border-b-2 border-brand text-brand font-medium" data-tab="description">
                 Açıklama
             </button>
             <button class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="features">

@@ -3,7 +3,7 @@
         <div class="max-w-7xl mx-auto px-5">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <div class="space-y-4">
-                    <h2 class="text-2xl font-semibold">schön<span class="text-primary">.</span></h2>
+                    <h2 class="text-2xl font-semibold">Bandland Shoes<span class="text-primary">.</span></h2>
                     <p class="text-gray-300 leading-relaxed">Türkiye'nin en kaliteli ayakkabı markası olarak müşterilerimize en iyi hizmeti sunmaktayız.</p>
                     <div class="flex space-x-4 mt-5">
                         <a href="#" class="inline-block text-white text-xl hover:text-primary transition-colors duration-300"><i class="fab fa-facebook"></i></a>
@@ -32,7 +32,7 @@
                 </div>
             </div>
             <div class="border-t border-gray-600 pt-5">
-                <p class="text-center text-gray-400">&copy; 2025 Schön. Tüm hakları saklıdır.</p>
+                <p class="text-center text-gray-400">&copy; 2025 Bandland Shoes. Tüm hakları saklıdır.</p>
             </div>
         </div>
     </footer>

@@ -7,7 +7,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schön | Türkiye'nin En Kaliteli Ayakkabı Markası</title>
+    <title>Bandland Shoes | Türkiye'nin En Kaliteli Ayakkabı Markası</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -18,20 +24,25 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         primary: '#e91e63',
                         secondary: '#333',
                         light: '#f4f4f4',
-                        dark: '#222'
+                        dark: '#222',
+                        brand: '#8BFD87'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'display': ['Poppins', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
 </head>
-<body>
+<body class="font-sans">
     <header class="bg-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-5">
             <div class="flex justify-between items-center py-5">
                 <div class="logo -ml-20">
                     <a href="/index.php">
-                        <img src="/assets/images/mt-logo.png" alt="Schön Logo" class="h-8 w-auto block md:h-8">
+                        <img src="/assets/images/mt-logo.png" alt="Bandland Shoes Logo" class="h-8 w-auto block md:h-8">
                     </a>
                 </div>
                 <nav class="hidden md:block">
