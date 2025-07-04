@@ -30,7 +30,7 @@ class SupabaseClient {
      * @param array $options Ek yapılandırma seçenekleri
      */
     public function __construct($baseUrl, $apiKey, $options = []) {
-        $this->baseUrl = rtrim($baseUrl, '/');
+        $this->baseUrl = rtrim($baseUrl, '/') . '/rest/v1';
         $this->apiKey = $apiKey;
         
         // Opsiyonel yapılandırma seçeneklerini ayarla

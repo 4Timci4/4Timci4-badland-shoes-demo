@@ -77,13 +77,18 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // PHP'den Supabase bilgilerini al
-    <?php require_once 'config/database.php'; ?>
+    <?php require_once 'config/env.php'; ?>
     const supabaseUrl = '<?php echo SUPABASE_URL; ?>';
     const supabaseKey = '<?php echo SUPABASE_KEY; ?>';
 
     // Supabase istemcisini oluştur
     const { createClient } = supabase;
-    const _supabase = createClient(supabaseUrl, supabaseKey);
+    const _supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    });
 
     // DOM Elementleri
     const categoryFiltersContainer = document.getElementById('category-filters-container');

@@ -12,69 +12,61 @@ function initSlider() {
     const slides = document.querySelectorAll('.slide');
     const dots = document.querySelectorAll('.dot');
     let currentSlide = 0;
-    
-    if (slides.length === 0) return;
-    
-    // İlk slaytı aktif yap
-    slides[0].classList.remove('opacity-0');
-    slides[0].classList.add('opacity-100');
-    if (dots.length > 0) {
-        dots[0].classList.remove('bg-opacity-50');
-        dots[0].classList.add('bg-opacity-100');
-    }
-    
-    // Otomatik slayt değiştirme
-    function nextSlide() {
-        // Aktif slaytı kaldır
-        slides[currentSlide].classList.remove('opacity-100');
-        slides[currentSlide].classList.add('opacity-0');
-        if (dots.length > 0) {
-            dots[currentSlide].classList.remove('bg-opacity-100');
-            dots[currentSlide].classList.add('bg-opacity-50');
+    let slideInterval;
+
+    if (slides.length <= 1) {
+        if (slides.length === 1) {
+            slides[0].classList.remove('opacity-0');
+            slides[0].classList.add('opacity-100');
         }
-        
-        // Sonraki slayta geç
-        currentSlide = (currentSlide + 1) % slides.length;
-        
-        // Yeni slaytı aktif yap
-        slides[currentSlide].classList.remove('opacity-0');
-        slides[currentSlide].classList.add('opacity-100');
         if (dots.length > 0) {
-            dots[currentSlide].classList.remove('bg-opacity-50');
-            dots[currentSlide].classList.add('bg-opacity-100');
+            dots.forEach(d => d.style.display = 'none');
         }
+        return;
     }
-    
-    // Her 5 saniyede bir slayt değiştir
-    let slideInterval = setInterval(nextSlide, 5000);
-    
-    // Noktalara tıklandığında
-    if (dots.length > 0) {
-        dots.forEach((dot, index) => {
-            dot.addEventListener('click', function() {
-                // Otomatik değiştirmeyi durdur ve yeniden başlat
-                clearInterval(slideInterval);
-                
-                // Aktif slaytı kaldır
-                slides[currentSlide].classList.remove('opacity-100');
-                slides[currentSlide].classList.add('opacity-0');
-                dots[currentSlide].classList.remove('bg-opacity-100');
-                dots[currentSlide].classList.add('bg-opacity-50');
-                
-                // Tıklanan slayta geç
-                currentSlide = index;
-                
-                // Yeni slaytı aktif yap
-                slides[currentSlide].classList.remove('opacity-0');
-                slides[currentSlide].classList.add('opacity-100');
-                dots[currentSlide].classList.remove('bg-opacity-50');
-                dots[currentSlide].classList.add('bg-opacity-100');
-                
-                // Otomatik değiştirmeyi yeniden başlat
-                slideInterval = setInterval(nextSlide, 5000);
-            });
+
+    function showSlide(index) {
+        slides.forEach((slide, i) => {
+            slide.classList.remove('opacity-100', 'z-10');
+            slide.classList.add('opacity-0', 'z-0');
+            if (dots[i]) {
+                dots[i].classList.remove('bg-opacity-100');
+                dots[i].classList.add('bg-opacity-50');
+            }
         });
+
+        slides[index].classList.remove('opacity-0', 'z-0');
+        slides[index].classList.add('opacity-100', 'z-10');
+        if (dots[index]) {
+            dots[index].classList.remove('bg-opacity-50');
+            dots[index].classList.add('bg-opacity-100');
+        }
+        currentSlide = index;
     }
+
+    function nextSlide() {
+        showSlide((currentSlide + 1) % slides.length);
+    }
+
+    function startSlider() {
+        stopSlider();
+        slideInterval = setInterval(nextSlide, 5000);
+    }
+
+    function stopSlider() {
+        clearInterval(slideInterval);
+    }
+
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            showSlide(index);
+            startSlider(); // Kullanıcı etkileşiminden sonra sayacı sıfırla
+        });
+    });
+
+    // İlk slaytı göster ve başlat
+    showSlide(0);
+    startSlider();
 }
 
 // Mobil menü işlevselliği

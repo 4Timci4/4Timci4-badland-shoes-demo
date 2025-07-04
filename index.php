@@ -1,34 +1,46 @@
-<?php include 'includes/header.php'; ?>
+<?php 
+include 'includes/header.php'; 
+require_once 'services/SliderService.php';
+
+$sliderService = new SliderService();
+$slides = $sliderService->getActiveSliders();
+?>
 
 <!-- Hero Slider -->
 <section class="relative h-[600px] overflow-hidden">
-    <div class="slide active absolute inset-0 w-full h-full opacity-100 transition-opacity duration-1000 flex items-center justify-center text-center text-white bg-primary">
-        <div class="slide-content max-w-4xl px-5">
-            <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5">Slider 1</h2>
-            <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">En yeni koleksiyonumuzu keşfedin. Şık ve rahat ayakkabılar ile tarzınızı tamamlayın.</p>
-            <a href="/products.php" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold uppercase text-sm tracking-wide hover:bg-opacity-80 transition-all duration-300">Şimdi Alışveriş Yap</a>
+    <?php if (!empty($slides)): ?>
+        <?php foreach ($slides as $index => $slide): ?>
+            <div 
+                class="slide absolute inset-0 w-full h-full transition-opacity duration-1000 <?php echo $index === 0 ? 'opacity-100' : 'opacity-0'; ?>"
+                style="background-color: <?php echo htmlspecialchars($slide['bg_color']); ?>;">
+                
+                <?php if (!empty($slide['image_url'])): ?>
+                    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('<?php echo htmlspecialchars($slide['image_url']); ?>');"></div>
+                    <div class="absolute inset-0 bg-black opacity-40"></div>
+                <?php endif; ?>
+
+                <div class="relative z-10 h-full flex items-center justify-center text-center text-white">
+                    <div class="slide-content max-w-4xl px-5">
+                        <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5"><?php echo htmlspecialchars($slide['title']); ?></h2>
+                        <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto"><?php echo htmlspecialchars($slide['description']); ?></p>
+                        <a href="<?php echo htmlspecialchars($slide['button_url']); ?>" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold uppercase text-sm tracking-wide hover:bg-opacity-80 transition-all duration-300">
+                            <?php echo htmlspecialchars($slide['button_text']); ?>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+        
+        <div class="slider-dots absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+            <?php foreach ($slides as $index => $slide): ?>
+                <span class="dot w-3 h-3 bg-white <?php echo $index === 0 ? 'bg-opacity-100' : 'bg-opacity-50'; ?> rounded-full cursor-pointer"></span>
+            <?php endforeach; ?>
         </div>
-    </div>
-    <div class="slide absolute inset-0 w-full h-full opacity-0 transition-opacity duration-1000 flex items-center justify-center text-center text-white bg-blue-500">
-        <div class="slide-content max-w-4xl px-5">
-            <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5">Slider 2</h2>
-            <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">Özel fırsatlar ve indirimler için hemen tıklayın. Sınırlı stok.</p>
-            <a href="/products.php" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold uppercase text-sm tracking-wide hover:bg-opacity-80 transition-all duration-300">İndirimleri Keşfet</a>
+    <?php else: ?>
+        <div class="flex items-center justify-center h-full">
+            <p class="text-xl text-gray-500">Slider bulunamadı.</p>
         </div>
-    </div>
-    <div class="slide absolute inset-0 w-full h-full opacity-0 transition-opacity duration-1000 flex items-center justify-center text-center text-white bg-green-500">
-        <div class="slide-content max-w-4xl px-5">
-            <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5">Slider 3</h2>
-            <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">Yeni sezon ürünlerimiz ile tarzınızı yansıtın. Her tarza uygun ayakkabılar.</p>
-            <a href="/products.php" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold uppercase text-sm tracking-wide hover:bg-opacity-80 transition-all duration-300">Yeni Sezon</a>
-        </div>
-    </div>
-    
-    <div class="slider-dots absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        <span class="dot w-3 h-3 bg-white bg-opacity-100 rounded-full cursor-pointer"></span>
-        <span class="dot w-3 h-3 bg-white bg-opacity-50 rounded-full cursor-pointer"></span>
-        <span class="dot w-3 h-3 bg-white bg-opacity-50 rounded-full cursor-pointer"></span>
-    </div>
+    <?php endif; ?>
 </section>
 
 <!-- Sezonluk Koleksiyonlar -->
@@ -83,7 +95,7 @@ $homeAbout = $aboutService->getHomePageAboutSection();
     <div class="max-w-7xl mx-auto px-5">
         <div class="flex flex-col lg:flex-row items-center gap-12">
             <div class="flex-1">
-                <img src="<?php echo htmlspecialchars($homeAbout['story_image_url'] ?? ''); ?>" alt="Mağaza" class="w-full rounded-lg shadow-lg">
+                <img src="<?php echo htmlspecialchars($homeAbout['story_image_url'] ?? ''); ?>" alt="Mağaza" class="w-2/3 mx-auto rounded-lg shadow-lg">
             </div>
             <div class="flex-1 text-center lg:text-left">
                 <h2 class="text-4xl font-bold mb-5 text-secondary"><?php echo htmlspecialchars($homeAbout['story_content_title'] ?? 'Schön Hakkında'); ?></h2>
