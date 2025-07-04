@@ -29,9 +29,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <header class="bg-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-5">
             <div class="flex justify-between items-center py-5">
-                <div class="logo">
+                <div class="logo -ml-20">
                     <a href="/index.php">
-                        <img src="/assets/images/mt-logo.png" alt="Schön Logo" class="h-12 w-auto block md:h-10">
+                        <img src="/assets/images/mt-logo.png" alt="Schön Logo" class="h-8 w-auto block md:h-8">
                     </a>
                 </div>
                 <nav class="hidden md:block">
