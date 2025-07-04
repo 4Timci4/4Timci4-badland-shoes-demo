@@ -11,14 +11,6 @@ $team = $content['team'];
 include 'includes/header.php'; 
 ?>
 
-<!-- Hakkımızda Banner -->
-<section class="bg-primary text-white py-12 text-center mb-12">
-    <div class="max-w-7xl mx-auto px-5">
-        <h1 class="text-5xl font-bold mb-4"><?php echo htmlspecialchars($settings['banner_title'] ?? ''); ?></h1>
-        <p class="text-xl"><?php echo htmlspecialchars($settings['banner_subtitle'] ?? ''); ?></p>
-    </div>
-</section>
-
 <section class="py-3 bg-white">
     <div class="max-w-7xl mx-auto px-5">
         <div class="text-center mb-10">

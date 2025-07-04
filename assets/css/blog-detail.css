@@ -1,32 +1,284 @@
-/* Blog Detay Sayfası için Tailwind CSS ile özel stiller */
+/*--------------------------------------------------------------
+# Blog Detay Sayfası Stilleri
+--------------------------------------------------------------*/
 
-/* Sadece Tailwind CSS'de bulunmayan özel stiller burada */
-.social-share a:hover {
-    transform: translateY(-3px);
+/* Genel Ayarlar */
+body {
+    background-color: #f9fafb;
+    color: #374151;
 }
 
-.related-card:hover .related-image img {
-    transform: scale(1.1);
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Blog Detay Bölümü */
+.blog-detail {
+    padding: 3rem 0;
+}
+
+/* Blog Başlığı */
+.blog-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.blog-header .category {
+    display: inline-block;
+    background-color: #fee2e2;
+    color: #ef4444;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.blog-header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+.blog-header .blog-meta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.blog-header .blog-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Öne Çıkan Görsel */
+.blog-featured-image {
+    margin-bottom: 2.5rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.blog-featured-image img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* Blog İçeriği */
+.blog-content {
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: #374151;
+}
+
+.blog-content p {
+    margin-bottom: 1.5rem;
+}
+
+.blog-content h2, .blog-content h3, .blog-content h4 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.blog-content h2 { font-size: 1.75rem; }
+.blog-content h3 { font-size: 1.5rem; }
+.blog-content h4 { font-size: 1.25rem; }
+
+.blog-content a {
+    color: #e91e63;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.blog-content a:hover {
+    color: #c2185b;
+}
+
+.blog-content ul, .blog-content ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.blog-content li {
+    margin-bottom: 0.5rem;
+}
+
+.blog-content blockquote {
+    border-left: 4px solid #e91e63;
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: #6b7280;
+}
+
+/* Etiketler */
+.blog-tags {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.blog-tags h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.blog-tags .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.blog-tags .tag {
+    display: inline-block;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.blog-tags .tag:hover {
+    background-color: #e91e63;
+    color: #ffffff;
+}
+
+/* Paylaşım Linkleri */
+.blog-share {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.blog-share h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.social-share {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.social-share a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+.social-share a:hover {
+    transform: translateY(-3px);
+    color: #ffffff;
+}
+
+.social-share .facebook:hover { background-color: #1877f2; }
+.social-share .twitter:hover { background-color: #1da1f2; }
+.social-share .linkedin:hover { background-color: #0a66c2; }
+.social-share .whatsapp:hover { background-color: #25d366; }
+.social-share .email:hover { background-color: #888; }
+
+/* Benzer Yazılar */
+.related-posts {
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.related-posts h2 {
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.related-card {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.related-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.related-image {
+    height: 150px;
+    overflow: hidden;
 }
 
 .related-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     transition: transform 0.5s ease;
 }
 
-.read-more:hover {
-    color: var(--secondary-color);
+.related-card:hover .related-image img {
+    transform: scale(1.05);
 }
 
-.tag:hover {
-    background-color: var(--primary-color);
-    color: var(--white-color);
+.related-content {
+    padding: 1rem;
 }
 
-.author-social a:hover {
-    background-color: var(--primary-color);
-    color: var(--white-color);
+.related-content h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
 }
 
-.comment-actions a:hover {
-    color: var(--secondary-color);
+.related-content .date {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+}
+
+.related-content .read-more {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #e91e63;
+    transition: color 0.3s ease;
+}
+
+.related-content .read-more:hover {
+    color: #c2185b;
+}
+
+/* Yorumlar Bölümü (Yorumlar kaldırıldığı için stiller de kaldırıldı) */
+.comments-section {
+    display: none;
 }

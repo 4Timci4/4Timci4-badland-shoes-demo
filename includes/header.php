@@ -36,41 +36,44 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
     </script>
 </head>
-<body class="font-sans">
+<body class="font-sans bg-gray-50">
     <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-5">
-            <div class="flex justify-between items-center py-5">
-                <div class="logo -ml-20">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="logo">
                     <a href="/index.php">
-                        <img src="/assets/images/mt-logo.png" alt="Bandland Shoes Logo" class="h-8 w-auto block md:h-8">
+                        <img src="/assets/images/mt-logo.png" alt="Bandland Shoes Logo" class="h-8 w-auto">
                     </a>
                 </div>
-                <nav class="hidden md:block">
-                    <ul class="flex space-x-5">
-                        <li><a href="/index.php" class="px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'index.php') ? 'text-primary' : 'text-secondary'; ?>">Ana Sayfa</a></li>
-                        <li><a href="/products.php" class="px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'products.php') ? 'text-primary' : 'text-secondary'; ?>">Ürünler</a></li>
-                        <li><a href="/about.php" class="px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'about.php') ? 'text-primary' : 'text-secondary'; ?>">Hakkımızda</a></li>
-                        <li><a href="/blog.php" class="px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'blog.php') ? 'text-primary' : 'text-secondary'; ?>">Blog</a></li>
-                        <li><a href="/contact.php" class="px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'contact.php') ? 'text-primary' : 'text-secondary'; ?>">İletişim</a></li>
-                    </ul>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="/index.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'index.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Ana Sayfa</a>
+                    <a href="/products.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'products.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Ürünler</a>
+                    <a href="/about.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'about.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Hakkımızda</a>
+                    <a href="/blog.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'blog.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Blog</a>
+                    <a href="/contact.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'contact.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">İletişim</a>
                 </nav>
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-secondary hover:text-primary">
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-primary"><i class="fas fa-search"></i></a>
+                    <a href="#" class="text-gray-600 hover:text-primary"><i class="fas fa-user"></i></a>
+                    <a href="#" class="text-gray-600 hover:text-primary relative">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                    </a>
+                    <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-primary">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                 </div>
             </div>
-            <!-- Mobile menu -->
-            <div id="mobile-menu" class="hidden md:hidden pb-5">
-                <ul class="flex flex-col space-y-2">
-                    <li><a href="/index.php" class="block px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'index.php') ? 'text-primary' : 'text-secondary'; ?>">Ana Sayfa</a></li>
-                    <li><a href="/products.php" class="block px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'products.php') ? 'text-primary' : 'text-secondary'; ?>">Ürünler</a></li>
-                    <li><a href="/about.php" class="block px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'about.php') ? 'text-primary' : 'text-secondary'; ?>">Hakkımızda</a></li>
-                    <li><a href="/blog.php" class="block px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'blog.php') ? 'text-primary' : 'text-secondary'; ?>">Blog</a></li>
-                    <li><a href="/contact.php" class="block px-2.5 py-2.5 transition-all duration-300 hover:text-primary <?php echo ($current_page == 'contact.php') ? 'text-primary' : 'text-secondary'; ?>">İletişim</a></li>
-                </ul>
-            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
+            <nav class="flex flex-col p-4 space-y-2">
+                <a href="/index.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'index.php') ? 'bg-primary text-white' : ''; ?>">Ana Sayfa</a>
+                <a href="/products.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'products.php') ? 'bg-primary text-white' : ''; ?>">Ürünler</a>
+                <a href="/about.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'about.php') ? 'bg-primary text-white' : ''; ?>">Hakkımızda</a>
+                <a href="/blog.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'blog.php') ? 'bg-primary text-white' : ''; ?>">Blog</a>
+                <a href="/contact.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'contact.php') ? 'bg-primary text-white' : ''; ?>">İletişim</a>
+            </nav>
         </div>
     </header>
-    <main>
+    <main class="container mx-auto px-4 py-8">
