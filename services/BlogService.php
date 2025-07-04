@@ -35,9 +35,9 @@ class BlogService {
                 $query .= '&tags=cs.{"' . urlencode($tag) . '"}';
             }
 
-            $response = $this->supabase->request($query, 'GET', [], ['Prefer: count=exact']);
+            $response = $this->supabase->request($query, 'GET', [], ['Prefer' => 'count=exact']);
             
-            $countHeader = $response['headers']['content-range'] ?? '0/0';
+            $countHeader = $response['headers']['Content-Range'] ?? '0/0';
             $total = (int) explode('/', $countHeader)[1];
             
             return [

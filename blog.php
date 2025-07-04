@@ -22,6 +22,11 @@
             $blogData = blogService()->get_posts($page, 6, $category, $tag);
             $posts = $blogData['posts'];
             $pages = $blogData['pages'];
+            
+            // Debug: Gelen veriyi kontrol et
+            // echo '<pre>';
+            // print_r($blogData);
+            // echo '</pre>';
 
             if (empty($posts)): ?>
                 <p class="col-span-full text-center text-gray-500">Bu kriterlere uygun yazı bulunamadı.</p>
