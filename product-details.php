@@ -18,6 +18,8 @@ if (!$product_data) {
 // Ürün verileri bulunduktan sonra diğer verileri çek
 $product_variants = get_product_variants($product_id);
 $product_images = get_product_images($product_id);
+$all_colors = get_colors(); // Performans için renkleri bir kez çek
+$all_sizes = get_sizes();   // Performans için bedenleri bir kez çek
 
 // Ürün bilgileri veritabanından çekildi
 ?>
@@ -28,44 +30,33 @@ $product_images = get_product_images($product_id);
 $product = $product_data;
 
 // Ürün özelliklerini hazırla
-$features = explode("\n", $product['description']);
-if (count($features) < 3) {
-    $features = [
-        'Yüksek kaliteli malzeme',
-        'Konforlu iç yapı',
-        'Dayanıklı dış taban',
-        'Modern tasarım',
-        'Günlük kullanım için ideal'
-    ];
-}
+$features = !empty($product['features']) ? explode("\n", $product['features']) : [];
 
-// Renkleri hazırla
+// Renkleri hazırla (Optimize Edilmiş)
 $colors = [];
-foreach ($product_variants as $variant) {
-    $color_id = $variant['color_id'];
-    $color_info = null;
-    
-    // Renk bilgisini bul
-    foreach (get_colors() as $c) {
-        if ($c['id'] == $color_id) {
-            $color_info = $c;
-            break;
-        }
-    }
-    
-    if ($color_info && !in_array($color_info, $colors)) {
-        $colors[] = $color_info;
+$product_color_ids = array_unique(array_column($product_variants, 'color_id'));
+$all_colors_map = array_column($all_colors, null, 'id'); // Renkleri ID'ye göre haritala
+
+foreach ($product_color_ids as $color_id) {
+    if (isset($all_colors_map[$color_id])) {
+        $colors[] = $all_colors_map[$color_id];
     }
 }
 
-// Bedenleri hazırla
+// Bedenleri hazırla (Optimize Edilmiş)
 $sizes = [];
-foreach ($product_variants as $variant) {
-    $size = $variant['size_id'];
-    if (!in_array($size, $sizes)) {
-        $sizes[] = $size;
+$product_size_ids = array_unique(array_column($product_variants, 'size_id'));
+$all_sizes_map = array_column($all_sizes, null, 'id'); // Bedenleri ID'ye göre haritala
+
+foreach ($product_size_ids as $size_id) {
+    if (isset($all_sizes_map[$size_id])) {
+        $sizes[] = $all_sizes_map[$size_id];
     }
 }
+// Bedenleri değere göre sırala
+usort($sizes, function($a, $b) {
+    return strnatcmp($a['size_value'], $b['size_value']);
+});
 ?>
 
 <!-- Breadcrumb -->
@@ -85,11 +76,11 @@ foreach ($product_variants as $variant) {
 
 <!-- Ürün Detay -->
 <section class="py-12 bg-white">
-    <div class="max-w-7xl mx-auto px-5">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <div class="max-w-6xl mx-auto px-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <!-- Sol Taraf - Ürün Görselleri -->
-            <div class="space-y-4">
+            <div class="lg:col-span-1 space-y-4">
                 <div class="main-image bg-gray-100 rounded-lg overflow-hidden aspect-square">
                     <img id="main-product-image"
                          src="<?php echo isset($product_images[0]['image_url']) ? $product_images[0]['image_url'] : ''; ?>"
@@ -97,7 +88,7 @@ foreach ($product_variants as $variant) {
                          class="w-full h-full object-cover">
                 </div>
                 
-                <div class="thumbnail-images grid grid-cols-3 gap-3">
+                <div class="thumbnail-images grid grid-cols-4 gap-4">
                     <?php foreach($product_images as $index => $image): ?>
                         <div class="thumbnail bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer border-2 <?php echo $index === 0 ? 'border-primary' : 'border-transparent hover:border-gray-300'; ?>"
                              onclick="changeMainImage('<?php echo $image['image_url']; ?>', this)">
@@ -110,15 +101,15 @@ foreach ($product_variants as $variant) {
             </div>
             
             <!-- Sağ Taraf - Ürün Bilgileri -->
-            <div class="space-y-6">
+            <div class="lg:col-span-2 space-y-5">
                 <div>
-                    <h1 class="text-3xl font-bold text-secondary mb-2"><?php echo $product['name']; ?></h1>
+                    <h1 class="text-2xl font-bold text-secondary mb-2"><?php echo $product['name']; ?></h1>
                     <p class="text-gray-600"><?php echo $product['category_name']; ?></p>
                 </div>
                 
                 <div class="price-section">
                     <div class="flex items-center gap-3">
-                        <span class="text-3xl font-bold text-secondary">₺ <?php echo number_format($product['base_price'], 2); ?></span>
+                        <span class="text-2xl font-bold text-secondary">₺ <?php echo number_format($product['base_price'], 2); ?></span>
                         <?php
                         $has_discount = false;
                         $original_price = 0;
@@ -133,14 +124,10 @@ foreach ($product_variants as $variant) {
                         
                         if ($has_discount):
                         ?>
-                            <span class="text-xl text-gray-400 line-through">₺ <?php echo number_format($original_price, 2); ?></span>
+                            <span class="text-lg text-gray-400 line-through">₺ <?php echo number_format($original_price, 2); ?></span>
                             <span class="bg-green-500 text-white text-sm px-2 py-1 rounded">İndirim</span>
                         <?php endif; ?>
                     </div>
-                </div>
-                
-                <div class="description">
-                    <p class="text-gray-700 leading-relaxed"><?php echo $product['description']; ?></p>
                 </div>
                 
                 <!-- Renk Seçimi -->
@@ -162,37 +149,41 @@ foreach ($product_variants as $variant) {
                 <!-- Beden Seçimi -->
                 <div class="size-selection">
                     <h3 class="text-lg font-semibold text-secondary mb-3">Beden Seçimi:</h3>
-                    <div class="grid grid-cols-4 gap-3">
+                    <div class="flex flex-wrap" style="max-width: 320px;">
                         <?php foreach($sizes as $size): ?>
-                            <button class="size-option px-4 py-3 border border-gray-300 rounded-lg hover:border-primary hover:bg-primary hover:text-white transition-all text-center font-medium"
-                                    data-size="<?php echo $size; ?>">
-                                <?php echo $size; ?>
+                            <button class="size-option w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:border-primary hover:bg-primary hover:text-white transition-all font-medium m-1"
+                                    data-size="<?php echo $size['id']; ?>"
+                                    data-size-value="<?php echo $size['size_value']; ?>">
+                                <?php echo $size['size_value']; ?>
                             </button>
                         <?php endforeach; ?>
                     </div>
                     <p class="text-sm text-gray-600 mt-2">Seçili beden: <span id="selected-size">-</span></p>
                 </div>
                 
-                <!-- Miktar -->
-                <div class="quantity-section">
-                    <h3 class="text-lg font-semibold text-secondary mb-3">Miktar:</h3>
-                    <div class="flex items-center gap-3">
-                        <button id="decrease-qty" class="w-10 h-10 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">-</button>
-                        <input type="number" id="quantity" value="1" min="1" max="10" class="w-16 h-10 text-center border border-gray-300 rounded-lg">
-                        <button id="increase-qty" class="w-10 h-10 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">+</button>
-                    </div>
+
+                <!-- Aksiyon Butonları -->
+                <div class="action-buttons space-y-3 mt-4">
+                    <button id="add-to-cart" 
+                            class="w-1/2 bg-primary text-white py-3 rounded text-sm font-bold hover:bg-opacity-90 hover:shadow-md transition duration-300 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
+                            disabled
+                            aria-label="Ürünü sepete ekle" 
+                            aria-describedby="cart-button-description"
+                            title="Sepete eklemek için renk ve beden seçimi yapmalısınız">
+                        <span id="add-to-cart-text">Seçim Yapın</span>
+                        <span id="loading-indicator" class="hidden">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                    </button>
+                    <span id="cart-button-description" class="sr-only">Sepete eklemek için önce renk ve beden seçimi yapmalısınız</span>
                 </div>
                 
                 <!-- Stok Durumu -->
                 <div class="stock-info">
-                    <p class="text-sm text-green-600" id="stock-status">Stok durumu: Seçim yapın</p>
-                </div>
-                
-                <!-- Aksiyon Butonları -->
-                <div class="action-buttons space-y-3">
-                    <button id="add-to-cart" class="w-full bg-primary text-white py-4 rounded-lg font-semibold hover:bg-pink-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
-                        Sepete Ekle
-                    </button>
+                    <p class="text-xs text-green-600" id="stock-status"></p>
                 </div>
             </div>
         </div>
@@ -207,9 +198,6 @@ foreach ($product_variants as $variant) {
                     <button class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="features">
                         Özellikler
                     </button>
-                    <button class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="reviews">
-                        Yorumlar
-                    </button>
                 </nav>
             </div>
             
@@ -217,10 +205,6 @@ foreach ($product_variants as $variant) {
                 <div id="description" class="tab-pane">
                     <div class="prose max-w-none">
                         <p class="text-gray-700 leading-relaxed"><?php echo $product['description']; ?></p>
-                        <p class="text-gray-700 leading-relaxed mt-4">
-                            Bu ürün, yüksek kaliteli malzemeler kullanılarak üretilmiştir. Günlük kullanım için ideal olan bu ayakkabı, 
-                            hem konfor hem de stil arayanlar için mükemmel bir seçimdir.
-                        </p>
                     </div>
                 </div>
                 
@@ -235,52 +219,6 @@ foreach ($product_variants as $variant) {
                     </ul>
                 </div>
                 
-                <div id="reviews" class="tab-pane hidden">
-                    <div class="space-y-6">
-                        <!-- Örnek Yorumlar -->
-                        <div class="border-b border-gray-200 pb-6">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-600"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-secondary">Ahmet Y.</h4>
-                                    <div class="flex items-center gap-1">
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <span class="text-sm text-gray-500 ml-2">5.0</span>
-                                    </div>
-                                </div>
-                                <span class="text-sm text-gray-500 ml-auto">2 gün önce</span>
-                            </div>
-                            <p class="text-gray-700">Çok kaliteli bir ürün. Tam beklediğim gibi çıktı. Uygun fiyata yüksek kalite. Kesinlikle tavsiye ederim.</p>
-                        </div>
-                        
-                        <div class="border-b border-gray-200 pb-6">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-600"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-secondary">Zeynep K.</h4>
-                                    <div class="flex items-center gap-1">
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <i class="far fa-star text-gray-300"></i>
-                                        <span class="text-sm text-gray-500 ml-2">4.0</span>
-                                    </div>
-                                </div>
-                                <span class="text-sm text-gray-500 ml-auto">1 hafta önce</span>
-                            </div>
-                            <p class="text-gray-700">Ürün güzel ancak kargo biraz geç geldi. Kalitesi ve işçiliği beklediğimden iyi çıktı.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -295,34 +233,27 @@ foreach ($product_variants as $variant) {
         </div>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Benzer Ürünler (Optimize Edilmiş) -->
             <?php
-            // Benzer ürünleri göster (aynı kategoriden)
-            $category_id = isset($product['category_id']) ? $product['category_id'] : 0;
+            $category_slug = isset($product['category_slug']) ? $product['category_slug'] : null;
             $similar_products = [];
-            
-            // Aynı kategorideki diğer ürünleri getir
-            $all_products = get_product_models(4, 0, null, null);
-            
-            foreach($all_products as $p) {
-                if ($p['id'] != $product_id && isset($p['category_id']) && $p['category_id'] == $category_id) {
-                    $similar_products[] = $p;
+            if ($category_slug) {
+                // Mevcut ürün hariç, aynı kategoriden 5 ürün getir (4 tane göstermek için)
+                $all_products = get_product_models(5, 0, $category_slug, null);
+                
+                foreach($all_products as $p) {
+                    if (count($similar_products) >= 4) break;
+                    if ($p['id'] != $product_id) {
+                        $similar_products[] = $p;
+                    }
                 }
-                if (count($similar_products) >= 4) break;
             }
             
             foreach($similar_products as $p): 
             ?>
                 <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                     <div class="aspect-square bg-gray-100">
-                        <?php
-                        // Ürün görseli
-                        $product_image = '';
-                        $product_images_data = get_product_images($p['id']);
-                        if (!empty($product_images_data)) {
-                            $product_image = $product_images_data[0]['image_url'];
-                        }
-                        ?>
-                        <img src="<?php echo $product_image; ?>"
+                        <img src="<?php echo isset($p['image_url']) ? $p['image_url'] : ''; ?>"
                              alt="<?php echo $p['name']; ?>"
                              class="w-full h-full object-cover">
                     </div>
@@ -348,6 +279,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let selectedColor = null;
     let selectedSize = null;
+    
+    // Sayfa yüklendiğinde ilk rengi seç
+    if (productColors.length > 0) {
+        selectedColor = productColors[0].id;
+    }
+    
+    // Stok olmayan bedenlerin üstünü çiz
+    function updateSizeButtonsBasedOnStock() {
+        if (!selectedColor) return;
+        
+        document.querySelectorAll('.size-option').forEach(button => {
+            const sizeId = parseInt(button.dataset.size);
+            const variant = productVariants.find(v => 
+                v.color_id === selectedColor && v.size_id === sizeId
+            );
+            
+            if (!variant || variant.stock_quantity <= 0) {
+                button.classList.add('line-through', 'opacity-50');
+                button.disabled = true;
+            } else {
+                button.classList.remove('line-through', 'opacity-50');
+                button.disabled = false;
+            }
+        });
+    }
     
     // Ana resim değiştirme
     window.changeMainImage = function(imageUrl, thumbnail) {
@@ -378,9 +334,16 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedColor = parseInt(this.dataset.colorId);
             document.getElementById('selected-color').textContent = this.dataset.colorName;
             
+            // Önce bedenlerin görünümünü güncelle
+            updateSizeButtonsBasedOnStock();
             updateStockStatus();
         });
     });
+    
+    // Sayfa yüklendiğinde bedenleri güncelle
+    if (selectedColor) {
+        updateSizeButtonsBasedOnStock();
+    }
     
     // Beden seçimi
     document.querySelectorAll('.size-option').forEach(button => {
@@ -396,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('bg-primary', 'text-white', 'border-primary');
             
             selectedSize = parseInt(this.dataset.size);
-            document.getElementById('selected-size').textContent = selectedSize;
+            document.getElementById('selected-size').textContent = this.dataset.sizeValue;
             
             updateStockStatus();
         });
@@ -405,58 +368,63 @@ document.addEventListener('DOMContentLoaded', function() {
     // Stok durumunu güncelle
     function updateStockStatus() {
         const addToCartBtn = document.getElementById('add-to-cart');
+        const addToCartText = document.getElementById('add-to-cart-text');
         const stockStatus = document.getElementById('stock-status');
         
         if (selectedColor && selectedSize) {
             const variant = productVariants.find(v => 
-                v.color_id === selectedColor && v.size === selectedSize
+                v.color_id === selectedColor && v.size_id === selectedSize
             );
             
-            if (variant && variant.stock > 0) {
-                stockStatus.textContent = `Stok durumu: ${variant.stock} adet mevcut`;
-                stockStatus.className = 'text-sm text-green-600';
+            if (variant && variant.stock_quantity > 0) {
+                stockStatus.textContent = variant.stock_quantity <= 3 ? 'Son ' + variant.stock_quantity + ' ürün!' : ''; 
+                stockStatus.className = 'text-xs text-green-600';
                 addToCartBtn.disabled = false;
-                addToCartBtn.textContent = 'Sepete Ekle';
+                addToCartBtn.title = 'Ürünü sepete eklemek için tıklayın';
+                addToCartText.textContent = 'Sepete Ekle';
             } else {
-                stockStatus.textContent = 'Stok durumu: Tükendi';
-                stockStatus.className = 'text-sm text-red-600';
+                stockStatus.textContent = 'Tükendi';
+                stockStatus.className = 'text-xs text-red-600';
                 addToCartBtn.disabled = true;
-                addToCartBtn.textContent = 'Stokta Yok';
+                addToCartBtn.title = 'Bu ürün tükenmiştir';
+                addToCartText.textContent = 'Stokta Yok';
             }
         } else {
-            stockStatus.textContent = 'Stok durumu: Renk ve beden seçin';
-            stockStatus.className = 'text-sm text-gray-600';
+            stockStatus.textContent = '';
+            stockStatus.className = 'text-xs text-gray-600';
             addToCartBtn.disabled = true;
-            addToCartBtn.textContent = 'Seçim Yapın';
+            addToCartBtn.title = 'Sepete eklemek için renk ve beden seçimi yapmalısınız';
+            addToCartText.textContent = 'Seçim Yapın';
         }
     }
     
-    // Miktar kontrolleri
-    const quantityInput = document.getElementById('quantity');
-    const decreaseBtn = document.getElementById('decrease-qty');
-    const increaseBtn = document.getElementById('increase-qty');
-    
-    decreaseBtn.addEventListener('click', function() {
-        const currentValue = parseInt(quantityInput.value);
-        if (currentValue > 1) {
-            quantityInput.value = currentValue - 1;
-        }
-    });
-    
-    increaseBtn.addEventListener('click', function() {
-        const currentValue = parseInt(quantityInput.value);
-        if (currentValue < 10) {
-            quantityInput.value = currentValue + 1;
-        }
-    });
     
     // Sepete ekle
     document.getElementById('add-to-cart').addEventListener('click', function() {
         if (selectedColor && selectedSize) {
-            const quantity = parseInt(quantityInput.value);
             const colorName = productColors.find(c => c.id === selectedColor).name;
+            const sizeValue = document.getElementById('selected-size').textContent;
             
-            alert(`Sepete eklendi:\n${quantity} adet <?php echo $product['name']; ?>\nRenk: ${colorName}\nBeden: ${selectedSize}`);
+            // Yükleme göstergesini göster
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const addToCartText = document.getElementById('add-to-cart-text');
+            
+            loadingIndicator.classList.remove('hidden');
+            this.disabled = true;
+            addToCartText.textContent = 'Ekleniyor...';
+            
+            // Sepete ekleme işlemini simüle et (gerçek uygulamada AJAX isteği olabilir)
+            setTimeout(() => {
+                loadingIndicator.classList.add('hidden');
+                this.disabled = false;
+                addToCartText.textContent = 'Sepete Ekle';
+                
+                // Başarılı mesajı göster
+                alert(`Sepete eklendi:\n<?php echo $product['name']; ?>\nRenk: ${colorName}\nBeden: ${sizeValue}`);
+                
+                // Stok durumunu güncelle (gerçek uygulamada API'den güncel stok bilgisi alınabilir)
+                updateStockStatus();
+            }, 800); // 800ms gecikme ile işlemi simüle et
         }
     });
     

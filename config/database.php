@@ -162,7 +162,7 @@ function get_product_models($limit = 10, $offset = 0, $category_slugs = null, $f
 function get_product_model($model_id) {
     // RPC fonksiyonu yerine doğrudan SQL tabloları kullanılıyor
     $query = [
-        'select' => 'id,name,description,base_price,is_featured,created_at,category_id',
+        'select' => 'id,name,description,features,base_price,is_featured,created_at,category_id',
         'id' => 'eq.' . $model_id,
         'limit' => 1
     ];
