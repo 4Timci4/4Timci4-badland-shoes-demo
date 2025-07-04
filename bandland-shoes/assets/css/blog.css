@@ -1,0 +1,153 @@
+/* Blog Sayfası Stilleri */
+.page-banner {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    padding: 50px 0;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.page-banner h1 {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.blog-section {
+    padding: 0 0 80px;
+}
+
+.blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.blog-card {
+    background-color: var(--white-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.blog-card:hover {
+    transform: translateY(-10px);
+}
+
+.blog-image {
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+}
+
+.blog-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.blog-card:hover .blog-image img {
+    transform: scale(1.1);
+}
+
+.category {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    padding: 5px 15px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.blog-content {
+    padding: 25px;
+}
+
+.blog-meta {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    color: #777;
+    font-size: 0.9rem;
+}
+
+.blog-meta i {
+    margin-right: 5px;
+}
+
+.blog-content h2 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+    line-height: 1.4;
+}
+
+.blog-content p {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.read-more {
+    color: var(--primary-color);
+    font-weight: 600;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.read-more i {
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+}
+
+.read-more:hover {
+    color: var(--secondary-color);
+}
+
+.read-more:hover i {
+    transform: translateX(5px);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.pagination a {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: var(--light-color);
+    border-radius: 4px;
+    color: var(--secondary-color);
+    transition: all 0.3s ease;
+}
+
+.pagination a.active, .pagination a:hover {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+}
+
+.pagination .next {
+    padding: 8px 20px;
+}
+
+@media (max-width: 768px) {
+    .page-banner h1 {
+        font-size: 2.5rem;
+    }
+    
+    .blog-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .blog-card {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+}

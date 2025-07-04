@@ -1,0 +1,264 @@
+/* Ürün Detay Sayfası Stilleri */
+.product-detail {
+    padding: 50px 0;
+}
+
+.product-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-bottom: 60px;
+}
+
+.product-images {
+    flex: 1;
+    min-width: 300px;
+}
+
+.main-image {
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail-images {
+    display: flex;
+    gap: 10px;
+}
+
+.thumbnail-images img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.thumbnail-images img.active,
+.thumbnail-images img:hover {
+    border-color: var(--primary-color);
+}
+
+.product-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.product-info h1 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.product-info .price {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.description {
+    margin-bottom: 30px;
+    color: #666;
+    line-height: 1.7;
+}
+
+.product-options {
+    margin-bottom: 25px;
+}
+
+.product-options h3 {
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.option-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.option-btn:hover,
+.option-btn.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.quantity {
+    margin-bottom: 30px;
+}
+
+.quantity-input {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+}
+
+.quantity-input button {
+    width: 40px;
+    height: 40px;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.quantity-input .decrease {
+    border-radius: 4px 0 0 4px;
+}
+
+.quantity-input .increase {
+    border-radius: 0 4px 4px 0;
+}
+
+.quantity-input input {
+    width: 60px;
+    height: 40px;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-right: none;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.product-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.add-to-cart {
+    padding: 12px 30px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-to-cart:hover {
+    background-color: #d81b60;
+}
+
+.btn-outline {
+    padding: 12px 15px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Tabs */
+.product-tabs {
+    margin-top: 40px;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.tab-pane {
+    display: none;
+    padding: 20px 0;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.features-list {
+    list-style: none;
+}
+
+.features-list li {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.features-list li i {
+    color: var(--primary-color);
+    margin-right: 10px;
+}
+
+/* Reviews */
+.review {
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.reviewer {
+    font-weight: 600;
+}
+
+.rating {
+    color: #ffc107;
+}
+
+.review-date {
+    color: #777;
+}
+
+@media (max-width: 768px) {
+    .product-container {
+        flex-direction: column;
+    }
+    
+    .review-header {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

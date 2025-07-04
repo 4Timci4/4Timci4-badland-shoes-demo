@@ -1,0 +1,186 @@
+/* Hakkımızda Sayfası Stilleri */
+.page-banner {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    padding: 50px 0;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.page-banner h1 {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.about-section {
+    padding: 50px 0;
+    background-color: var(--white-color);
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-title h2 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+.section-title p {
+    color: #777;
+}
+
+.about-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 40px;
+}
+
+.about-image {
+    flex: 1;
+    min-width: 300px;
+}
+
+.about-image img {
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.about-text {
+    flex: 1;
+    min-width: 300px;
+}
+
+.about-text h3 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.about-text p {
+    margin-bottom: 15px;
+    color: #666;
+    line-height: 1.7;
+}
+
+.values-section {
+    padding: 50px 0;
+    background-color: #f9f9f9;
+}
+
+.values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.value-card {
+    background-color: var(--white-color);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.value-card:hover {
+    transform: translateY(-10px);
+}
+
+.value-card .icon {
+    width: 70px;
+    height: 70px;
+    line-height: 70px;
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    font-size: 1.5rem;
+}
+
+.value-card h3 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.value-card p {
+    color: #666;
+}
+
+.team-section {
+    padding: 50px 0;
+    background-color: var(--white-color);
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.team-member {
+    background-color: var(--white-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.team-member:hover {
+    transform: translateY(-10px);
+}
+
+.member-image {
+    height: 250px;
+    overflow: hidden;
+}
+
+.member-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.member-info {
+    padding: 20px;
+    text-align: center;
+}
+
+.member-info h3 {
+    font-size: 1.4rem;
+    margin-bottom: 5px;
+    color: var(--secondary-color);
+}
+
+.member-info .position {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.member-info .bio {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .page-banner h1 {
+        font-size: 2.5rem;
+    }
+    
+    .about-content {
+        flex-direction: column;
+    }
+    
+    .value-card, .team-member {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+}
