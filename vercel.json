@@ -2,25 +2,25 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     },
     "api/about.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     },
     "api/blog.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     },
     "api/blog-detail.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     },
     "api/contact.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     },
     "api/products.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     },
     "api/product-details.php": {
-      "runtime": "vercel-php@0.5.2"
+      "runtime": "vercel-php@0.6.0"
     }
   },
   "routes": [
