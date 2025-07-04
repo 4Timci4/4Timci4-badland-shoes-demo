@@ -70,7 +70,7 @@ function supabase_request($endpoint, $method = 'GET', $data = null) {
 }
 
 /**
- * Ürün modellerini getiren fonksiyon
+ * Ürün modellerini getiren fonksiyon - Düzeltilmiş basit SQL sorgusu ile
  * 
  * @param int $limit Maksimum ürün sayısı
  * @param int $offset Başlangıç indeksi
@@ -80,77 +80,139 @@ function supabase_request($endpoint, $method = 'GET', $data = null) {
  * @return array Ürün modelleri
  */
 function get_product_models($limit = 10, $offset = 0, $category_slugs = null, $featured = null, $sort = null) {
-    // RPC fonksiyonunu kullanarak birleştirilmiş veriyi al
-    $result = supabase_request('/rest/v1/rpc/get_joined_products', 'POST', []);
+    error_log("get_product_models çağrıldı: limit=$limit, offset=$offset, category_slugs=" . json_encode($category_slugs));
     
-    // Sonuç yoksa boş dizi döndür
-    if (empty($result)) {
-        return [];
-    }
+    // SQL sorgusu oluştur
+    $query = [
+        'select' => 'pm.id,pm.name,pm.description,pm.base_price,pm.is_featured,c.name as category_name,c.slug as category_slug,pi.image_url',
+        'from' => 'product_models.pm,categories.c,product_images.pi',
+        'where' => 'pm.category_id=c.id and pi.model_id=pm.id and pi.is_primary=true',
+        'order' => 'pm.id.asc',
+        'limit' => $limit,
+        'offset' => $offset
+    ];
     
-    // Veri formatını düzenle - her bir üründeki get_joined_products nesnesini çıkar
-    $normalized_results = [];
-    foreach ($result as $item) {
-        if (isset($item['get_joined_products'])) {
-            $normalized_results[] = $item['get_joined_products'];
+    // Kategori filtresi ekle
+    if (!empty($category_slugs)) {
+        if (is_array($category_slugs)) {
+            $slugList = implode("','", array_map(function($slug) {
+                return str_replace("'", "''", $slug); // SQL enjeksiyonuna karşı koruma
+            }, $category_slugs));
+            $query['where'] .= " and c.slug in ('$slugList')";
+        } else {
+            $safeSlug = str_replace("'", "''", $category_slugs); // SQL enjeksiyonuna karşı koruma
+            $query['where'] .= " and c.slug = '$safeSlug'";
         }
     }
     
-    // Hiç ürün yoksa boş dizi döndür
-    if (empty($normalized_results)) {
-        return [];
-    }
-    
-    // Filtreleme, sıralama ve sayfalama işlemlerini PHP'de yap
-    $filtered_results = $normalized_results;
-    
-    // Kategori filtresi
-    if (!empty($category_slugs)) {
-        $filtered_results = array_filter($filtered_results, function($product) use ($category_slugs) {
-            if (is_array($category_slugs)) {
-                return in_array($product['category_slug'], $category_slugs);
-            } else {
-                return $product['category_slug'] == $category_slugs;
-            }
-        });
-    }
-    
-    // Öne çıkan filtresi
+    // Öne çıkan filtresi ekle
     if ($featured !== null) {
-        $filtered_results = array_filter($filtered_results, function($product) use ($featured) {
-            return $product['is_featured'] == $featured;
-        });
+        $featuredValue = $featured ? 'true' : 'false';
+        $query['where'] .= " and pm.is_featured = $featuredValue";
+    }
+    
+    // Manuel SQL sorgusu oluştur (Supabase URL yapısı çok karmaşık olduğu için)
+    $sqlQuery = "
+    SELECT
+        pm.id, 
+        pm.name, 
+        pm.description, 
+        pm.base_price,
+        pm.is_featured,
+        c.name as category_name,
+        c.slug as category_slug,
+        pi.image_url
+    FROM 
+        product_models pm
+    JOIN 
+        categories c ON pm.category_id = c.id
+    LEFT JOIN 
+        (SELECT DISTINCT ON (model_id) model_id, image_url FROM product_images WHERE is_primary = true) pi 
+        ON pm.id = pi.model_id
+    ";
+    
+    // Kategori filtresi ekle
+    if (!empty($category_slugs)) {
+        if (is_array($category_slugs)) {
+            $placeholders = implode(',', array_fill(0, count($category_slugs), '?'));
+            $sqlQuery .= " WHERE c.slug IN ($placeholders)";
+        } else {
+            $sqlQuery .= " WHERE c.slug = '$category_slugs'";
+        }
     }
     
     // Sıralama
-    if ($sort) {
-        $sort_params = explode('-', $sort);
-        $column = $sort_params[0];
-        $direction = count($sort_params) > 1 ? $sort_params[1] : 'asc';
-        
-        usort($filtered_results, function($a, $b) use ($column, $direction) {
-            if (!isset($a[$column]) || !isset($b[$column])) {
-                return 0;
-            }
-            
-            if ($direction === 'asc') {
-                return $a[$column] <=> $b[$column];
-            } else {
-                return $b[$column] <=> $a[$column];
-            }
-        });
-    }
+    $sqlQuery .= " ORDER BY pm.id ASC";
     
     // Sayfalama
-    $total_count = count($filtered_results);
-    $filtered_results = array_slice($filtered_results, $offset, $limit);
+    $sqlQuery .= " LIMIT $limit OFFSET $offset";
     
-    // Count ekstra bilgisini ekle
-    if (!empty($filtered_results)) {
-        $filtered_results[0]['count'] = $total_count;
+    error_log("SQL Sorgusu: $sqlQuery");
+    
+    // HTTP isteği yerine doğrudan PostgreSQL RPC çağrısı kullan
+    $result = supabase_request('/rest/v1/rpc/execute_sql', 'POST', [
+        'query' => $sqlQuery
+    ]);
+    
+    // Hata kontrolü
+    if (empty($result) || !isset($result[0]) || empty($result[0])) {
+        error_log("Supabase RPC execute_sql sonucu boş döndü.");
+        
+        // Plan B: Temel SQL sorgusu
+        $basic_query = [
+            'select' => '*',
+            'limit' => $limit,
+            'offset' => $offset
+        ];
+        
+        if (!empty($category_slugs)) {
+            $category_query = [
+                'select' => 'id',
+                'slug' => is_array($category_slugs) ? 'in.(' . implode(',', $category_slugs) . ')' : 'eq.' . $category_slugs
+            ];
+            $category_result = supabase_request('/rest/v1/categories?' . http_build_query($category_query));
+            
+            if (!empty($category_result)) {
+                $category_ids = array_column($category_result, 'id');
+                $basic_query['category_id'] = 'in.(' . implode(',', $category_ids) . ')';
+            }
+        }
+        
+        $products = supabase_request('/rest/v1/product_models?' . http_build_query($basic_query));
+        
+        // Kategori ve görsel bilgilerini ekle
+        foreach ($products as &$product) {
+            // Kategori bilgisi
+            $cat_query = [
+                'select' => 'name,slug',
+                'id' => 'eq.' . $product['category_id'],
+                'limit' => 1
+            ];
+            $cat_result = supabase_request('/rest/v1/categories?' . http_build_query($cat_query));
+            
+            if (!empty($cat_result)) {
+                $product['category_name'] = $cat_result[0]['name'];
+                $product['category_slug'] = $cat_result[0]['slug'];
+            }
+            
+            // Görsel bilgisi
+            $img_query = [
+                'select' => 'image_url',
+                'model_id' => 'eq.' . $product['id'],
+                'is_primary' => 'eq.true',
+                'limit' => 1
+            ];
+            $img_result = supabase_request('/rest/v1/product_images?' . http_build_query($img_query));
+            
+            if (!empty($img_result)) {
+                $product['image_url'] = $img_result[0]['image_url'];
+            }
+        }
+        
+        return $products;
     }
     
-    return $filtered_results;
+    return $result;
 }
 
 /**

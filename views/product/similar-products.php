@@ -1,4 +1,5 @@
 <!-- Benzer Ürünler -->
+<?php if (!empty($similar_products)): ?>
 <section class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-5">
         <div class="text-center mb-12">
@@ -6,7 +7,7 @@
             <p class="text-gray-600">Beğenebileceğiniz diğer modellerimiz</p>
         </div>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <!-- Benzer Ürünler -->
             <?php foreach($similar_products as $p): ?>
                 <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
@@ -28,3 +29,4 @@
         </div>
     </div>
 </section>
+<?php endif; ?>

@@ -53,19 +53,23 @@ usort($sizes, function($a, $b) {
     return strnatcmp($a['size_value'], $b['size_value']);
 });
 
-// Benzer ürünleri getir
-$category_slug = isset($product['category_slug']) ? $product['category_slug'] : null;
+// Benzer ürünleri getir - SADECE aynı kategoriden
 $similar_products = [];
 
+// Aynı kategoriden ürünleri getir
+$category_slug = isset($product['category_slug']) ? $product['category_slug'] : null;
 if ($category_slug) {
-    // Mevcut ürün hariç, aynı kategoriden 5 ürün getir (4 tane göstermek için)
-    $all_products = get_product_models(5, 0, $category_slug, null);
+    // Daha fazla ürün getir (20) çünkü filtreleme sonrası azalabilir
+    $category_products = get_product_models(20, 0, $category_slug, null);
     
-    foreach($all_products as $p) {
-        if (count($similar_products) >= 4) break;
+    foreach($category_products as $p) {
+        // Sadece farklı ürünleri ekle (mevcut ürünü hariç tut)
         if ($p['id'] != $product_id) {
             $similar_products[] = $p;
         }
     }
+    
+    // En fazla 5 ürün göster
+    $similar_products = array_slice($similar_products, 0, 5);
 }
 ?>

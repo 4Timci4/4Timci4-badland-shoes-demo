@@ -1,5 +1,5 @@
 <!-- Ürün Detay Tabları -->
-<div class="mt-16">
+<div class="mt-16 max-w-6xl mx-auto px-5">
     <div class="border-b border-gray-200">
         <nav class="flex space-x-8">
             <button class="tab-button py-4 px-1 border-b-2 border-primary text-primary font-medium" data-tab="description">
