@@ -17,6 +17,9 @@ require_once __DIR__ . '/../services/ProductService.php';
 // Kategori servisini içe aktar
 require_once __DIR__ . '/../services/CategoryService.php';
 
+// Blog servisini içe aktar
+require_once __DIR__ . '/../services/BlogService.php';
+
 /**
  * Tüm renkleri getiren fonksiyon
  * 

@@ -1,48 +1,22 @@
 <?php include 'includes/header.php'; ?>
 
 <?php
-// Blog ID'sini al
-$blog_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+require_once __DIR__ . '/config/database.php';
 
-// Örnek blog yazıları (Normalde veritabanından çekilir)
-$all_blog_posts = [
-    [
-        'id' => 1, 
-        'title' => '2025 Yaz Sezonunun Gözde Ayakkabıları', 
-        'excerpt' => 'Bu yaz hem rahatlığı hem de şıklığı bir araya getiren en trend ayakkabı modellerini sizler için derledik.', 
-        'content' => '<p>2025 yaz sezonu, ayakkabı dünyasında yenilikçi tasarımlar ve cesur renklerin öne çıktığı bir dönem olarak karşımıza çıkıyor. Bu sezon ayakkabı trendlerinde minimalist tasarımlardan gösterişli modellere kadar geniş bir yelpaze sunuluyor.</p><h3>1. Platform Sandalet ve Terlikler</h3><p>90\'ların nostaljik havası, platform sandalet ve terliklerin geri dönüşüyle devam ediyor. Özellikle pastel tonlardaki platform sandaletler ve kalın tabanlı terlikler, 2025 yazının öne çıkan parçaları arasında yer alıyor.</p>',
-        'image' => 'https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80', 
-        'date' => '15 Haziran 2025', 
-        'category' => 'Trendler',
-        'tags' => ['Yaz Modası', 'Trendler', 'Sandalet']
-    ],
-    [
-        'id' => 2, 
-        'title' => 'Ayak Sağlığınız İçin Doğru Ayakkabı Nasıl Seçilir?', 
-        'excerpt' => 'Gün boyu konfor ve sağlık için ayakkabı seçerken dikkat etmeniz gereken önemli noktaları inceliyoruz.', 
-        'content' => '<p>Ayakkabı seçimi, sadece estetik bir konu değil, aynı zamanda sağlığımızı da doğrudan etkileyen önemli bir faktördür. Yanlış ayakkabı seçimi, ayak ağrılarından başlayarak sırt ve bel problemlerine kadar uzanan birçok sağlık sorununa yol açabilir.</p><h3>Ayak Sağlığı ve Ayakkabı İlişkisi</h3><p>Ayaklarımız vücudumuzu taşıyan en önemli yapılardır ve günde ortalama 8.000-10.000 adım attığımızı düşünürsek, doğru ayakkabı seçiminin önemi daha iyi anlaşılır.</p>',
-        'image' => 'https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80', 
-        'date' => '02 Haziran 2025', 
-        'category' => 'Sağlık',
-        'tags' => ['Ayak Sağlığı', 'Doğru Ayakkabı', 'Sağlık']
-    ],
-    // Diğer yazılar da benzer şekilde 'content' alanı eklenerek devam edebilir...
-];
+$blog_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Tüm blog yazılarını bir dizide toplayalım (ID'leri anahtar olarak kullanarak)
-$blog_posts_by_id = [];
-foreach ($all_blog_posts as $post) {
-    $blog_posts_by_id[$post['id']] = $post;
-}
-
-// Eğer blog yazısı bulunamazsa geri yönlendir
-if (!isset($blog_posts_by_id[$blog_id])) {
-    header("Location: blog.php");
+if ($blog_id === 0) {
+    header("Location: /blog.php");
     exit;
 }
 
-// Blog yazısı bilgilerini al
-$post = $blog_posts_by_id[$blog_id];
+$post = blogService()->get_post_by_id($blog_id);
+
+if (!$post) {
+    header("Location: /404.php"); // Veya blog ana sayfasına yönlendir
+    exit;
+}
+$post = (array) $post; // Obje ise diziye çevir
 ?>
 
 <!-- Blog Detay -->
@@ -50,15 +24,15 @@ $post = $blog_posts_by_id[$blog_id];
     <div class="container">
         <article>
             <header class="blog-header">
-                <a href="/blog.php?category=<?php echo urlencode($post['category']); ?>" class="category"><?php echo $post['category']; ?></a>
-                <h1><?php echo $post['title']; ?></h1>
+                <a href="/blog.php?category=<?php echo urlencode($post['category']); ?>" class="category"><?php echo htmlspecialchars($post['category']); ?></a>
+                <h1><?php echo htmlspecialchars($post['title']); ?></h1>
                 <div class="blog-meta">
-                    <span class="date"><i class="far fa-calendar-alt"></i> <?php echo $post['date']; ?></span>
+                    <span class="date"><i class="far fa-calendar-alt"></i> <?php echo date('d F Y', strtotime($post['created_at'])); ?></span>
                 </div>
             </header>
             
             <div class="blog-featured-image">
-                <img src="<?php echo $post['image']; ?>" alt="<?php echo $post['title']; ?>">
+                <img src="<?php echo htmlspecialchars($post['image_url']); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>">
             </div>
             
             <div class="blog-content">
@@ -66,12 +40,21 @@ $post = $blog_posts_by_id[$blog_id];
             </div>
             
             <footer class="blog-footer">
-                <?php if (isset($post['tags']) && !empty($post['tags'])): ?>
+                <?php 
+                // Supabase'den gelen tags alanı '{tag1,tag2}' formatında bir string olabilir.
+                $tags = [];
+                if (!empty($post['tags'])) {
+                    $tags = str_replace(['{', '}'], '', $post['tags']);
+                    $tags = explode(',', $tags);
+                }
+
+                if (!empty($tags)): 
+                ?>
                 <div class="blog-tags">
                     <h3>Etiketler</h3>
                     <div class="tags">
-                        <?php foreach($post['tags'] as $tag): ?>
-                            <a href="/blog.php?tag=<?php echo urlencode($tag); ?>" class="tag"><?php echo $tag; ?></a>
+                        <?php foreach($tags as $tag): ?>
+                            <a href="/blog.php?tag=<?php echo urlencode(trim($tag)); ?>" class="tag"><?php echo htmlspecialchars(trim($tag)); ?></a>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -92,27 +75,23 @@ $post = $blog_posts_by_id[$blog_id];
         
         <?php
         // Benzer yazıları bul
-        $related_posts = [];
-        foreach($all_blog_posts as $related_post) {
-            if ($related_post['id'] != $post['id'] && $related_post['category'] == $post['category']) {
-                $related_posts[] = $related_post;
-            }
-            if (count($related_posts) >= 2) break; // En fazla 2 benzer yazı göster
-        }
+        $related_posts = blogService()->get_related_posts($post['id'], $post['category']);
         
         if (!empty($related_posts)):
         ?>
         <aside class="related-posts">
             <h2>Benzer Yazılar</h2>
             <div class="related-grid">
-                <?php foreach($related_posts as $related): ?>
+                <?php foreach($related_posts as $related): 
+                    $related = (array) $related;
+                ?>
                     <a href="/blog-detail.php?id=<?php echo $related['id']; ?>" class="related-card">
                         <div class="related-image">
-                            <img src="<?php echo $related['image']; ?>" alt="<?php echo $related['title']; ?>">
+                            <img src="<?php echo htmlspecialchars($related['image_url']); ?>" alt="<?php echo htmlspecialchars($related['title']); ?>">
                         </div>
                         <div class="related-content">
-                            <h3><?php echo $related['title']; ?></h3>
-                            <div class="date"><?php echo $related['date']; ?></div>
+                            <h3><?php echo htmlspecialchars($related['title']); ?></h3>
+                            <div class="date"><?php echo date('d F Y', strtotime($related['created_at'])); ?></div>
                         </div>
                     </a>
                 <?php endforeach; ?>
