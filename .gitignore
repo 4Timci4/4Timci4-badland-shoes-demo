@@ -1,0 +1,10 @@
+# Vercel
+.vercel
+
+# Node modules
+node_modules
+
+# IDE specific
+.idea
+.vscode
+.roo

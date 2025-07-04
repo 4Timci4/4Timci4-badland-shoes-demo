@@ -1,5 +1,3 @@
-<?php include 'includes/header.php'; ?>
-
 <?php
 // Ürün ID'sini al
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -10,10 +8,6 @@ require_once 'config/database.php';
 // Veritabanından ürün bilgilerini çek
 $product_data_result = get_product_model($product_id);
 $product_data = $product_data_result ? $product_data_result[0] : null;
-$product_variants = get_product_variants($product_id);
-$product_images = get_product_images($product_id);
-
-// Ürün bilgileri veritabanından çekildi
 
 // Eğer ürün bulunamazsa geri yönlendir
 if (!$product_data) {
@@ -21,6 +15,15 @@ if (!$product_data) {
     exit;
 }
 
+// Ürün verileri bulunduktan sonra diğer verileri çek
+$product_variants = get_product_variants($product_id);
+$product_images = get_product_images($product_id);
+
+// Ürün bilgileri veritabanından çekildi
+?>
+<?php include 'includes/header.php'; ?>
+
+<?php
 // Ürün bilgilerini al
 $product = $product_data;
 

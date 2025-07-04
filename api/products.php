@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <a href="/product-details.php?id=${product.id}" class="text-inherit hover:text-primary transition-colors">${product.name}</a>
                         </h3>
                         <div class="text-xl font-bold text-secondary">
-                            ₺ ${Number(product.base_price).toFixed(2)}
+                            ₺ ${Number(product.price).toFixed(2)}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">${product.category_name || ''}</div>
                     </div>
