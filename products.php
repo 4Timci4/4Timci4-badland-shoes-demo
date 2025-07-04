@@ -1,30 +1,30 @@
 <?php include 'includes/header.php'; ?>
 
 <!-- Ürünler Sayfası Banner -->
-<section class="page-banner">
-    <div class="container">
-        <h1>Ürünlerimiz</h1>
-        <p>Kaliteli ve şık ayakkabı modelleri</p>
+<section class="bg-primary text-white py-12 text-center mb-12">
+    <div class="max-w-7xl mx-auto px-5">
+        <h1 class="text-5xl font-bold mb-4">Ürünlerimiz</h1>
+        <p class="text-xl">Kaliteli ve şık ayakkabı modelleri</p>
     </div>
 </section>
 
 <!-- Ürün Filtreleme -->
-<section class="filter-section">
-    <div class="container">
-        <div class="filters">
-            <button class="filter-btn active" data-filter="all">Tümü</button>
-            <button class="filter-btn" data-filter="erkek">Erkek</button>
-            <button class="filter-btn" data-filter="kadın">Kadın</button>
-            <button class="filter-btn" data-filter="çocuk">Çocuk</button>
-            <button class="filter-btn" data-filter="spor">Spor</button>
+<section class="py-8 bg-white border-b">
+    <div class="max-w-7xl mx-auto px-5">
+        <div class="flex flex-wrap justify-center gap-4">
+            <button class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-primary text-white" data-filter="all">Tümü</button>
+            <button class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-primary hover:text-white" data-filter="erkek">Erkek</button>
+            <button class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-primary hover:text-white" data-filter="kadın">Kadın</button>
+            <button class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-primary hover:text-white" data-filter="çocuk">Çocuk</button>
+            <button class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-primary hover:text-white" data-filter="spor">Spor</button>
         </div>
     </div>
 </section>
 
 <!-- Ürünler Listesi -->
-<section class="products-section">
-    <div class="container">
-        <div class="products-grid">
+<section class="py-16 bg-light">
+    <div class="max-w-7xl mx-auto px-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             <?php
             // Ürünleri göster (Örnek ürünler - gerçek uygulamada veri tabanından çekilir)
             $products = [
@@ -86,16 +86,16 @@
                 ]
             ];
             
-            foreach($products as $product): 
+            foreach($products as $product):
             ?>
-                <div class="product-card" data-category="<?php echo $product['category']; ?>">
-                    <div class="product-image">
-                        <img src="<?php echo $product['image']; ?>" alt="<?php echo $product['name']; ?>">
+                <div class="bg-white rounded-lg overflow-hidden shadow-lg hover:-translate-y-2 transition-transform duration-300" data-category="<?php echo $product['category']; ?>">
+                    <div class="h-70 overflow-hidden">
+                        <img src="<?php echo $product['image']; ?>" alt="<?php echo $product['name']; ?>" class="w-full h-full object-cover hover:scale-110 transition-transform duration-500">
                     </div>
-                    <div class="product-info">
-                        <h3><?php echo $product['name']; ?></h3>
-                        <div class="price"><?php echo number_format($product['price'], 2, ',', '.'); ?> TL</div>
-                        <a href="/product-details.php?id=<?php echo $product['id']; ?>" class="btn">Ürün Detayı</a>
+                    <div class="p-5">
+                        <h3 class="text-lg font-semibold mb-2 text-secondary"><?php echo $product['name']; ?></h3>
+                        <div class="text-xl font-semibold text-primary mb-4"><?php echo number_format($product['price'], 2, ',', '.'); ?> TL</div>
+                        <a href="/product-details.php?id=<?php echo $product['id']; ?>" class="block w-full text-center px-6 py-2 bg-primary text-white rounded-full font-semibold hover:bg-pink-600 transition-colors duration-300">Ürün Detayı</a>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -111,12 +111,16 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {
             // Aktif filtre butonunu güncelle
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
+            filterButtons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            this.classList.remove('bg-gray-200', 'text-gray-700');
+            this.classList.add('bg-primary', 'text-white');
             
             // Ürünleri filtrele
             const filter = this.dataset.filter;
-            const products = document.querySelectorAll('.product-card');
+            const products = document.querySelectorAll('[data-category]');
             
             products.forEach(product => {
                 if (filter === 'all' || product.dataset.category === filter) {
@@ -129,7 +133,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<link rel="stylesheet" href="/assets/css/products.css">
 
 <?php include 'includes/footer.php'; ?>
