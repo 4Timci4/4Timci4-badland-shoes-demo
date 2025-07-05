@@ -38,6 +38,21 @@ class CategoryService {
     }
     
     /**
+     * Tüm kategorileri getiren metod (Admin panel için)
+     * 
+     * @return array Kategoriler
+     */
+    public function getAllCategories() {
+        try {
+            $response = $this->supabase->request('categories?select=*&order=name.asc');
+            return $response['body'] ?? [];
+        } catch (Exception $e) {
+            error_log("Tüm kategorileri getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Her kategori için ürün sayılarını getiren metod
      *
      * @return array Kategori slug'ı anahtar, ürün sayısı değer olan bir dizi

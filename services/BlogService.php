@@ -223,6 +223,27 @@ class BlogService {
     }
 
     /**
+     * Tüm blog yazılarını getirir (Admin panel için)
+     *
+     * @param int $limit Maksimum yazı sayısı
+     * @return array Blog yazıları
+     */
+    public function getAllBlogs($limit = 100) {
+        try {
+            $response = $this->supabase->request('blogs?select=*&order=created_at.desc&limit=' . $limit);
+            if (!empty($response['body'])) {
+                return $response['body'];
+            }
+        } catch (Exception $e) {
+            error_log("Tüm blog yazılarını getirme hatası: " . $e->getMessage());
+        }
+        
+        // Supabase'den veri gelmezse dummy data kullan
+        $dummyData = $this->getDummyPosts(1, $limit);
+        return $dummyData['posts'];
+    }
+
+    /**
      * Test verisi döndürür (Supabase'den veri gelmeyen durumlarda)
      *
      * @param int $page Mevcut sayfa numarası
