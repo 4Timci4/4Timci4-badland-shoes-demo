@@ -23,20 +23,13 @@ $recent_products = get_recent_products(3);
 // Son eklenen blogları al
 $recent_blogs = get_recent_blogs(3);
 
-// Son aktiviteleri al
-$recent_activities = get_recent_activities(4);
 
-// Grafik verileri al
-$chart_data = get_monthly_chart_data();
+// Grafik verileri kaldırıldı.
 
 // Gerekli CSS ve JS
-$additional_css = [
-    'https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.css'
-];
+$additional_css = [];
 
-$additional_js = [
-    'https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js'
-];
+$additional_js = [];
 
 // Header dahil et
 include 'includes/header.php';
@@ -148,30 +141,8 @@ include 'includes/header.php';
     </div>
 
     <!-- Charts and Activity Section -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 gap-8">
         
-        <!-- Monthly Statistics Chart -->
-        <div class="xl:col-span-2">
-            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div class="flex items-center justify-between p-6 border-b border-gray-100">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900">Aylık İstatistikler</h3>
-                        <p class="text-gray-600 text-sm mt-1">Son 12 ayın performans özeti</p>
-                    </div>
-                    <div class="relative">
-                        <select class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            <option>Son 6 Ay</option>
-                            <option selected>Son 12 Ay</option>
-                            <option>Bu Yıl</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <div id="monthlyStatsChart" class="h-80"></div>
-                </div>
-            </div>
-        </div>
-
         <!-- Recent Activity -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-100">
@@ -298,9 +269,22 @@ include 'includes/header.php';
                                     <img src="<?= htmlspecialchars($product['image_url'] ?? 'https://via.placeholder.com/64') ?>" 
                                          alt="<?= htmlspecialchars($product['name']) ?>" 
                                          class="w-16 h-16 rounded-xl object-cover">
-                                    <?php if ($product['is_featured']): ?>
-                                        <span class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center shadow-md">
-                                            <i class="fas fa-star text-white text-xs"></i>
+                                    <?php
+                                        $status_icon = null;
+                                        $time_diff = time() - strtotime($product['created_at']);
+                                        $is_new = $time_diff < (86400 * 2); // 2 days
+
+                                        if (!empty($product['is_featured'])) {
+                                            $status_icon = 'fa-star';
+                                            $status_bg = 'bg-yellow-500';
+                                        } elseif ($is_new) {
+                                            $status_icon = 'fa-check';
+                                            $status_bg = 'bg-green-500';
+                                        }
+                                    ?>
+                                    <?php if ($status_icon): ?>
+                                        <span class="absolute -top-2 -right-2 w-6 h-6 <?= $status_bg ?> rounded-full flex items-center justify-center shadow-md">
+                                            <i class="fas <?= $status_icon ?> text-white text-xs"></i>
                                         </span>
                                     <?php endif; ?>
                                 </div>
@@ -344,8 +328,8 @@ include 'includes/header.php';
                     <i class="fas fa-arrow-right ml-2"></i>
                 </a>
             </div>
-            <div class="p-6">
-                <div class="space-y-6">
+            <div class="p-2">
+                <div class="space-y-2">
                     <?php if (!empty($recent_blogs)): ?>
                         <?php 
                             $category_colors = [
@@ -366,26 +350,28 @@ include 'includes/header.php';
                                 $color = $category_colors[$blog['category']] ?? $category_colors['Default'];
                                 $icon = $category_icons[$blog['category']] ?? $category_icons['Default'];
                             ?>
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-<?= $color ?>-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas <?= $icon ?> text-<?= $color ?>-600"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="font-semibold text-gray-900 mb-2 truncate"><?= htmlspecialchars($blog['title']) ?></h4>
-                                    <p class="text-gray-600 text-sm mb-3 line-clamp-2"><?= htmlspecialchars($blog['excerpt']) ?></p>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs text-<?= $color ?>-700 bg-<?= $color ?>-50 px-2 py-1 rounded-full font-medium"><?= htmlspecialchars($blog['category']) ?></span>
-                                        <span class="text-xs text-gray-500">
-                                            <?php
-                                            $time_diff = time() - strtotime($blog['created_at']);
-                                            if ($time_diff < 3600) { echo floor($time_diff / 60) . ' dk önce'; }
-                                            elseif ($time_diff < 86400) { echo floor($time_diff / 3600) . ' saat önce'; } 
-                                            else { echo floor($time_diff / 86400) . ' gün önce'; }
-                                            ?>
-                                        </span>
+                            <a href="blog-edit.php?id=<?= $blog['id'] ?>" class="block p-4 rounded-2xl hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 bg-<?= $color ?>-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                        <i class="fas <?= $icon ?> text-<?= $color ?>-600"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-semibold text-gray-900 mb-2 truncate"><?= htmlspecialchars($blog['title']) ?></h4>
+                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2"><?= htmlspecialchars($blog['excerpt']) ?></p>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs text-<?= $color ?>-700 bg-<?= $color ?>-50 px-2 py-1 rounded-full font-medium"><?= htmlspecialchars($blog['category']) ?></span>
+                                            <span class="text-xs text-gray-500">
+                                                <?php
+                                                $time_diff = time() - strtotime($blog['created_at']);
+                                                if ($time_diff < 3600) { echo floor($time_diff / 60) . ' dk önce'; }
+                                                elseif ($time_diff < 86400) { echo floor($time_diff / 3600) . ' saat önce'; } 
+                                                else { echo floor($time_diff / 86400) . ' gün önce'; }
+                                                ?>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <div class="text-center py-8">
@@ -399,119 +385,7 @@ include 'includes/header.php';
     </div>
 </div>
 
-<!-- ApexCharts Script -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof ApexCharts !== 'undefined') {
-        const chartOptions = {
-            series: [
-                {
-                    name: 'Ürünler',
-                    data: <?= json_encode($chart_data['products']) ?>
-                },
-                {
-                    name: 'Blog Yazıları',
-                    data: <?= json_encode($chart_data['blogs']) ?>
-                },
-                {
-                    name: 'Mesajlar',
-                    data: <?= json_encode($chart_data['messages']) ?>
-                }
-            ],
-            chart: {
-                height: 320,
-                type: 'area',
-                toolbar: {
-                    show: false
-                },
-                background: 'transparent',
-                fontFamily: 'Inter, system-ui, sans-serif'
-            },
-            colors: ['#7367f0', '#28c76f', '#ff9f43'],
-            dataLabels: {
-                enabled: false
-            },
-            stroke: {
-                curve: 'smooth',
-                width: 3
-            },
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shadeIntensity: 1,
-                    opacityFrom: 0.3,
-                    opacityTo: 0.1,
-                    stops: [0, 90, 100]
-                }
-            },
-            grid: {
-                borderColor: '#f1f5f9',
-                strokeDashArray: 3,
-                xaxis: {
-                    lines: {
-                        show: true
-                    }
-                },
-                yaxis: {
-                    lines: {
-                        show: true
-                    }
-                }
-            },
-            xaxis: {
-                categories: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
-                labels: {
-                    style: {
-                        colors: '#64748b',
-                        fontSize: '12px',
-                        fontWeight: 500
-                    }
-                },
-                axisBorder: {
-                    show: false
-                },
-                axisTicks: {
-                    show: false
-                }
-            },
-            yaxis: {
-                labels: {
-                    style: {
-                        colors: '#64748b',
-                        fontSize: '12px',
-                        fontWeight: 500
-                    }
-                }
-            },
-            legend: {
-                position: 'top',
-                horizontalAlign: 'left',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                fontWeight: 500,
-                labels: {
-                    colors: '#374151'
-                },
-                markers: {
-                    width: 8,
-                    height: 8,
-                    radius: 4
-                }
-            },
-            tooltip: {
-                shared: true,
-                intersect: false,
-                theme: 'light',
-                style: {
-                    fontFamily: 'Inter, system-ui, sans-serif'
-                }
-            }
-        };
-        
-        const chart = new ApexCharts(document.querySelector('#monthlyStatsChart'), chartOptions);
-        chart.render();
-    }
-});
-</script>
+<!-- ApexCharts Script - Kaldırıldı -->
 
 <?php
 // Footer dahil et

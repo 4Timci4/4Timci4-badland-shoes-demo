@@ -371,50 +371,6 @@ function get_recent_activities($limit = 10) {
     }
 }
 
-/**
- * Aylık istatistikleri getir (grafik için)
- */
-function get_monthly_chart_data() {
-    require_once __DIR__ . '/../../config/database.php';
-    
-    try {
-        $chart_data = [
-            'products' => [],
-            'blogs' => [],
-            'messages' => []
-        ];
-        
-        // Son 12 ay için veriler
-        for ($i = 11; $i >= 0; $i--) {
-            $month_start = date('Y-m-01 00:00:00', strtotime("-$i months"));
-            $month_end = date('Y-m-t 23:59:59', strtotime("-$i months"));
-            
-            // Ürünler
-            $products_response = supabase()->request("products?select=id&created_at=gte.$month_start&created_at=lte.$month_end");
-            $chart_data['products'][] = count($products_response['body'] ?? []);
-            
-            // Bloglar
-            $blogs_response = supabase()->request("blogs?select=id&created_at=gte.$month_start&created_at=lte.$month_end");
-            $chart_data['blogs'][] = count($blogs_response['body'] ?? []);
-            
-            // Mesajlar
-            $messages_response = supabase()->request("contacts?select=id&created_at=gte.$month_start&created_at=lte.$month_end");
-            $chart_data['messages'][] = count($messages_response['body'] ?? []);
-        }
-        
-        return $chart_data;
-        
-    } catch (Exception $e) {
-        error_log("Monthly chart data error: " . $e->getMessage());
-        
-        // Fallback data
-        return [
-            'products' => [12, 15, 18, 22, 20, 25, 30, 28, 35, 40, 38, 45],
-            'blogs' => [2, 3, 4, 3, 5, 4, 6, 5, 7, 8, 6, 9],
-            'messages' => [8, 12, 15, 18, 22, 25, 20, 28, 30, 35, 32, 40]
-        ];
-    }
-}
 
 /**
  * Logout işlemi
