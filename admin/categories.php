@@ -273,7 +273,7 @@ include 'includes/header.php';
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end space-x-2">
                                         <a href="categories.php?edit=<?= $category['id'] ?>" 
-                                           class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                           class="inline-flex items-center justify-center w-24 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>
                                             Düzenle
                                         </a>
@@ -284,13 +284,13 @@ include 'includes/header.php';
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="category_id" value="<?= $category['id'] ?>">
                                                 <button type="submit" 
-                                                        class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
+                                                        class="inline-flex items-center justify-center w-24 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
                                                     <i class="fas fa-trash mr-1"></i>
                                                     Sil
                                                 </button>
                                             </form>
                                         <?php else: ?>
-                                            <span class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
+                                            <span class="inline-flex items-center justify-center w-24 px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
                                                   title="Bu kategoriye ait ürünler mevcut, silinemez">
                                                 <i class="fas fa-ban mr-1"></i>
                                                 Silinemez
