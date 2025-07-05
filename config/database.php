@@ -20,6 +20,9 @@ require_once __DIR__ . '/../services/CategoryService.php';
 // Blog servisini içe aktar
 require_once __DIR__ . '/../services/BlogService.php';
 
+// İletişim servisini içe aktar
+require_once __DIR__ . '/../services/ContactService.php';
+
 /**
  * Tüm renkleri getiren fonksiyon
  * 

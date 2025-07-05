@@ -311,7 +311,7 @@ function supabase() {
     if ($instance === null) {
         $options = [
             'useCache' => true,
-            'cacheExpiry' => 300 // 5 dakika
+            'cacheExpiry' => 1 // 1 saniye - neredeyse gerçek zamanlı güncellemeler
         ];
         
         try {

@@ -1,9 +1,13 @@
 <?php 
 include 'includes/header.php'; 
 require_once 'services/SliderService.php';
+require_once 'services/SeasonalCollectionsService.php';
 
 $sliderService = new SliderService();
 $slides = $sliderService->getActiveSliders();
+
+$seasonalCollectionsService = new SeasonalCollectionsService();
+$collections = $seasonalCollectionsService->getActiveCollections();
 ?>
 
 <!-- Hero Slider -->
@@ -51,37 +55,28 @@ $slides = $sliderService->getActiveSliders();
             <p class="text-gray-600">Her mevsime özel, stilinizi tamamlayacak tasarımlar.</p>
         </div>
 
-        <!-- İlkbahar/Yaz Koleksiyonu -->
-        <div class="flex flex-col md:flex-row items-center gap-12 mb-20">
-            <div class="flex-1 text-center">
-                <h3 class="text-3xl font-display font-bold mb-4 text-secondary">İlkbahar/Yaz 2025</h3>
-                <p class="text-gray-600 leading-relaxed mb-6 max-w-md mx-auto">
-                    Doğanın uyanışından ilham alan, canlı renkler ve nefes alan materyallerle tasarlanmış koleksiyonumuzla adımlarınıza enerji katın.
-                </p>
-                <a href="/products.php?category=ilkbahar-yaz" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold hover:bg-opacity-80 transition-all duration-300">
-                    Koleksiyonu Gör
-                </a>
+        <?php if (!empty($collections)): ?>
+            <?php foreach ($collections as $index => $collection): ?>
+                <div class="flex flex-col md:flex-row<?php echo $collection['layout_type'] === 'right' ? '-reverse' : ''; ?> items-center gap-12<?php echo $index < count($collections) - 1 ? ' mb-20' : ''; ?>">
+                    <div class="flex-1 text-center">
+                        <h3 class="text-3xl font-display font-bold mb-4 text-secondary"><?php echo htmlspecialchars($collection['title']); ?></h3>
+                        <p class="text-gray-600 leading-relaxed mb-6 max-w-md mx-auto">
+                            <?php echo htmlspecialchars($collection['description']); ?>
+                        </p>
+                        <a href="<?php echo htmlspecialchars($collection['button_url']); ?>" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold hover:bg-opacity-80 transition-all duration-300">
+                            Koleksiyonu Gör
+                        </a>
+                    </div>
+                    <div class="flex-1">
+                        <img src="<?php echo htmlspecialchars($collection['image_url']); ?>" alt="<?php echo htmlspecialchars($collection['title']); ?>" class="w-full md:w-4/5 mx-auto rounded-lg shadow-xl">
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="text-center py-8">
+                <p class="text-gray-500">Henüz koleksiyon bulunmamaktadır.</p>
             </div>
-            <div class="flex-1">
-                <img src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" alt="İlkbahar/Yaz 2025 Koleksiyonu" class="w-full md:w-4/5 mx-auto rounded-lg shadow-xl">
-            </div>
-        </div>
-
-        <!-- Sonbahar/Kış Koleksiyonu -->
-        <div class="flex flex-col md:flex-row-reverse items-center gap-12">
-            <div class="flex-1 text-center">
-                <h3 class="text-3xl font-display font-bold mb-4 text-secondary">Sonbahar/Kış 2025</h3>
-                <p class="text-gray-600 leading-relaxed mb-6 max-w-md mx-auto">
-                    Şehrin ritmine ayak uyduran, su geçirmez ve sıcak tutan botlarımızla soğuk havalarda bile stilinizden ödün vermeyin.
-                </p>
-                <a href="/products.php?category=sonbahar-kis" class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold hover:bg-opacity-80 transition-all duration-300">
-                    Koleksiyonu Gör
-                </a>
-            </div>
-            <div class="flex-1">
-                <img src="https://images.unsplash.com/photo-1603145733316-74623f43c351?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" alt="Sonbahar/Kış 2025 Koleksiyonu" class="w-full md:w-4/5 mx-auto rounded-lg shadow-xl">
-            </div>
-        </div>
+        <?php endif; ?>
     </div>
 </section>
 

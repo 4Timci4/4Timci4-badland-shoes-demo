@@ -22,59 +22,67 @@ class BlogService {
      * @return array Blog yazıları ve toplam sayfa sayısı
      */
     public function get_posts($page = 1, $perPage = 6, $category = null, $tag = null) {
-        // HTTP client sorunlu, şimdilik Supabase'deki gerçek verileri sabit olarak döndürelim
-        // MCP server çalışıyor ve verilere erişebiliyoruz
-        $realPosts = [
-            [
-                'id' => 1,
-                'title' => '2025 Yaz Sezonunun Gözde Ayakkabıları',
-                'excerpt' => 'Bu yaz hem rahatlığı hem de şıklığı bir araya getiren en trend ayakkabı modellerini sizler için derledik.',
-                'content' => '<p>2025 yaz sezonu, ayakkabı dünyasında yenilikçi tasarımlar ve cesur renklerin öne çıktığı bir dönem olarak karşımıza çıkıyor. Bu sezon ayakkabı trendlerinde minimalist tasarımlardan gösterişli modellere kadar geniş bir yelpaze sunuluyor.</p><h3>1. Platform Sandalet ve Terlikler</h3><p>90\'ların nostaljik havası, platform sandalet ve terliklerin geri dönüşüyle devam ediyor. Özellikle pastel tonlardaki platform sandaletler ve kalın tabanlı terlikler, 2025 yazının öne çıkan parçaları arasında yer alıyor.</p>',
-                'image_url' => 'https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
-                'category' => 'Trendler',
-                'tags' => ['Yaz Modası', 'Trendler', 'Sandalet'],
-                'created_at' => '2025-07-04 14:17:26'
-            ],
-            [
-                'id' => 2,
-                'title' => 'Ayak Sağlığınız İçin Doğru Ayakkabı Nasıl Seçilir?',
-                'excerpt' => 'Gün boyu konfor ve sağlık için ayakkabı seçerken dikkat etmeniz gereken önemli noktaları inceliyoruz.',
-                'content' => '<p>Ayakkabı seçimi, sadece estetik bir konu değil, aynı zamanda sağlığımızı da doğrudan etkileyen önemli bir faktördür. Yanlış ayakkabı seçimi, ayak ağrılarından başlayarak sırt ve bel problemlerine kadar uzanan birçok sağlık sorununa yol açabilir.</p><h3>Ayak Sağlığı ve Ayakkabı İlişkisi</h3><p>Ayaklarımız vücudumuzu taşıyan en önemli yapılardır ve günde ortalama 8.000-10.000 adım attığımızı düşünürsek, doğru ayakkabı seçiminin önemi daha iyi anlaşılır.</p>',
-                'image_url' => 'https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
-                'category' => 'Sağlık',
-                'tags' => ['Ayak Sağlığı', 'Doğru Ayakkabı', 'Sağlık'],
-                'created_at' => '2025-07-04 14:17:26'
-            ]
-        ];
+        try {
+            // Önbelleği temizle
+            $this->supabase->clearCache('blogs?select=*');
+            
+            // Veritabanından blog yazılarını çek
+            $query = 'blogs?select=*&order=created_at.desc';
+            $response = $this->supabase->request($query);
+            
+            // Debug için log ekle
+            error_log("Blog Posts Response: " . json_encode($response));
+            
+            if (!empty($response['body'])) {
+                $allPosts = $response['body'];
+                
+                // Kategori filtreleme
+                if ($category) {
+                    $allPosts = array_filter($allPosts, function($post) use ($category) {
+                        return $post['category'] === $category;
+                    });
+                }
 
-        // Kategori filtreleme
-        if ($category) {
-            $realPosts = array_filter($realPosts, function($post) use ($category) {
-                return $post['category'] === $category;
-            });
+                // Etiket filtreleme
+                if ($tag) {
+                    $allPosts = array_filter($allPosts, function($post) use ($tag) {
+                        // Etiketler array formatında olabilir
+                        $postTags = $post['tags'] ?? [];
+                        if (is_string($postTags)) {
+                            // PostgreSQL array formatından PHP array'e çevir
+                            $postTags = str_replace(['{', '}'], ['', ''], $postTags);
+                            $postTags = array_map('trim', explode(',', $postTags));
+                        }
+                        return in_array($tag, $postTags);
+                    });
+                }
+
+                // Dizin anahtarlarını sıfırla
+                $allPosts = array_values($allPosts);
+
+                // Sayfalama
+                $total = count($allPosts);
+                $offset = ($page - 1) * $perPage;
+                $pagedPosts = array_slice($allPosts, $offset, $perPage);
+
+                return [
+                    'posts' => $pagedPosts,
+                    'total' => $total,
+                    'pages' => ceil($total / $perPage)
+                ];
+            } else {
+                error_log("Veritabanından blog yazıları alınamadı - boş response body");
+            }
+        } catch (Exception $e) {
+            error_log("Blog yazıları getirme hatası: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
         }
-
-        // Etiket filtreleme  
-        if ($tag) {
-            $realPosts = array_filter($realPosts, function($post) use ($tag) {
-                return in_array($tag, $post['tags']);
-            });
-        }
-
-        // Dizin anahtarlarını sıfırla
-        $realPosts = array_values($realPosts);
-
-        // Sayfalama
-        $total = count($realPosts);
-        $offset = ($page - 1) * $perPage;
-        $pagedPosts = array_slice($realPosts, $offset, $perPage);
-
-        return [
-            'posts' => $pagedPosts,
-            'total' => $total,
-            'pages' => ceil($total / $perPage)
-        ];
+        
+        // Veritabanından veri gelmezse varsayılan değerleri kullan
+        error_log("Varsayılan blog verileri kullanılıyor");
+        return $this->getDummyPosts($page, $perPage, $category, $tag);
     }
+
 
     /**
      * ID'ye göre tek bir blog yazısını getirir.
