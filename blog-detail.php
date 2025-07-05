@@ -13,7 +13,7 @@ if ($blog_id === 0) {
 $post = blogService()->get_post_by_id($blog_id);
 
 if (!$post) {
-    header("Location: /404.php"); // Veya blog ana sayfasına yönlendir
+    header("Location: /blog.php"); // Blog ana sayfasına yönlendir
     exit;
 }
 $post = (array) $post; // Obje ise diziye çevir
@@ -41,11 +41,17 @@ $post = (array) $post; // Obje ise diziye çevir
             
             <footer class="blog-footer">
                 <?php 
-                // Supabase'den gelen tags alanı '{tag1,tag2}' formatında bir string olabilir.
+                // Tags alanı array veya string olabilir
                 $tags = [];
                 if (!empty($post['tags'])) {
-                    $tags = str_replace(['{', '}'], '', $post['tags']);
-                    $tags = explode(',', $tags);
+                    if (is_array($post['tags'])) {
+                        // Eğer tags array ise direkt kullan
+                        $tags = $post['tags'];
+                    } elseif (is_string($post['tags'])) {
+                        // Eğer tags string ise ('{tag1,tag2}' formatında) parse et
+                        $tags = str_replace(['{', '}'], '', $post['tags']);
+                        $tags = explode(',', $tags);
+                    }
                 }
 
                 if (!empty($tags)): 
@@ -63,11 +69,17 @@ $post = (array) $post; // Obje ise diziye çevir
                 <div class="blog-share">
                     <h3>Bu Yazıyı Paylaş</h3>
                     <div class="social-share">
-                        <a href="#" class="facebook" title="Facebook'ta Paylaş"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="twitter" title="Twitter'da Paylaş"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="linkedin" title="LinkedIn'de Paylaş"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#" class="whatsapp" title="WhatsApp'ta Paylaş"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#" class="email" title="E-posta ile Gönder"><i class="far fa-envelope"></i></a>
+                        <?php
+                        // Mevcut sayfa URL'ini al
+                        $current_url = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+                        $share_title = htmlspecialchars($post['title']);
+                        $share_text = htmlspecialchars($post['excerpt'] ?? substr(strip_tags($post['content']), 0, 100) . '...');
+                        ?>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode($current_url); ?>" target="_blank" class="facebook" title="Facebook'ta Paylaş"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://twitter.com/intent/tweet?url=<?php echo urlencode($current_url); ?>&text=<?php echo urlencode($share_title); ?>" target="_blank" class="twitter" title="Twitter'da Paylaş"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?php echo urlencode($current_url); ?>" target="_blank" class="linkedin" title="LinkedIn'de Paylaş"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://wa.me/?text=<?php echo urlencode($share_title . ' - ' . $current_url); ?>" target="_blank" class="whatsapp" title="WhatsApp'ta Paylaş"><i class="fab fa-whatsapp"></i></a>
+                        <a href="mailto:?subject=<?php echo urlencode($share_title); ?>&body=<?php echo urlencode($share_text . "\n\n" . $current_url); ?>" class="email" title="E-posta ile Gönder"><i class="far fa-envelope"></i></a>
                     </div>
                 </div>
             </footer>

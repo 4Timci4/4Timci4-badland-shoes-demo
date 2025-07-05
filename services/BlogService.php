@@ -85,11 +85,64 @@ class BlogService {
     public function get_post_by_id($id) {
         try {
             $response = $this->supabase->request('blogs?id=eq.' . $id . '&select=*', 'GET');
-            return $response['body'][0] ?? null;
+            if (!empty($response['body'])) {
+                return $response['body'][0];
+            }
         } catch (Exception $e) {
             error_log("Blog yazısı getirme hatası: " . $e->getMessage());
-            return null;
         }
+        
+        // Supabase'den veri gelmezse dummy data kullan
+        return $this->getDummyPostById($id);
+    }
+
+    /**
+     * ID'ye göre tek bir dummy blog yazısını getirir.
+     *
+     * @param int $id Blog yazısı ID'si
+     * @return array|null Blog yazısı veya bulunamazsa null
+     */
+    private function getDummyPostById($id) {
+        $dummyPosts = [
+            [
+                'id' => 1,
+                'title' => '2025 Yaz Sezonunun Gözde Ayakkabıları',
+                'excerpt' => 'Bu yaz hem rahatlığı hem de şıklığı bir araya getiren en trend ayakkabı modellerini sizler için derledik.',
+                'content' => '<p>2025 yaz sezonu, ayakkabı dünyasında yenilikçi tasarımlar ve cesur renklerin öne çıktığı bir dönem olarak karşımıza çıkıyor. Bu sezon ayakkabı trendlerinde minimalist tasarımlardan gösterişli modellere kadar geniş bir yelpaze sunuluyor.</p><h3>1. Platform Sandalet ve Terlikler</h3><p>90\'ların nostaljik havası, platform sandalet ve terliklerin geri dönüşüyle devam ediyor. Özellikle pastel tonlardaki platform sandaletler ve kalın tabanlı terlikler, 2025 yazının öne çıkan parçaları arasında yer alıyor.</p><h3>2. Minimalist Spor Ayakkabılar</h3><p>Bu sezon spor ayakkabı trendlerinde sadelik ön planda. Tek renkli, minimalist tasarımlar ve özellikle beyaz renk tonları yaz aylarının favori tercihleri arasında yer alıyor.</p><h3>3. Doğal Malzemeler</h3><p>Sürdürülebilirlik trendinin etkisiyle, doğal malzemelerden üretilen ayakkabılar 2025 yazının öne çıkan parçaları. Hasır, keten ve organik pamuk gibi malzemeler özellikle tercih ediliyor.</p>',
+                'image_url' => 'https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
+                'category' => 'Trendler',
+                'tags' => '{Yaz Modası,Trendler,Sandalet}',
+                'created_at' => '2025-07-04 14:17:26'
+            ],
+            [
+                'id' => 2,
+                'title' => 'Ayak Sağlığınız İçin Doğru Ayakkabı Nasıl Seçilir?',
+                'excerpt' => 'Gün boyu konfor ve sağlık için ayakkabı seçerken dikkat etmeniz gereken önemli noktaları inceliyoruz.',
+                'content' => '<p>Ayakkabı seçimi, sadece estetik bir konu değil, aynı zamanda sağlığımızı da doğrudan etkileyen önemli bir faktördür. Yanlış ayakkabı seçimi, ayak ağrılarından başlayarak sırt ve bel problemlerine kadar uzanan birçok sağlık sorununa yol açabilir.</p><h3>Ayak Sağlığı ve Ayakkabı İlişkisi</h3><p>Ayaklarımız vücudumuzu taşıyan en önemli yapılardır ve günde ortalama 8.000-10.000 adım attığımızı düşünürsek, doğru ayakkabı seçiminin önemi daha iyi anlaşılır.</p><h3>Doğru Ayakkabı Seçimi İçin İpuçları</h3><p>1. <strong>Ayak Ölçüsü:</strong> Ayakkabı alışverişini akşam saatlerinde yapın çünkü ayaklar gün boyunca şişer.<br>2. <strong>Malzeme:</strong> Nefes alabilir, doğal malzemelerden üretilen ayakkabıları tercih edin.<br>3. <strong>Taban:</strong> Ayakkabının tabanı esnek olmalı ve ayak anatomisine uygun olmalıdır.<br>4. <strong>Topuk Yüksekliği:</strong> Günlük kullanımda topuk yüksekliği 2-3 cm\'yi geçmemelidir.</p>',
+                'image_url' => 'https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
+                'category' => 'Sağlık',
+                'tags' => '{Ayak Sağlığı,Doğru Ayakkabı,Sağlık}',
+                'created_at' => '2025-07-04 14:17:26'
+            ],
+            [
+                'id' => 3,
+                'title' => 'Ayakkabı Bakım Rehberi: Uzun Ömürlü Kullanım İpuçları',
+                'excerpt' => 'Ayakkabılarınızı nasıl temizler ve bakımını yaparsınız? Uzun ömürlü kullanım için profesyonel ipuçları.',
+                'content' => '<p>Kaliteli ayakkabılar, doğru bakım ile yıllarca kullanılabilir. Ayakkabı bakımı sadece görünüm için değil, aynı zamanda ayak sağlığı için de önemlidir.</p><h3>Günlük Bakım</h3><p>Her kullanımdan sonra ayakkabılarınızı temiz, kuru bir bezle silin. Özellikle deri ayakkabılarda toz ve kir birikimini önlemek için bu adım çok önemlidir.</p><h3>Haftalık Bakım</h3><p>Haftada bir kez, ayakkabılarınızı uygun temizlik ürünleri ile temizleyin. Deri ayakkabılar için özel deri temizleyicileri, süet ayakkabılar için süet fırçası kullanın.</p>',
+                'image_url' => 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=300&fit=crop',
+                'category' => 'Bakım',
+                'tags' => '{Bakım,Temizlik,İpuçları}',
+                'created_at' => '2025-07-03 14:17:26'
+            ]
+        ];
+
+        foreach ($dummyPosts as $post) {
+            if ($post['id'] == $id) {
+                return $post;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -104,11 +157,61 @@ class BlogService {
         try {
             $query = 'blogs?select=*&category=eq.' . urlencode($category) . '&id=neq.' . $current_id . '&limit=' . $limit . '&order=created_at.desc';
             $response = $this->supabase->request($query);
-            return $response['body'];
+            if (!empty($response['body'])) {
+                return $response['body'];
+            }
         } catch (Exception $e) {
             error_log("Benzer yazıları getirme hatası: " . $e->getMessage());
-            return [];
         }
+        
+        // Supabase'den veri gelmezse dummy data kullan
+        return $this->getDummyRelatedPosts($current_id, $category, $limit);
+    }
+
+    /**
+     * Dummy benzer yazıları getirir.
+     *
+     * @param int $current_id Mevcut yazı ID'si (hariç tutmak için)
+     * @param string $category Kategori
+     * @param int $limit Getirilecek yazı sayısı
+     * @return array Benzer yazılar
+     */
+    private function getDummyRelatedPosts($current_id, $category, $limit = 2) {
+        // Sadece mevcut dummy post ID'leri ile sınırla
+        $dummyPosts = [
+            [
+                'id' => 1,
+                'title' => '2025 Yaz Sezonunun Gözde Ayakkabıları',
+                'excerpt' => 'Bu yaz hem rahatlığı hem de şıklığı bir araya getiren en trend ayakkabı modellerini sizler için derledik.',
+                'image_url' => 'https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
+                'category' => 'Trendler',
+                'created_at' => '2025-07-04 14:17:26'
+            ],
+            [
+                'id' => 2,
+                'title' => 'Ayak Sağlığınız İçin Doğru Ayakkabı Nasıl Seçilir?',
+                'excerpt' => 'Gün boyu konfor ve sağlık için ayakkabı seçerken dikkat etmeniz gereken önemli noktaları inceliyoruz.',
+                'image_url' => 'https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
+                'category' => 'Sağlık',
+                'created_at' => '2025-07-04 14:17:26'
+            ],
+            [
+                'id' => 3,
+                'title' => 'Ayakkabı Bakım Rehberi: Uzun Ömürlü Kullanım İpuçları',
+                'excerpt' => 'Ayakkabılarınızı nasıl temizler ve bakımını yaparsınız? Uzun ömürlü kullanım için profesyonel ipuçları.',
+                'image_url' => 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=300&fit=crop',
+                'category' => 'Bakım',
+                'created_at' => '2025-07-03 14:17:26'
+            ]
+        ];
+
+        // Aynı kategorideki ve mevcut yazı dışındaki yazıları filtrele
+        $relatedPosts = array_filter($dummyPosts, function($post) use ($current_id, $category) {
+            return $post['id'] != $current_id && $post['category'] === $category;
+        });
+
+        // Limiti uygula
+        return array_slice(array_values($relatedPosts), 0, $limit);
     }
 
     /**
