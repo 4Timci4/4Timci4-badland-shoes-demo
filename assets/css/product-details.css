@@ -1,0 +1,35 @@
+/* Ürün Detay Sayfası için Tailwind CSS ile özel stiller */
+
+/* Sadece Tailwind CSS'de bulunmayan özel stiller burada */
+.thumbnail-images img.active,
+.thumbnail-images img:hover {
+    border-color: var(--primary-color);
+}
+
+.option-btn:hover,
+.option-btn.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.add-to-cart:hover {
+    background-color: #d81b60;
+}
+
+.btn-outline:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.tab-btn.active {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.features-list li i {
+    color: var(--primary-color);
+}
+
+.rating {
+    color: #ffc107;
+}

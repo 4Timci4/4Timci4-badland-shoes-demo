@@ -1,0 +1,25 @@
+/* Özel CSS Stiller - Tailwind CSS ile kullanım için minimal CSS */
+
+/* Sadece gerekli olan özel stiller burada kalacak */
+.h-70 {
+    height: 280px;
+}
+
+/* Slider için özel stiller */
+.slide {
+    transition: opacity 1s ease-in-out;
+}
+
+.slide.active {
+    opacity: 1 !important;
+}
+
+/* Mobil menü animasyonu */
+#mobile-menu {
+    transition: all 0.3s ease;
+}
+
+/* Form odak stilleri */
+input:focus, textarea:focus {
+    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+}
