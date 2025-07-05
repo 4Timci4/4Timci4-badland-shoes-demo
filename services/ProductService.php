@@ -383,6 +383,130 @@ class ProductService {
             return 0;
         }
     }
+    
+    /**
+     * Admin panel için ürünleri getiren metod
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @param string $search Arama terimi
+     * @param string $category_filter Kategori filtresi
+     * @param string $status_filter Durum filtresi
+     * @return array Ürünler ve pagination bilgisi
+     */
+    public function getAdminProducts($limit = 20, $offset = 0, $search = '', $category_filter = '', $status_filter = '') {
+        try {
+            // Product models tablosundan veri çek, kategorilerle birlikte
+            $query_parts = ['select=id,name,base_price,is_featured,created_at,category_id,categories(name)'];
+            
+            // Arama filtresi
+            if (!empty($search)) {
+                $query_parts[] = 'name=ilike.*' . urlencode($search) . '*';
+            }
+            
+            // Kategori filtresi
+            if (!empty($category_filter) && $category_filter !== 'all') {
+                $query_parts[] = 'category_id=eq.' . intval($category_filter);
+            }
+            
+            // Durum filtresi
+            if (!empty($status_filter) && $status_filter !== 'all') {
+                if ($status_filter === 'featured') {
+                    $query_parts[] = 'is_featured=eq.true';
+                } elseif ($status_filter === 'normal') {
+                    $query_parts[] = 'is_featured=eq.false';
+                }
+            }
+            
+            // Sıralama ve sayfalama
+            $query_parts[] = 'order=created_at.desc';
+            $query_parts[] = 'limit=' . intval($limit);
+            $query_parts[] = 'offset=' . intval($offset);
+            
+            $query_string = implode('&', $query_parts);
+            $response = $this->supabase->request('product_models?' . $query_string);
+            $products = $response['body'] ?? [];
+            
+            // Kategori bilgilerini manuel olarak ekle (join çalışmazsa)
+            foreach ($products as &$product) {
+                if (!isset($product['categories']) && isset($product['category_id'])) {
+                    $cat_response = $this->supabase->request('categories?select=name&id=eq.' . $product['category_id'] . '&limit=1');
+                    $cat_data = $cat_response['body'] ?? [];
+                    $product['categories'] = !empty($cat_data) ? $cat_data[0] : ['name' => 'Kategorisiz'];
+                }
+            }
+            
+            // Toplam sayı için basit count sorgusu
+            $count_query_parts = [];
+            if (!empty($search)) {
+                $count_query_parts[] = 'name=ilike.*' . urlencode($search) . '*';
+            }
+            if (!empty($category_filter) && $category_filter !== 'all') {
+                $count_query_parts[] = 'category_id=eq.' . intval($category_filter);
+            }
+            if (!empty($status_filter) && $status_filter !== 'all') {
+                if ($status_filter === 'featured') {
+                    $count_query_parts[] = 'is_featured=eq.true';
+                } elseif ($status_filter === 'normal') {
+                    $count_query_parts[] = 'is_featured=eq.false';
+                }
+            }
+            
+            $count_query_string = empty($count_query_parts) ? '' : '?' . implode('&', $count_query_parts);
+            $count_response = $this->supabase->request('product_models' . $count_query_string);
+            $total_count = count($count_response['body'] ?? []);
+            
+            return [
+                'products' => $products,
+                'total' => $total_count,
+                'limit' => $limit,
+                'offset' => $offset
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Admin ürünleri getirme hatası: " . $e->getMessage());
+            return [
+                'products' => [],
+                'total' => 0,
+                'limit' => $limit,
+                'offset' => $offset
+            ];
+        }
+    }
+    
+    /**
+     * Ürün silme metodu
+     * 
+     * @param int $product_id Ürün ID
+     * @return bool Başarı durumu
+     */
+    public function deleteProduct($product_id) {
+        try {
+            $response = $this->supabase->request('product_models?id=eq.' . intval($product_id), 'DELETE');
+            return !empty($response);
+        } catch (Exception $e) {
+            error_log("Ürün silme hatası: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Ürün durumu güncelleme metodu
+     * 
+     * @param int $product_id Ürün ID
+     * @param bool $is_featured Öne çıkan durumu
+     * @return bool Başarı durumu
+     */
+    public function updateProductStatus($product_id, $is_featured) {
+        try {
+            $data = ['is_featured' => $is_featured];
+            $response = $this->supabase->request('product_models?id=eq.' . intval($product_id), 'PATCH', $data);
+            return !empty($response);
+        } catch (Exception $e) {
+            error_log("Ürün durumu güncelleme hatası: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 
 // ProductService sınıfı singleton örneği
@@ -450,4 +574,39 @@ function get_product_images($model_id) {
  */
 function get_total_product_count($category_slugs = null, $featured = null) {
     return product_service()->getTotalProductCount($category_slugs, $featured);
+}
+
+/**
+ * Admin için tüm ürünleri getiren fonksiyon
+ * 
+ * @param int $limit Limit
+ * @param int $offset Offset
+ * @param string $search Arama terimi
+ * @param string $category_filter Kategori filtresi
+ * @param string $status_filter Durum filtresi
+ * @return array Ürünler ve pagination bilgisi
+ */
+function get_admin_products($limit = 20, $offset = 0, $search = '', $category_filter = '', $status_filter = '') {
+    return product_service()->getAdminProducts($limit, $offset, $search, $category_filter, $status_filter);
+}
+
+/**
+ * Ürün silme fonksiyonu
+ * 
+ * @param int $product_id Ürün ID
+ * @return bool Başarı durumu
+ */
+function delete_product($product_id) {
+    return product_service()->deleteProduct($product_id);
+}
+
+/**
+ * Ürün durumu güncelleme fonksiyonu
+ * 
+ * @param int $product_id Ürün ID
+ * @param bool $is_featured Öne çıkan durumu
+ * @return bool Başarı durumu
+ */
+function update_product_status($product_id, $is_featured) {
+    return product_service()->updateProductStatus($product_id, $is_featured);
 }

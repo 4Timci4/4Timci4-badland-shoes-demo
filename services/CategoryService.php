@@ -92,6 +92,127 @@ class CategoryService {
             return [];
         }
     }
+    
+    /**
+     * Yeni kategori oluşturma metodu
+     * 
+     * @param array $data Kategori verileri
+     * @return bool Başarı durumu
+     */
+    public function createCategory($data) {
+        try {
+            $response = $this->supabase->request('categories', 'POST', $data);
+            return !empty($response);
+        } catch (Exception $e) {
+            error_log("Kategori oluşturma hatası: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Kategori güncelleme metodu
+     * 
+     * @param int $category_id Kategori ID
+     * @param array $data Güncellenecek veriler
+     * @return bool Başarı durumu
+     */
+    public function updateCategory($category_id, $data) {
+        try {
+            $response = $this->supabase->request('categories?id=eq.' . intval($category_id), 'PATCH', $data);
+            return !empty($response);
+        } catch (Exception $e) {
+            error_log("Kategori güncelleme hatası: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Kategori silme metodu
+     * 
+     * @param int $category_id Kategori ID
+     * @return bool Başarı durumu
+     */
+    public function deleteCategory($category_id) {
+        try {
+            // Önce bu kategoriye ait ürün var mı kontrol et
+            $products_response = $this->supabase->request('product_models?select=id&category_id=eq.' . intval($category_id) . '&limit=1');
+            $products = $products_response['body'] ?? [];
+            
+            if (!empty($products)) {
+                return false; // Kategoriye ait ürün varsa silinemez
+            }
+            
+            $response = $this->supabase->request('categories?id=eq.' . intval($category_id), 'DELETE');
+            return !empty($response);
+        } catch (Exception $e) {
+            error_log("Kategori silme hatası: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Kategori ID'ye göre kategori getirme metodu
+     * 
+     * @param int $category_id Kategori ID
+     * @return array|null Kategori veya bulunamazsa boş dizi
+     */
+    public function getCategoryById($category_id) {
+        try {
+            $response = $this->supabase->request('categories?id=eq.' . intval($category_id) . '&limit=1');
+            $result = $response['body'] ?? [];
+            
+            if (!empty($result)) {
+                return $result[0];
+            }
+            
+            return [];
+        } catch (Exception $e) {
+            error_log("Kategori getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Slug oluşturma metodu
+     * 
+     * @param string $text Dönüştürülecek metin
+     * @return string Slug
+     */
+    public function generateSlug($text) {
+        // Türkçe karakterleri dönüştür
+        $turkish = ['ç', 'ğ', 'ı', 'ö', 'ş', 'ü', 'Ç', 'Ğ', 'I', 'İ', 'Ö', 'Ş', 'Ü'];
+        $english = ['c', 'g', 'i', 'o', 's', 'u', 'C', 'G', 'I', 'I', 'O', 'S', 'U'];
+        $text = str_replace($turkish, $english, $text);
+        
+        // Küçük harfe dönüştür ve sadece alfanumerik karakterleri bırak
+        $text = strtolower($text);
+        $text = preg_replace('/[^a-z0-9]+/', '-', $text);
+        $text = trim($text, '-');
+        
+        return $text;
+    }
+    
+    /**
+     * Admin için kategorileri ürün sayılarıyla getir
+     * 
+     * @return array Kategoriler ve ürün sayıları
+     */
+    public function getCategoriesWithProductCounts() {
+        try {
+            $categories = $this->getAllCategories();
+            
+            foreach ($categories as &$category) {
+                $products_response = $this->supabase->request('product_models?select=id&category_id=eq.' . $category['id']);
+                $products = $products_response['body'] ?? [];
+                $category['product_count'] = count($products);
+            }
+            
+            return $categories;
+        } catch (Exception $e) {
+            error_log("Kategoriler ve ürün sayıları getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
 }
 
 // CategoryService sınıfı singleton örneği

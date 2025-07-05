@@ -38,23 +38,6 @@ include 'includes/header.php';
 <!-- Dashboard Content -->
 <div class="space-y-8">
     
-    <!-- Welcome Section -->
-    <div class="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-8 text-white shadow-lg">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div class="mb-6 lg:mb-0">
-                <h1 class="text-3xl font-bold mb-3 flex items-center">
-                    <i class="fas fa-hand-wave mr-3 text-yellow-300"></i>
-                    Hoş geldiniz, <?= htmlspecialchars(get_admin_info()['username']) ?>!
-                </h1>
-                <p class="text-white/80 text-lg">Admin paneline hoş geldiniz. İşte sitenizin genel durumu.</p>
-            </div>
-            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center">
-                <div class="text-white/70 text-sm mb-1">Bugün</div>
-                <div class="text-2xl font-bold mb-1"><?= date('d.m.Y') ?></div>
-                <div class="text-white/70 text-sm"><?= date('H:i') ?></div>
-            </div>
-        </div>
-    </div>
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -140,58 +123,6 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <!-- Charts and Activity Section -->
-    <div class="grid grid-cols-1 gap-8">
-        
-        <!-- Recent Activity -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900 mb-1">Son Aktiviteler</h3>
-                <p class="text-gray-600 text-sm">Sistem üzerindeki son işlemler</p>
-            </div>
-            <div class="p-6">
-                <div class="space-y-6">
-                    <?php if (!empty($recent_activities)): ?>
-                        <?php foreach ($recent_activities as $activity): ?>
-                            <div class="flex items-start space-x-4">
-                                <div class="w-10 h-10 bg-<?= $activity['color'] ?>-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <i class="fas <?= $activity['icon'] ?> text-<?= $activity['color'] ?>-600"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="font-semibold text-gray-900 mb-1"><?= htmlspecialchars($activity['title']) ?></h4>
-                                    <p class="text-gray-600 text-sm mb-2"><?= htmlspecialchars($activity['description']) ?></p>
-                                    <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-                                        <?php
-                                        $time_diff = time() - strtotime($activity['created_at']);
-                                        if ($time_diff < 3600) {
-                                            echo floor($time_diff / 60) . ' dakika önce';
-                                        } elseif ($time_diff < 86400) {
-                                            echo floor($time_diff / 3600) . ' saat önce';
-                                        } else {
-                                            echo floor($time_diff / 86400) . ' gün önce';
-                                        }
-                                        ?>
-                                    </span>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="text-center py-8">
-                            <i class="fas fa-clock text-gray-400 text-3xl mb-4"></i>
-                            <p class="text-gray-500">Henüz aktivite bulunmuyor</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="mt-6 pt-6 border-t border-gray-100">
-                    <a href="activity-log.php" class="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center">
-                        Tüm aktiviteleri gör
-                        <i class="fas fa-arrow-right ml-2"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Quick Actions -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
