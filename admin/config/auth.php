@@ -155,12 +155,17 @@ function get_admin_menu() {
                 [
                     'title' => 'Blog Yazıları',
                     'url' => 'blogs.php',
-                    'active' => is_active_page('blogs.php')
+                    'active' => is_active_page('blogs.php') || is_active_page('blog-add.php') || is_active_page('blog-edit.php')
+                ],
+                [
+                    'title' => 'Yeni Blog Yazısı',
+                    'url' => 'blog-add.php',
+                    'active' => is_active_page('blog-add.php')
                 ],
                 [
                     'title' => 'Slider Yönetimi',
                     'url' => 'sliders.php',
-                    'active' => is_active_page('sliders.php')
+                    'active' => is_active_page('sliders.php') || is_active_page('slider-add.php') || is_active_page('slider-edit.php')
                 ],
                 [
                     'title' => 'Hakkında Sayfası',
