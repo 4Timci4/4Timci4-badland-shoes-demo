@@ -102,25 +102,6 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <!-- Messages Card -->
-        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <i class="fas fa-envelope text-yellow-600 text-xl"></i>
-                </div>
-                <span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-semibold">
-                    <?= $stats['pending_messages'] ?> Beklemede
-                </span>
-            </div>
-            <div>
-                <h3 class="text-3xl font-bold text-gray-900 mb-1"><?= number_format($stats['total_messages']) ?></h3>
-                <p class="text-gray-600 font-medium">Mesajlar</p>
-                <div class="flex items-center mt-3 text-red-600 text-sm">
-                    <i class="fas fa-exclamation-circle mr-1"></i>
-                    <span class="font-semibold">Beklemede</span>
-                </div>
-            </div>
-        </div>
     </div>
 
 
@@ -163,15 +144,6 @@ include 'includes/header.php';
                     </div>
                 </a>
 
-                <a href="messages.php" class="group block p-6 border-2 border-dashed border-yellow-200 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 transition-all duration-300">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                            <i class="fas fa-envelope text-yellow-600 text-2xl"></i>
-                        </div>
-                        <h4 class="font-bold text-gray-900 mb-2">Mesajlar</h4>
-                        <p class="text-gray-600 text-sm">Gelen mesajları görüntüle</p>
-                    </div>
-                </a>
             </div>
         </div>
     </div>
@@ -222,10 +194,10 @@ include 'includes/header.php';
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-semibold text-gray-900 mb-1 truncate"><?= htmlspecialchars($product['name']) ?></h4>
                                     <p class="text-gray-600 text-sm mb-2">
-                                        <?= htmlspecialchars($product['categories']['name'] ?? 'Kategorisiz') ?> • Stokta: <?= htmlspecialchars($product['stock']) ?> adet
+                                        <?= htmlspecialchars($product['categories']['name'] ?? 'Kategorisiz') ?> • Stok: Bilinmiyor
                                     </p>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-lg font-bold text-primary-600">₺<?= number_format($product['price'], 2) ?></span>
+                                        <span class="text-lg font-bold text-primary-600">₺<?= number_format($product['base_price'], 2) ?></span>
                                         <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                                             <?php
                                             $time_diff = time() - strtotime($product['created_at']);

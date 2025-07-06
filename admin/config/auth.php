@@ -220,11 +220,11 @@ function get_dashboard_stats() {
         $current_month_start = date('Y-m-01 00:00:00');
         
         // Toplam ürün sayısı
-        $products_response = supabase()->request('products?select=id');
+        $products_response = supabase()->request('product_models?select=id');
         $total_products = count($products_response['body'] ?? []);
         
         // Bu ay eklenen ürünler
-        $monthly_products_response = supabase()->request("products?select=id&created_at=gte.$current_month_start");
+        $monthly_products_response = supabase()->request("product_models?select=id&created_at=gte.$current_month_start");
         $monthly_products = count($monthly_products_response['body'] ?? []);
         
         // Toplam kategori sayısı
@@ -239,16 +239,11 @@ function get_dashboard_stats() {
         $monthly_blogs_response = supabase()->request("blogs?select=id&created_at=gte.$current_month_start");
         $monthly_blogs = count($monthly_blogs_response['body'] ?? []);
         
-        // Toplam mesaj sayısı
-        $messages_response = supabase()->request('contacts?select=id');
-        $total_messages = count($messages_response['body'] ?? []);
-        
-        // Bekleyen mesajlar (is_read = false)
-        $pending_messages_response = supabase()->request('contacts?select=id&is_read=eq.false');
-        $pending_messages = count($pending_messages_response['body'] ?? []);
+        $total_messages = 0;
+        $pending_messages = 0;
         
         // Öne çıkan ürünler
-        $featured_products_response = supabase()->request('products?select=id&is_featured=eq.true');
+        $featured_products_response = supabase()->request('product_models?select=id&is_featured=eq.true');
         $featured_products = count($featured_products_response['body'] ?? []);
         
         return [
@@ -286,7 +281,7 @@ function get_recent_products($limit = 5) {
     require_once __DIR__ . '/../../config/database.php';
     
     try {
-        $response = supabase()->request("products?select=*,categories(name)&order=created_at.desc&limit=$limit");
+        $response = supabase()->request("product_models?select=*,categories(name)&order=created_at.desc&limit=$limit");
         return $response['body'] ?? [];
     } catch (Exception $e) {
         error_log("Recent products error: " . $e->getMessage());
