@@ -97,7 +97,7 @@ $flash_message = get_flash_message();
     <div class="min-h-screen flex">
         
         <!-- Sidebar -->
-        <aside id="sidebar" class="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col transition-all duration-300 lg:translate-x-0 -translate-x-full fixed lg:relative z-40 h-full">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col transition-all duration-300 lg:translate-x-0 -translate-x-full fixed lg:relative z-40 h-screen">
             
             <!-- App Brand -->
             <div class="flex items-center justify-between p-6 border-b border-gray-200">
