@@ -1,4 +1,6 @@
 <?php
+require_once 'config/auth.php';
+
 // Auth kontrolü yapılmışsa başlık bilgilerini al
 $page_title = $page_title ?? 'Dashboard';
 $breadcrumb_items = $breadcrumb_items ?? [];
