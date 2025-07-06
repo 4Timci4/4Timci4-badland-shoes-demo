@@ -10,26 +10,29 @@ check_admin_auth();
 // Veritabanı bağlantısı
 require_once '../config/database.php';
 
-// Blog ID kontrolü
-$blog_id = intval($_GET['id'] ?? 0);
-if ($blog_id <= 0) {
-    set_flash_message('error', 'Geçersiz blog ID.');
+// ID parametresi zorunlu kontrolü
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    set_flash_message('error', 'Düzenlenecek blog ID\'si belirtilmedi.');
     header('Location: blogs.php');
     exit;
 }
 
-// Blog yazısını getir
+$blog_id = intval($_GET['id']);
+
+// Blog bilgilerini getir
 try {
-    $response = supabase()->request('blogs?id=eq.' . $blog_id . '&select=*');
-    $blog = !empty($response['body']) ? $response['body'][0] : null;
+    $blog_response = supabase()->request("blogs?id=eq.$blog_id");
+    $blog_data = $blog_response['body'] ?? [];
     
-    if (!$blog) {
+    if (empty($blog_data)) {
         set_flash_message('error', 'Blog yazısı bulunamadı.');
         header('Location: blogs.php');
         exit;
     }
+    
+    $blog = $blog_data[0];
 } catch (Exception $e) {
-    set_flash_message('error', 'Blog yazısı yüklenirken bir hata oluştu: ' . $e->getMessage());
+    set_flash_message('error', 'Blog yüklenirken bir hata oluştu.');
     header('Location: blogs.php');
     exit;
 }
@@ -38,23 +41,48 @@ try {
 $page_title = 'Blog Düzenle: ' . htmlspecialchars($blog['title']);
 $breadcrumb_items = [
     ['title' => 'Blog Yazıları', 'url' => 'blogs.php', 'icon' => 'fas fa-edit'],
-    ['title' => 'Blog Düzenle', 'url' => '#', 'icon' => 'fas fa-pencil-alt']
+    ['title' => htmlspecialchars($blog['title']), 'url' => '#', 'icon' => 'fas fa-file-alt'],
+    ['title' => 'Düzenle', 'url' => '#', 'icon' => 'fas fa-edit']
 ];
 
-// POST işlemi
+// Orijinal verileri sakla (değişiklik tespiti için)
+$original_data = [
+    'title' => $blog['title'],
+    'excerpt' => $blog['excerpt'] ?? '',
+    'content' => $blog['content'] ?? '',
+    'category' => $blog['category'] ?? '',
+    'tags' => is_array($blog['tags']) ? implode(', ', $blog['tags']) : '',
+    'image_url' => $blog['image_url'] ?? ''
+];
+
+// Form işleme
+$changes_detected = false;
 if ($_POST) {
     $csrf_token = $_POST['csrf_token'] ?? '';
     
     if (!verify_csrf_token($csrf_token)) {
         set_flash_message('error', 'Güvenlik hatası. Lütfen tekrar deneyin.');
     } else {
+        // Form verilerini al
         $title = trim($_POST['title'] ?? '');
         $excerpt = trim($_POST['excerpt'] ?? '');
         $content = $_POST['content'] ?? '';
         $category = trim($_POST['category'] ?? '');
-        $tags = array_filter(array_map('trim', explode(',', $_POST['tags'] ?? '')));
+        $tags_string = trim($_POST['tags'] ?? '');
+        $tags = array_filter(array_map('trim', explode(',', $tags_string)));
         $image_url = trim($_POST['image_url'] ?? '');
-        $status = $_POST['status'] ?? 'published';
+        
+        // Değişiklik tespiti
+        $new_data = [
+            'title' => $title,
+            'excerpt' => $excerpt,
+            'content' => $content,
+            'category' => $category,
+            'tags' => $tags_string,
+            'image_url' => $image_url
+        ];
+        
+        $changes_detected = ($original_data !== $new_data);
         
         // Validation
         $errors = [];
@@ -76,44 +104,48 @@ if ($_POST) {
         }
         
         if (empty($errors)) {
-            try {
-                $blog_data = [
-                    'title' => $title,
-                    'excerpt' => $excerpt,
-                    'content' => $content,
-                    'category' => $category,
-                    'tags' => $tags,
-                    'image_url' => $image_url,
-                    'status' => $status
-                ];
-                
-                $response = supabase()->request('blogs?id=eq.' . $blog_id, 'PATCH', $blog_data);
-                
-                if (!empty($response)) {
-                    set_flash_message('success', 'Blog yazısı başarıyla güncellendi.');
-                    header('Location: blogs.php');
-                    exit;
-                } else {
-                    set_flash_message('error', 'Blog yazısı güncellenirken bir hata oluştu.');
+            if (!$changes_detected) {
+                set_flash_message('info', 'Herhangi bir değişiklik yapılmadı.');
+            } else {
+                try {
+                    $update_data = [
+                        'title' => $title,
+                        'excerpt' => $excerpt,
+                        'content' => $content,
+                        'category' => $category,
+                        'tags' => $tags,
+                        'image_url' => $image_url
+                    ];
+                    
+                    // Supabase UPDATE işlemi
+                    $response = supabase()->request("blogs?id=eq.$blog_id", 'PATCH', $update_data);
+                    
+                    if ($response && !empty($response['body'])) {
+                        set_flash_message('success', 'Blog yazısı başarıyla güncellendi.');
+                        
+                        // Devam et mi yoksa listeye dön mü?
+                        if (isset($_POST['save_and_continue'])) {
+                            header('Location: blog-edit.php?id=' . $blog_id);
+                        } else {
+                            header('Location: blogs.php');
+                        }
+                        exit;
+                    } else {
+                        throw new Exception('Supabase güncelleme işlemi başarısız');
+                    }
+                    
+                } catch (Exception $e) {
+                    error_log("Blog update error: " . $e->getMessage());
+                    $errors[] = 'Blog yazısı güncellenirken bir hata oluştu: ' . $e->getMessage();
                 }
-            } catch (Exception $e) {
-                set_flash_message('error', 'Blog yazısı güncellenirken bir hata oluştu: ' . $e->getMessage());
             }
-        } else {
+        }
+        
+        // Hataları flash message olarak sakla
+        if (!empty($errors)) {
             set_flash_message('error', implode('<br>', $errors));
         }
     }
-} else {
-    // Form verilerini blog verisinden doldur
-    $_POST = [
-        'title' => $blog['title'],
-        'excerpt' => $blog['excerpt'],
-        'content' => $blog['content'],
-        'category' => $blog['category'],
-        'tags' => is_array($blog['tags']) ? implode(', ', $blog['tags']) : (is_string($blog['tags']) ? str_replace(['{', '}', '"'], '', $blog['tags']) : ''),
-        'image_url' => $blog['image_url'] ?? '',
-        'status' => $blog['status'] ?? 'published'
-    ];
 }
 
 // Header dahil et
@@ -126,20 +158,38 @@ include 'includes/header.php';
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Blog Düzenle</h1>
-            <p class="text-gray-600">Blog yazısını düzenleyin ve güncelleyin</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Blog Yazısı Düzenle
+            </h1>
+            <p class="text-gray-600">
+                <span class="font-semibold"><?= htmlspecialchars($blog['title']) ?></span> yazısının bilgilerini güncelleyin
+            </p>
         </div>
         <div class="mt-4 lg:mt-0 flex space-x-3">
-            <a href="../blog-detail.php?id=<?= $blog_id ?>" 
-               target="_blank"
-               class="inline-flex items-center px-6 py-3 bg-green-100 text-green-700 font-semibold rounded-xl hover:bg-green-200 transition-colors">
-                <i class="fas fa-eye mr-2"></i>
-                Önizleme
-            </a>
-            <a href="blogs.php" class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+            <a href="blogs.php" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>
-                Blog Listesine Dön
+                Blog Listesi
             </a>
+            <a href="../blog-detail.php?id=<?= $blog_id ?>" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                <i class="fas fa-external-link-alt mr-2"></i>
+                Önizle
+            </a>
+        </div>
+    </div>
+
+    <!-- Blog Info Card -->
+    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-purple-500 rounded-xl flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars($blog['title']) ?></h3>
+                <p class="text-gray-600">Blog ID: #<?= $blog_id ?></p>
+                <p class="text-sm text-gray-500">
+                    Son güncelleme: <?= date('d.m.Y H:i', strtotime($blog['created_at'])) ?>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -147,34 +197,41 @@ include 'includes/header.php';
     <?php
     $flash_message = get_flash_message();
     if ($flash_message):
-        $bg_color = $flash_message['type'] === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-        $text_color = $flash_message['type'] === 'success' ? 'text-green-800' : 'text-red-800';
-        $icon = $flash_message['type'] === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-        $icon_color = $flash_message['type'] === 'success' ? 'text-green-500' : 'text-red-500';
+        $bg_colors = [
+            'success' => 'bg-green-50 border-green-200',
+            'error' => 'bg-red-50 border-red-200',
+            'info' => 'bg-blue-50 border-blue-200'
+        ];
+        $text_colors = [
+            'success' => 'text-green-800',
+            'error' => 'text-red-800',
+            'info' => 'text-blue-800'
+        ];
+        $icons = [
+            'success' => 'fa-check-circle',
+            'error' => 'fa-exclamation-triangle',
+            'info' => 'fa-info-circle'
+        ];
+        $icon_colors = [
+            'success' => 'text-green-500',
+            'error' => 'text-red-500',
+            'info' => 'text-blue-500'
+        ];
+        
+        $type = $flash_message['type'];
+        $bg_color = $bg_colors[$type] ?? 'bg-gray-50 border-gray-200';
+        $text_color = $text_colors[$type] ?? 'text-gray-800';
+        $icon = $icons[$type] ?? 'fa-info';
+        $icon_color = $icon_colors[$type] ?? 'text-gray-500';
     ?>
-        <div class="<?= $bg_color ?> border rounded-xl p-4 flex items-center">
-            <i class="fas <?= $icon ?> <?= $icon_color ?> mr-3"></i>
-            <span class="<?= $text_color ?> font-medium"><?= nl2br(htmlspecialchars($flash_message['message'])) ?></span>
+        <div class="<?= $bg_color ?> border rounded-xl p-4 flex items-start">
+            <i class="fas <?= $icon ?> <?= $icon_color ?> mr-3 mt-0.5"></i>
+            <div class="<?= $text_color ?> font-medium"><?= nl2br(htmlspecialchars($flash_message['message'])) ?></div>
         </div>
     <?php endif; ?>
 
-    <!-- Blog Info -->
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div class="flex items-center">
-            <i class="fas fa-info-circle text-blue-500 mr-3"></i>
-            <div>
-                <p class="text-blue-800 font-medium">Düzenleme Modu</p>
-                <p class="text-blue-700 text-sm">
-                    Blog ID: #<?= $blog['id'] ?> | 
-                    Oluşturma: <?= date('d M Y H:i', strtotime($blog['created_at'])) ?> | 
-                    Durum: <span class="font-semibold"><?= ($blog['status'] ?? 'published') === 'published' ? 'Yayında' : 'Taslak' ?></span>
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Blog Form -->
-    <form method="POST" class="space-y-6">
+    <!-- Blog Edit Form -->
+    <form method="POST" class="space-y-6" id="blogEditForm">
         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -198,9 +255,10 @@ include 'includes/header.php';
                                    id="title" 
                                    name="title" 
                                    required
-                                   value="<?= htmlspecialchars($_POST['title'] ?? '') ?>"
+                                   value="<?= htmlspecialchars($blog['title']) ?>"
                                    placeholder="Örn: 2025 Yaz Ayakkabı Trendleri"
                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-lg">
+                            <div class="text-xs text-gray-500 mt-1">Orijinal: <?= htmlspecialchars($original_data['title']) ?></div>
                         </div>
 
                         <!-- Excerpt -->
@@ -213,7 +271,7 @@ include 'includes/header.php';
                                       required
                                       rows="3"
                                       placeholder="Blog yazısının kısa özetini yazın (SEO için önemli)..."
-                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"><?= htmlspecialchars($_POST['excerpt'] ?? '') ?></textarea>
+                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"><?= htmlspecialchars($blog['excerpt'] ?? '') ?></textarea>
                             <p class="text-xs text-gray-500 mt-1">Bu metin blog listesinde ve arama motorlarında görünecek</p>
                         </div>
                     </div>
@@ -235,7 +293,7 @@ include 'includes/header.php';
                                       required
                                       rows="12"
                                       placeholder="Blog yazısının ana içeriğini buraya yazın. HTML etiketleri kullanabilirsiniz..."
-                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"><?= htmlspecialchars($_POST['content'] ?? '') ?></textarea>
+                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"><?= htmlspecialchars($blog['content'] ?? '') ?></textarea>
                             <div class="mt-2 text-xs text-gray-500 space-y-1">
                                 <p><strong>HTML Etiketleri:</strong> &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;br&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;</p>
                                 <p><strong>Örnek:</strong> &lt;h3&gt;Alt Başlık&lt;/h3&gt;&lt;p&gt;Paragraf metni...&lt;/p&gt;</p>
@@ -248,46 +306,6 @@ include 'includes/header.php';
             <!-- Sidebar -->
             <div class="space-y-6">
                 
-                <!-- Publish Options -->
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900">Yayın Durumu</h3>
-                        <p class="text-gray-600 text-sm mt-1">Blog yazısının durumunu belirleyin</p>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-3">
-                            <label class="flex items-center">
-                                <input type="radio" 
-                                       name="status" 
-                                       value="published" 
-                                       <?= ($_POST['status'] ?? 'published') === 'published' ? 'checked' : '' ?>
-                                       class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                <span class="ml-3 text-sm font-medium text-gray-900">
-                                    <i class="fas fa-eye text-green-500 mr-2"></i>Yayında
-                                </span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" 
-                                       name="status" 
-                                       value="draft"
-                                       <?= ($_POST['status'] ?? '') === 'draft' ? 'checked' : '' ?>
-                                       class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                <span class="ml-3 text-sm font-medium text-gray-900">
-                                    <i class="fas fa-eye-slash text-yellow-500 mr-2"></i>Taslak
-                                </span>
-                            </label>
-                        </div>
-                        
-                        <div class="mt-6 pt-4 border-t border-gray-100">
-                            <button type="submit" 
-                                    class="w-full bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
-                                <i class="fas fa-save mr-2"></i>
-                                Değişiklikleri Kaydet
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Category and Tags -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                     <div class="p-6 border-b border-gray-100">
@@ -305,12 +323,12 @@ include 'includes/header.php';
                                     required
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                                 <option value="">Kategori Seçin</option>
-                                <option value="Trendler" <?= ($_POST['category'] ?? '') === 'Trendler' ? 'selected' : '' ?>>Trendler</option>
-                                <option value="Sağlık" <?= ($_POST['category'] ?? '') === 'Sağlık' ? 'selected' : '' ?>>Sağlık</option>
-                                <option value="Moda" <?= ($_POST['category'] ?? '') === 'Moda' ? 'selected' : '' ?>>Moda</option>
-                                <option value="Bakım" <?= ($_POST['category'] ?? '') === 'Bakım' ? 'selected' : '' ?>>Bakım</option>
-                                <option value="Teknoloji" <?= ($_POST['category'] ?? '') === 'Teknoloji' ? 'selected' : '' ?>>Teknoloji</option>
-                                <option value="Yaşam" <?= ($_POST['category'] ?? '') === 'Yaşam' ? 'selected' : '' ?>>Yaşam</option>
+                                <option value="Trendler" <?= ($blog['category'] ?? '') === 'Trendler' ? 'selected' : '' ?>>Trendler</option>
+                                <option value="Sağlık" <?= ($blog['category'] ?? '') === 'Sağlık' ? 'selected' : '' ?>>Sağlık</option>
+                                <option value="Moda" <?= ($blog['category'] ?? '') === 'Moda' ? 'selected' : '' ?>>Moda</option>
+                                <option value="Bakım" <?= ($blog['category'] ?? '') === 'Bakım' ? 'selected' : '' ?>>Bakım</option>
+                                <option value="Teknoloji" <?= ($blog['category'] ?? '') === 'Teknoloji' ? 'selected' : '' ?>>Teknoloji</option>
+                                <option value="Yaşam" <?= ($blog['category'] ?? '') === 'Yaşam' ? 'selected' : '' ?>>Yaşam</option>
                             </select>
                         </div>
 
@@ -322,7 +340,7 @@ include 'includes/header.php';
                             <input type="text" 
                                    id="tags" 
                                    name="tags" 
-                                   value="<?= htmlspecialchars($_POST['tags'] ?? '') ?>"
+                                   value="<?= htmlspecialchars($original_data['tags']) ?>"
                                    placeholder="ayakkabı, moda, trend"
                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Etiketleri virgülle ayırın</p>
@@ -344,48 +362,106 @@ include 'includes/header.php';
                             <input type="url" 
                                    id="image_url" 
                                    name="image_url" 
-                                   value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>"
+                                   value="<?= htmlspecialchars($blog['image_url'] ?? '') ?>"
                                    placeholder="https://example.com/image.jpg"
                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Unsplash, Pexels gibi sitelerden resim URL'si kullanabilirsiniz</p>
                         </div>
                         
                         <!-- Image Preview -->
-                        <div id="image-preview" class="mt-4 <?= empty($_POST['image_url']) ? 'hidden' : '' ?>">
+                        <div id="image-preview" class="mt-4 <?= empty($blog['image_url']) ? 'hidden' : '' ?>">
                             <div class="border border-gray-200 rounded-xl overflow-hidden">
-                                <img id="preview-img" src="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>" alt="Önizleme" class="w-full h-32 object-cover">
+                                <img id="preview-img" src="<?= htmlspecialchars($blog['image_url'] ?? '') ?>" alt="Önizleme" class="w-full h-32 object-cover">
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Delete Blog -->
-                <div class="bg-white rounded-2xl shadow-lg border border-red-200 overflow-hidden">
-                    <div class="p-6 border-b border-red-100">
-                        <h3 class="text-lg font-bold text-red-900">Tehlikeli İşlemler</h3>
-                        <p class="text-red-600 text-sm mt-1">Bu işlemler geri alınamaz</p>
-                    </div>
-                    <div class="p-6">
-                        <form method="POST" action="blogs.php" onsubmit="return confirm('Bu blog yazısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')">
-                            <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="blog_id" value="<?= $blog['id'] ?>">
-                            <button type="submit" 
-                                    class="w-full bg-red-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-red-700 transition-colors flex items-center justify-center">
-                                <i class="fas fa-trash mr-2"></i>
-                                Blog Yazısını Sil
-                            </button>
-                        </form>
-                    </div>
-                </div>
             </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+            <button type="submit" 
+                    name="save_and_return"
+                    class="flex-1 sm:flex-none sm:min-w-[200px] bg-primary-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-primary-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center">
+                <i class="fas fa-save mr-2"></i>
+                Kaydet ve Listeye Dön
+            </button>
+            
+            <button type="submit" 
+                    name="save_and_continue"
+                    class="flex-1 sm:flex-none sm:min-w-[200px] bg-green-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center">
+                <i class="fas fa-check mr-2"></i>
+                Kaydet ve Düzenlemeye Devam Et
+            </button>
+            
+            <a href="blogs.php" 
+               class="flex-1 sm:flex-none sm:min-w-[150px] bg-gray-100 text-gray-700 font-semibold py-3 px-8 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
+                <i class="fas fa-times mr-2"></i>
+                İptal
+            </a>
         </div>
     </form>
 </div>
 
-<!-- JavaScript for enhanced UX -->
+<!-- Enhanced JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#blogEditForm');
+    const titleInput = document.querySelector('#title');
+    const excerptInput = document.querySelector('#excerpt');
+    const contentInput = document.querySelector('#content');
+    const categorySelect = document.querySelector('#category');
+    
+    // Orijinal değerler
+    const originalValues = {
+        title: <?= json_encode($original_data['title']) ?>,
+        excerpt: <?= json_encode($original_data['excerpt']) ?>,
+        content: <?= json_encode($original_data['content']) ?>,
+        category: <?= json_encode($original_data['category']) ?>,
+        tags: <?= json_encode($original_data['tags']) ?>,
+        image_url: <?= json_encode($original_data['image_url']) ?>
+    };
+    
+    // Değişiklik tespiti
+    function detectChanges() {
+        const currentValues = {
+            title: titleInput.value.trim(),
+            excerpt: excerptInput.value.trim(),
+            content: contentInput.value.trim(),
+            category: categorySelect.value,
+            tags: document.querySelector('#tags').value.trim(),
+            image_url: document.querySelector('#image_url').value.trim()
+        };
+        
+        const hasChanges = JSON.stringify(currentValues) !== JSON.stringify(originalValues);
+        
+        // Submit butonlarını güncelle
+        const saveButtons = document.querySelectorAll('button[type="submit"]');
+        saveButtons.forEach(btn => {
+            if (hasChanges) {
+                btn.classList.remove('opacity-50');
+                btn.disabled = false;
+            } else {
+                btn.classList.add('opacity-50');
+                btn.disabled = true;
+            }
+        });
+        
+        return hasChanges;
+    }
+    
+    // Form alanlarını izle
+    [titleInput, excerptInput, contentInput, categorySelect, 
+     document.querySelector('#tags'), document.querySelector('#image_url')].forEach(element => {
+        element.addEventListener('input', detectChanges);
+        element.addEventListener('change', detectChanges);
+    });
+    
+    
+    // Sayfa yüklendiğinde kontrol et
+    detectChanges();
+    
     // Image preview
     const imageUrlInput = document.getElementById('image_url');
     const imagePreview = document.getElementById('image-preview');
@@ -406,36 +482,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            if (detectChanges()) {
+                form.querySelector('button[name="save_and_continue"]').click();
+            }
+        }
+    });
+    
     // Auto-resize textareas
     document.querySelectorAll('textarea').forEach(textarea => {
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
+            this.style.height = (this.scrollHeight) + 'px';
         });
         
-        // Trigger resize on load
-        textarea.dispatchEvent(new Event('input'));
+        // Initial resize
+        textarea.style.height = 'auto';
+        textarea.style.height = (textarea.scrollHeight) + 'px';
     });
     
-    // Form submission loading state
-    const form = document.querySelector('form[method="POST"]:not([action])');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const btnText = submitBtn.innerHTML;
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Güncelleniyor...';
-            
-            // Re-enable after 10 seconds as fallback
-            setTimeout(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = btnText;
-            }, 10000);
-        });
-    }
-    
-    // Character count for title and excerpt
+    // Character counters
     function addCharacterCounter(input, maxLength = null) {
         const counter = document.createElement('div');
         counter.className = 'text-xs text-gray-500 mt-1';
@@ -459,8 +528,35 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCounter();
     }
     
-    addCharacterCounter(document.getElementById('title'), 100);
-    addCharacterCounter(document.getElementById('excerpt'), 200);
+    addCharacterCounter(titleInput, 100);
+    addCharacterCounter(excerptInput, 200);
+    
+    // Form submission loading
+    form.addEventListener('submit', function(e) {
+        const submitBtn = e.submitter;
+        const btnText = submitBtn.innerHTML;
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Kaydediliyor...';
+        
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = btnText;
+        }, 5000);
+    });
+    
+    // Sayfa terk etme uyarısı
+    let formSubmitted = false;
+    form.addEventListener('submit', function() {
+        formSubmitted = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (detectChanges() && !formSubmitted) {
+            e.preventDefault();
+            e.returnValue = 'Kaydedilmemiş değişiklikler var. Sayfadan ayrılmak istediğinizden emin misiniz?';
+        }
+    });
 });
 </script>
 

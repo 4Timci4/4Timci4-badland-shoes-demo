@@ -11,6 +11,7 @@ check_admin_auth();
 require_once '../config/database.php';
 require_once '../services/ProductService.php';
 require_once '../services/CategoryService.php';
+require_once '../services/VariantService.php';
 
 // Düzenleme modu kontrolü
 $edit_mode = isset($_GET['id']) && !empty($_GET['id']);
@@ -80,24 +81,43 @@ if ($_POST) {
                 ];
                 
                 if ($edit_mode) {
-                    // Güncelleme işlemi (şimdilik basit placeholder)
-                    $response = supabase()->request('products?id=eq.' . $product_id, 'PATCH', $product_data);
-                    if ($response) {
-                        set_flash_message('success', 'Ürün başarıyla güncellendi.');
-                        header('Location: products.php');
-                        exit;
-                    } else {
-                        $errors[] = 'Ürün güncellenirken bir hata oluştu.';
+                    // Güncelleme işlemi - doğru tablo adı: product_models
+                    try {
+                        $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $product_data);
+                        if ($response && !empty($response['body'])) {
+                            set_flash_message('success', 'Ürün başarıyla güncellendi.');
+                            header('Location: products.php');
+                            exit;
+                        } else {
+                            throw new Exception('Supabase response boş döndü');
+                        }
+                    } catch (Exception $e) {
+                        error_log("Product update error: " . $e->getMessage());
+                        $errors[] = 'Ürün güncellenirken bir hata oluştu: ' . $e->getMessage();
                     }
                 } else {
-                    // Yeni ürün ekleme
-                    $response = supabase()->request('products', 'POST', $product_data);
-                    if ($response) {
-                        set_flash_message('success', 'Ürün başarıyla eklendi.');
-                        header('Location: products.php');
-                        exit;
-                    } else {
-                        $errors[] = 'Ürün eklenirken bir hata oluştu.';
+                    // Yeni ürün ekleme - doğru tablo adı: product_models
+                    try {
+                        $response = supabase()->request('product_models', 'POST', $product_data);
+                        if ($response && !empty($response['body'])) {
+                            // Yeni ürünün ID'sini al
+                            $new_product = $response['body'][0] ?? null;
+                            $new_product_id = $new_product['id'] ?? null;
+                            
+                            if ($new_product_id) {
+                                set_flash_message('success', 'Ürün başarıyla eklendi! Şimdi renk/beden varyantlarını ekleyebilirsiniz.');
+                                header('Location: product-edit.php?id=' . $new_product_id);
+                            } else {
+                                set_flash_message('success', 'Ürün başarıyla eklendi.');
+                                header('Location: products.php');
+                            }
+                            exit;
+                        } else {
+                            throw new Exception('Supabase response boş döndü');
+                        }
+                    } catch (Exception $e) {
+                        error_log("Product add error: " . $e->getMessage());
+                        $errors[] = 'Ürün eklenirken bir hata oluştu: ' . $e->getMessage();
                     }
                 }
             } catch (Exception $e) {

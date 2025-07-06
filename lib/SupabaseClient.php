@@ -164,8 +164,17 @@ class SupabaseClient {
             return $result;
         }
         
-        error_log("Supabase API Error: HTTP $http_code - $response");
-        throw new Exception("Supabase API Error: HTTP $http_code", $http_code);
+        $error_message = "Supabase API Error: HTTP $http_code";
+        $decoded_response = json_decode($response, true);
+        
+        if ($decoded_response && isset($decoded_response['message'])) {
+            $error_message .= " - " . $decoded_response['message'];
+        } else if (!empty($response)) {
+            $error_message .= " - " . $response;
+        }
+
+        error_log($error_message);
+        throw new Exception($error_message, $http_code);
     }
     
     /**

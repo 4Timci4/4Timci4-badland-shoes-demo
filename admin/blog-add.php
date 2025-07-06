@@ -30,7 +30,6 @@ if ($_POST) {
         $category = trim($_POST['category'] ?? '');
         $tags = array_filter(array_map('trim', explode(',', $_POST['tags'] ?? '')));
         $image_url = trim($_POST['image_url'] ?? '');
-        $status = $_POST['status'] ?? 'published';
         
         // Validation
         $errors = [];
@@ -59,21 +58,26 @@ if ($_POST) {
                     'content' => $content,
                     'category' => $category,
                     'tags' => $tags,
-                    'image_url' => $image_url,
-                    'status' => $status
+                    'image_url' => $image_url
                 ];
                 
-                $response = supabase()->request('blogs', 'POST', $blog_data);
-                
-                if (!empty($response)) {
-                    set_flash_message('success', 'Blog yazısı başarıyla eklendi.');
-                    header('Location: blogs.php');
-                    exit;
-                } else {
-                    set_flash_message('error', 'Blog yazısı eklenirken bir hata oluştu.');
+                try {
+                    $response = supabase()->request('blogs', 'POST', $blog_data);
+                    
+                    if ($response && !empty($response['body'])) {
+                        set_flash_message('success', 'Blog yazısı başarıyla eklendi.');
+                        header('Location: blogs.php');
+                        exit;
+                    } else {
+                        throw new Exception('Supabase response boş döndü');
+                    }
+                } catch (Exception $e) {
+                    error_log("Blog add error: " . $e->getMessage());
+                    $errors[] = 'Blog yazısı eklenirken bir hata oluştu: ' . $e->getMessage();
                 }
             } catch (Exception $e) {
-                set_flash_message('error', 'Blog yazısı eklenirken bir hata oluştu: ' . $e->getMessage());
+                error_log("Blog save error: " . $e->getMessage());
+                $errors[] = 'Sistem hatası oluştu. Lütfen tekrar deneyin.';
             }
         } else {
             set_flash_message('error', implode('<br>', $errors));
@@ -192,43 +196,13 @@ include 'includes/header.php';
             <!-- Sidebar -->
             <div class="space-y-6">
                 
-                <!-- Publish Options -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900">Yayın Durumu</h3>
-                        <p class="text-gray-600 text-sm mt-1">Blog yazısının durumunu belirleyin</p>
-                    </div>
                     <div class="p-6">
-                        <div class="space-y-3">
-                            <label class="flex items-center">
-                                <input type="radio" 
-                                       name="status" 
-                                       value="published" 
-                                       <?= ($_POST['status'] ?? 'published') === 'published' ? 'checked' : '' ?>
-                                       class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                <span class="ml-3 text-sm font-medium text-gray-900">
-                                    <i class="fas fa-eye text-green-500 mr-2"></i>Hemen Yayınla
-                                </span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" 
-                                       name="status" 
-                                       value="draft"
-                                       <?= ($_POST['status'] ?? '') === 'draft' ? 'checked' : '' ?>
-                                       class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                <span class="ml-3 text-sm font-medium text-gray-900">
-                                    <i class="fas fa-eye-slash text-yellow-500 mr-2"></i>Taslak Olarak Kaydet
-                                </span>
-                            </label>
-                        </div>
-                        
-                        <div class="mt-6 pt-4 border-t border-gray-100">
-                            <button type="submit" 
-                                    class="w-full bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
-                                <i class="fas fa-save mr-2"></i>
-                                Blog Yazısını Kaydet
-                            </button>
-                        </div>
+                        <button type="submit" 
+                                class="w-full bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
+                            <i class="fas fa-save mr-2"></i>
+                            Blog Yazısını Kaydet
+                        </button>
                     </div>
                 </div>
 

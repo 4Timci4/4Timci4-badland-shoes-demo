@@ -1,0 +1,1021 @@
+<?php
+/**
+ * Ürün Düzenleme Sayfası
+ * Modern, kullanıcı dostu ürün düzenleme formu
+ */
+
+require_once 'config/auth.php';
+check_admin_auth();
+
+// Veritabanı bağlantısı
+require_once '../config/database.php';
+require_once '../services/ProductService.php';
+require_once '../services/CategoryService.php';
+require_once '../services/VariantService.php';
+
+// ID parametresi zorunlu kontrolü
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    set_flash_message('error', 'Düzenlenecek ürün ID\'si belirtilmedi.');
+    header('Location: products.php');
+    exit;
+}
+
+$product_id = intval($_GET['id']);
+
+// Ürün bilgilerini getir
+$product_data = get_product_model($product_id);
+if (empty($product_data)) {
+    set_flash_message('error', 'Ürün bulunamadı.');
+    header('Location: products.php');
+    exit;
+}
+
+$product = $product_data[0];
+
+// Sayfa bilgileri
+$page_title = 'Ürün Düzenle: ' . htmlspecialchars($product['name']);
+$breadcrumb_items = [
+    ['title' => 'Ürün Yönetimi', 'url' => 'products.php', 'icon' => 'fas fa-box'],
+    ['title' => htmlspecialchars($product['name']), 'url' => '#', 'icon' => 'fas fa-tag'],
+    ['title' => 'Düzenle', 'url' => '#', 'icon' => 'fas fa-edit']
+];
+
+// Orijinal verileri sakla (değişiklik tespiti için)
+$original_data = [
+    'name' => $product['name'],
+    'description' => $product['description'],
+    'base_price' => floatval($product['base_price']),
+    'category_id' => intval($product['category_id']),
+    'is_featured' => (bool)$product['is_featured'],
+    'features' => $product['features'] ?? ''
+];
+
+// Form işleme
+$changes_detected = false;
+if ($_POST) {
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    
+    if (!verify_csrf_token($csrf_token)) {
+        set_flash_message('error', 'Güvenlik hatası. Lütfen tekrar deneyin.');
+    } else {
+        // Form verilerini al
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $base_price = floatval($_POST['base_price'] ?? 0);
+        $category_id = intval($_POST['category_id'] ?? 0);
+        $is_featured = isset($_POST['is_featured']) ? true : false;
+        $features = trim($_POST['features'] ?? '');
+        
+        // Değişiklik tespiti
+        $new_data = [
+            'name' => $name,
+            'description' => $description,
+            'base_price' => $base_price,
+            'category_id' => $category_id,
+            'is_featured' => $is_featured,
+            'features' => $features
+        ];
+        
+        $changes_detected = ($original_data !== $new_data);
+        
+        // Validation
+        $errors = [];
+        
+        if (empty($name)) {
+            $errors[] = 'Ürün adı zorunludur.';
+        }
+        
+        if (empty($description)) {
+            $errors[] = 'Ürün açıklaması zorunludur.';
+        }
+        
+        if ($base_price <= 0) {
+            $errors[] = 'Geçerli bir fiyat giriniz.';
+        }
+        
+        if ($category_id <= 0) {
+            $errors[] = 'Bir kategori seçiniz.';
+        }
+        
+        if (empty($errors)) {
+            if (!$changes_detected) {
+                set_flash_message('info', 'Herhangi bir değişiklik yapılmadı.');
+            } else {
+                try {
+                    $update_data = [
+                        'name' => $name,
+                        'description' => $description,
+                        'base_price' => $base_price,
+                        'category_id' => $category_id,
+                        'is_featured' => $is_featured,
+                        'features' => $features,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ];
+                    
+                    // Supabase UPDATE işlemi
+                    $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $update_data);
+                    
+                    if ($response && !empty($response['body'])) {
+                        set_flash_message('success', 'Ürün başarıyla güncellendi.');
+                        
+                        // Önbelleği temizle
+                        supabase()->clearCache();
+                        
+                        // Devam et mi yoksa listeye dön mü?
+                        if (isset($_POST['save_and_continue'])) {
+                            header('Location: product-edit.php?id=' . $product_id);
+                        } else {
+                            header('Location: products.php');
+                        }
+                        exit;
+                    } else {
+                        throw new Exception('Supabase güncelleme işlemi başarısız');
+                    }
+                    
+                } catch (Exception $e) {
+                    error_log("Product update error: " . $e->getMessage());
+                    $errors[] = 'Ürün güncellenirken bir hata oluştu: ' . $e->getMessage();
+                }
+            }
+        }
+        
+        // Hataları flash message olarak sakla
+        if (!empty($errors)) {
+            set_flash_message('error', implode('<br>', $errors));
+        }
+    }
+}
+
+// Kategorileri getir
+$categories = category_service()->getAllCategories();
+
+// Header dahil et
+include 'includes/header.php';
+?>
+
+<!-- Product Edit Content -->
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Ürün Düzenle
+            </h1>
+            <p class="text-gray-600">
+                <span class="font-semibold"><?= htmlspecialchars($product['name']) ?></span> ürününün bilgilerini güncelleyin
+            </p>
+        </div>
+        <div class="mt-4 lg:mt-0 flex space-x-3">
+            <a href="products.php" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Ürün Listesi
+            </a>
+            <a href="../product-details.php?id=<?= $product_id ?>" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                <i class="fas fa-external-link-alt mr-2"></i>
+                Önizle
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Info Card -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-blue-500 rounded-xl flex items-center justify-center">
+                <i class="fas fa-box text-white text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars($product['name']) ?></h3>
+                <p class="text-gray-600">Ürün ID: #<?= $product_id ?></p>
+                <p class="text-sm text-gray-500">
+                    Son güncelleme: <?= date('d.m.Y H:i', strtotime($product['updated_at'] ?? $product['created_at'])) ?>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <?php
+    $flash_message = get_flash_message();
+    if ($flash_message):
+        $bg_colors = [
+            'success' => 'bg-green-50 border-green-200',
+            'error' => 'bg-red-50 border-red-200',
+            'info' => 'bg-blue-50 border-blue-200'
+        ];
+        $text_colors = [
+            'success' => 'text-green-800',
+            'error' => 'text-red-800',
+            'info' => 'text-blue-800'
+        ];
+        $icons = [
+            'success' => 'fa-check-circle',
+            'error' => 'fa-exclamation-triangle',
+            'info' => 'fa-info-circle'
+        ];
+        $icon_colors = [
+            'success' => 'text-green-500',
+            'error' => 'text-red-500',
+            'info' => 'text-blue-500'
+        ];
+        
+        $type = $flash_message['type'];
+        $bg_color = $bg_colors[$type] ?? 'bg-gray-50 border-gray-200';
+        $text_color = $text_colors[$type] ?? 'text-gray-800';
+        $icon = $icons[$type] ?? 'fa-info';
+        $icon_color = $icon_colors[$type] ?? 'text-gray-500';
+    ?>
+        <div class="<?= $bg_color ?> border rounded-xl p-4 flex items-start">
+            <i class="fas <?= $icon ?> <?= $icon_color ?> mr-3 mt-0.5"></i>
+            <div class="<?= $text_color ?> font-medium"><?= $flash_message['message'] ?></div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Product Edit Form -->
+    <form method="POST" class="space-y-8" id="productEditForm">
+        <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
+        
+        <!-- Basic Information Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-1">Temel Bilgiler</h3>
+                <p class="text-gray-600 text-sm">Ürünün temel bilgilerini güncelleyin</p>
+            </div>
+            <div class="p-6 space-y-6">
+                
+                <!-- Product Name -->
+                <div>
+                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-tag mr-2"></i>Ürün Adı *
+                    </label>
+                    <input type="text" 
+                           id="name" 
+                           name="name" 
+                           required
+                           value="<?= htmlspecialchars($product['name']) ?>"
+                           placeholder="Örn: Nike Air Max 270"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                    <div class="text-xs text-gray-500 mt-1">Orijinal: <?= htmlspecialchars($original_data['name']) ?></div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-align-left mr-2"></i>Ürün Açıklaması *
+                    </label>
+                    <textarea id="description" 
+                              name="description" 
+                              required
+                              rows="4"
+                              placeholder="Ürününüzün detaylı açıklamasını yazın..."
+                              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"><?= htmlspecialchars($product['description']) ?></textarea>
+                </div>
+
+                <!-- Features -->
+                <div>
+                    <label for="features" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-list mr-2"></i>Özellikler
+                    </label>
+                    <textarea id="features" 
+                              name="features" 
+                              rows="3"
+                              placeholder="Ürün özelliklerini listeleyin (her satıra bir özellik)..."
+                              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"><?= htmlspecialchars($product['features'] ?? '') ?></textarea>
+                    <p class="text-xs text-gray-500 mt-2">Her satıra bir özellik yazın. Örn: "Su geçirmez", "Nefes alabilir kumaş"</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category and Pricing Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-1">Kategori ve Fiyatlandırma</h3>
+                <p class="text-gray-600 text-sm">Ürün kategorisi ve fiyat bilgilerini güncelleyin</p>
+            </div>
+            <div class="p-6 space-y-6">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Category Selection -->
+                    <div>
+                        <label for="category_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-folder mr-2"></i>Kategori *
+                        </label>
+                        <select id="category_id" 
+                                name="category_id" 
+                                required
+                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                            <option value="">Kategori Seçin</option>
+                            <?php foreach ($categories as $category): ?>
+                                <option value="<?= htmlspecialchars($category['id']) ?>" 
+                                        <?= ($product['category_id'] == $category['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($category['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Base Price -->
+                    <div>
+                        <label for="base_price" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lira-sign mr-2"></i>Fiyat (₺) *
+                        </label>
+                        <input type="number" 
+                               id="base_price" 
+                               name="base_price" 
+                               required
+                               min="0" 
+                               step="0.01"
+                               value="<?= htmlspecialchars($product['base_price']) ?>"
+                               placeholder="0.00"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                        <div class="text-xs text-gray-500 mt-1">Orijinal: ₺<?= number_format($original_data['base_price'], 2) ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Status Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-1">Ürün Durumu</h3>
+                <p class="text-gray-600 text-sm">Ürünün görünürlük ayarlarını güncelleyin</p>
+            </div>
+            <div class="p-6">
+                
+                <!-- Featured Status -->
+                <div class="flex items-start space-x-4">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" 
+                               id="is_featured" 
+                               name="is_featured" 
+                               value="1"
+                               <?= $product['is_featured'] ? 'checked' : '' ?>
+                               class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2">
+                    </div>
+                    <div class="text-sm">
+                        <label for="is_featured" class="font-semibold text-gray-700 cursor-pointer">
+                            <i class="fas fa-star text-yellow-500 mr-2"></i>Öne Çıkarılmış Ürün
+                        </label>
+                        <p class="text-gray-500">Bu ürün ana sayfada öne çıkarılmış ürünler bölümünde görünecektir.</p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            Mevcut durum: <?= $original_data['is_featured'] ? 'Öne çıkarılmış' : 'Normal' ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Variant Management Card -->
+        <?php
+        // Varyant verilerini getir
+        $variants = variant_service()->getProductVariants($product_id);
+        $all_colors = variant_service()->getAllColors();
+        $all_sizes = variant_service()->getAllSizes();
+        $total_stock = variant_service()->getTotalStock($product_id);
+        ?>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">Varyant Yönetimi</h3>
+                        <p class="text-gray-600 text-sm">Renk/beden kombinasyonları ve stok yönetimi</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-600"><?= $total_stock ?></div>
+                        <div class="text-xs text-gray-500">Toplam Stok</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                
+                <!-- Existing Variants -->
+                <?php if (!empty($variants)): ?>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-list mr-2"></i>Mevcut Varyantlar (<?= count($variants) ?>)
+                    </h4>
+                    
+                    <div class="overflow-hidden border border-gray-200 rounded-xl">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renk</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beden</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiyat</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <?php foreach ($variants as $variant): ?>
+                                <tr class="hover:bg-gray-50" data-variant-id="<?= $variant['id'] ?>">
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 rounded-full border border-gray-300" 
+                                                 style="background-color: <?= htmlspecialchars($variant['color_hex'] ?? '#cccccc') ?>"></div>
+                                            <span class="ml-3 text-sm text-gray-900"><?= htmlspecialchars($variant['color_name'] ?? 'Renk Yok') ?></span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <?= htmlspecialchars($variant['size_value'] ?? 'Beden Yok') ?> <?= htmlspecialchars($variant['size_type'] ?? '') ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-gray-900 font-mono"><?= htmlspecialchars($variant['sku']) ?></span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            <input type="number" 
+                                                   value="<?= htmlspecialchars($variant['price']) ?>" 
+                                                   step="0.01" 
+                                                   min="0"
+                                                   class="variant-price w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                                   data-variant-id="<?= $variant['id'] ?>">
+                                            <span class="text-xs text-gray-500">₺</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <input type="number" 
+                                               value="<?= htmlspecialchars($variant['stock_quantity']) ?>" 
+                                               min="0"
+                                               class="variant-stock w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                               data-variant-id="<?= $variant['id'] ?>">
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" 
+                                                   <?= $variant['is_active'] ? 'checked' : '' ?>
+                                                   class="variant-active form-checkbox h-4 w-4 text-primary-600"
+                                                   data-variant-id="<?= $variant['id'] ?>">
+                                            <span class="ml-2 text-sm text-gray-700">Aktif</span>
+                                        </label>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button type="button" 
+                                                class="save-variant-btn text-green-600 hover:text-green-900 mr-3"
+                                                data-variant-id="<?= $variant['id'] ?>">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="delete-variant-btn text-red-600 hover:text-red-900"
+                                                data-variant-id="<?= $variant['id'] ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <?php else: ?>
+                <div class="text-center py-8 bg-gray-50 rounded-xl">
+                    <i class="fas fa-box-open text-gray-400 text-4xl mb-4"></i>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Henüz varyant eklenmemiş</h4>
+                    <p class="text-gray-500">Bu ürün için renk ve beden kombinasyonları ekleyin.</p>
+                </div>
+                <?php endif; ?>
+
+                <!-- Add New Variant -->
+                <div class="border-t pt-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-plus mr-2"></i>Yeni Varyant Ekle
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Renk</label>
+                            <select id="new-variant-color" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">Renk Seçin</option>
+                                <?php foreach ($all_colors as $color): ?>
+                                <option value="<?= $color['id'] ?>" data-hex="<?= $color['hex_code'] ?>">
+                                    <?= htmlspecialchars($color['name']) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Beden</label>
+                            <select id="new-variant-size" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">Beden Seçin</option>
+                                <?php foreach ($all_sizes as $size): ?>
+                                <option value="<?= $size['id'] ?>">
+                                    <?= htmlspecialchars($size['size_value']) ?> <?= htmlspecialchars($size['size_type']) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fiyat (₺)</label>
+                            <input type="number" 
+                                   id="new-variant-price" 
+                                   value="<?= $product['base_price'] ?>"
+                                   step="0.01" 
+                                   min="0"
+                                   placeholder="0.00"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Stok Miktarı</label>
+                            <input type="number" 
+                                   id="new-variant-stock" 
+                                   value="0"
+                                   min="0"
+                                   placeholder="0"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="new-variant-active" checked class="form-checkbox h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-sm text-gray-700">Aktif varyant</span>
+                        </label>
+                        
+                        <button type="button" 
+                                id="add-variant-btn"
+                                class="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Varyant Ekle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions -->
+                <div class="border-t pt-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-tools mr-2"></i>Toplu İşlemler
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button type="button" 
+                                id="bulk-activate-btn"
+                                class="px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition-colors">
+                            <i class="fas fa-check mr-2"></i>Tümünü Aktif Et
+                        </button>
+                        
+                        <button type="button" 
+                                id="bulk-deactivate-btn"
+                                class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            <i class="fas fa-ban mr-2"></i>Tümünü Pasif Et
+                        </button>
+                        
+                        <button type="button" 
+                                id="bulk-delete-btn"
+                                class="px-4 py-2 bg-red-100 text-red-700 font-medium rounded-lg hover:bg-red-200 transition-colors">
+                            <i class="fas fa-trash mr-2"></i>Tümünü Sil
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+            <button type="submit" 
+                    name="save_and_return"
+                    class="flex-1 sm:flex-none sm:min-w-[200px] bg-primary-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-primary-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center">
+                <i class="fas fa-save mr-2"></i>
+                Kaydet ve Listeye Dön
+            </button>
+            
+            <button type="submit" 
+                    name="save_and_continue"
+                    class="flex-1 sm:flex-none sm:min-w-[200px] bg-green-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center">
+                <i class="fas fa-check mr-2"></i>
+                Kaydet ve Düzenlemeye Devam Et
+            </button>
+            
+            <a href="products.php" 
+               class="flex-1 sm:flex-none sm:min-w-[150px] bg-gray-100 text-gray-700 font-semibold py-3 px-8 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
+                <i class="fas fa-times mr-2"></i>
+                İptal
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Enhanced JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#productEditForm');
+    const nameInput = document.querySelector('#name');
+    const descriptionInput = document.querySelector('#description');
+    const priceInput = document.querySelector('#base_price');
+    const categorySelect = document.querySelector('#category_id');
+    
+    // Orijinal değerler
+    const originalValues = {
+        name: <?= json_encode($original_data['name']) ?>,
+        description: <?= json_encode($original_data['description']) ?>,
+        base_price: <?= json_encode($original_data['base_price']) ?>,
+        category_id: <?= json_encode($original_data['category_id']) ?>,
+        is_featured: <?= json_encode($original_data['is_featured']) ?>,
+        features: <?= json_encode($original_data['features']) ?>
+    };
+    
+    // Değişiklik tespiti
+    function detectChanges() {
+        const currentValues = {
+            name: nameInput.value.trim(),
+            description: descriptionInput.value.trim(),
+            base_price: parseFloat(priceInput.value) || 0,
+            category_id: parseInt(categorySelect.value) || 0,
+            is_featured: document.querySelector('#is_featured').checked,
+            features: document.querySelector('#features').value.trim()
+        };
+        
+        const hasChanges = JSON.stringify(currentValues) !== JSON.stringify(originalValues);
+        
+        // Submit butonlarını güncelle
+        const saveButtons = document.querySelectorAll('button[type="submit"]');
+        saveButtons.forEach(btn => {
+            if (hasChanges) {
+                btn.classList.remove('opacity-50');
+                btn.disabled = false;
+            } else {
+                btn.classList.add('opacity-50');
+                btn.disabled = true;
+            }
+        });
+        
+        return hasChanges;
+    }
+    
+    // Form alanlarını izle
+    [nameInput, descriptionInput, priceInput, categorySelect, document.querySelector('#is_featured'), document.querySelector('#features')].forEach(element => {
+        element.addEventListener('input', detectChanges);
+        element.addEventListener('change', detectChanges);
+    });
+    
+    // Sayfa yüklendiğinde kontrol et
+    detectChanges();
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            if (detectChanges()) {
+                form.querySelector('button[name="save_and_continue"]').click();
+            }
+        }
+    });
+    
+    // Sayfa terk etme uyarısı
+    let formSubmitted = false;
+    form.addEventListener('submit', function() {
+        formSubmitted = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (detectChanges() && !formSubmitted) {
+            e.preventDefault();
+            e.returnValue = 'Kaydedilmemiş değişiklikler var. Sayfadan ayrılmak istediğinizden emin misiniz?';
+        }
+    });
+    
+    // Real-time validation
+    function validateField(field, condition, message) {
+        const errorElement = field.parentNode.querySelector('.error-message');
+        
+        if (condition) {
+            field.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            field.classList.add('border-green-300', 'focus:border-green-500', 'focus:ring-green-500');
+            if (errorElement) errorElement.remove();
+        } else {
+            field.classList.remove('border-green-300', 'focus:border-green-500', 'focus:ring-green-500');
+            field.classList.add('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            
+            if (!errorElement) {
+                const error = document.createElement('p');
+                error.className = 'error-message text-red-600 text-xs mt-1';
+                error.textContent = message;
+                field.parentNode.appendChild(error);
+            }
+        }
+    }
+    
+    // Validation events
+    nameInput.addEventListener('blur', function() {
+        validateField(this, this.value.trim().length >= 2, 'Ürün adı en az 2 karakter olmalıdır.');
+    });
+    
+    descriptionInput.addEventListener('blur', function() {
+        validateField(this, this.value.trim().length >= 10, 'Açıklama en az 10 karakter olmalıdır.');
+    });
+    
+    priceInput.addEventListener('blur', function() {
+        const price = parseFloat(this.value);
+        validateField(this, price > 0, 'Geçerli bir fiyat giriniz.');
+    });
+    
+    categorySelect.addEventListener('change', function() {
+        validateField(this, this.value !== '', 'Bir kategori seçiniz.');
+    });
+    
+    // Form submission loading
+    form.addEventListener('submit', function(e) {
+        const submitBtn = e.submitter;
+        const btnText = submitBtn.innerHTML;
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Kaydediliyor...';
+        
+        // Re-enable after timeout as fallback
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = btnText;
+        }, 5000);
+    });
+    
+    // Auto-resize textareas
+    document.querySelectorAll('textarea').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Initial resize
+        textarea.style.height = 'auto';
+        textarea.style.height = (textarea.scrollHeight) + 'px';
+    });
+
+    // Variant Management JavaScript
+    const productId = <?= $product_id ?>;
+
+    // Add New Variant
+    document.getElementById('add-variant-btn').addEventListener('click', function() {
+        const colorId = document.getElementById('new-variant-color').value;
+        const sizeId = document.getElementById('new-variant-size').value;
+        const price = document.getElementById('new-variant-price').value;
+        const stock = document.getElementById('new-variant-stock').value;
+        const isActive = document.getElementById('new-variant-active').checked;
+
+        if (!colorId || !sizeId || !price) {
+            alert('Lütfen renk, beden ve fiyat alanlarını doldurun.');
+            return;
+        }
+
+        const data = {
+            model_id: productId,
+            color_id: parseInt(colorId),
+            size_id: parseInt(sizeId),
+            price: parseFloat(price),
+            stock_quantity: parseInt(stock) || 0,
+            is_active: isActive
+        };
+
+        addVariant(data);
+    });
+
+    // Save Variant Buttons
+    document.querySelectorAll('.save-variant-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const variantId = this.dataset.variantId;
+            const row = document.querySelector(`tr[data-variant-id="${variantId}"]`);
+            
+            const price = row.querySelector('.variant-price').value;
+            const stock = row.querySelector('.variant-stock').value;
+            const isActive = row.querySelector('.variant-active').checked;
+
+            const data = {
+                price: parseFloat(price),
+                stock_quantity: parseInt(stock) || 0,
+                is_active: isActive
+            };
+
+            updateVariant(variantId, data);
+        });
+    });
+
+    // Delete Variant Buttons
+    document.querySelectorAll('.delete-variant-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const variantId = this.dataset.variantId;
+            
+            if (confirm('Bu varyantı silmek istediğinizden emin misiniz?')) {
+                deleteVariant(variantId);
+            }
+        });
+    });
+
+    // Bulk Actions
+    document.getElementById('bulk-activate-btn').addEventListener('click', function() {
+        bulkUpdateVariants({is_active: true});
+    });
+
+    document.getElementById('bulk-deactivate-btn').addEventListener('click', function() {
+        bulkUpdateVariants({is_active: false});
+    });
+
+    document.getElementById('bulk-delete-btn').addEventListener('click', function() {
+        if (confirm('Tüm varyantları silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+            bulkDeleteVariants();
+        }
+    });
+
+    // AJAX Functions
+    function addVariant(data) {
+        fetch('variant-api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'add',
+                data: data
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification('Varyant başarıyla eklendi.', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(result.message || 'Varyant eklenirken hata oluştu.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Bir hata oluştu.', 'error');
+        });
+    }
+
+    function updateVariant(variantId, data) {
+        fetch('variant-api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'update',
+                variant_id: variantId,
+                data: data
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification('Varyant başarıyla güncellendi.', 'success');
+            } else {
+                showNotification(result.message || 'Varyant güncellenirken hata oluştu.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Bir hata oluştu.', 'error');
+        });
+    }
+
+    function deleteVariant(variantId) {
+        fetch('variant-api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'delete',
+                variant_id: variantId
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification('Varyant başarıyla silindi.', 'success');
+                document.querySelector(`tr[data-variant-id="${variantId}"]`).remove();
+                updateTotalStock();
+            } else {
+                showNotification(result.message || 'Varyant silinirken hata oluştu.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Bir hata oluştu.', 'error');
+        });
+    }
+
+    function bulkUpdateVariants(data) {
+        fetch('variant-api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'bulk_update',
+                product_id: productId,
+                data: data
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification('Varyantlar başarıyla güncellendi.', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(result.message || 'Varyantlar güncellenirken hata oluştu.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Bir hata oluştu.', 'error');
+        });
+    }
+
+    function bulkDeleteVariants() {
+        fetch('variant-api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'bulk_delete',
+                product_id: productId
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification('Tüm varyantlar başarıyla silindi.', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(result.message || 'Varyantlar silinirken hata oluştu.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Bir hata oluştu.', 'error');
+        });
+    }
+
+    function updateTotalStock() {
+        let totalStock = 0;
+        document.querySelectorAll('.variant-stock').forEach(input => {
+            totalStock += parseInt(input.value) || 0;
+        });
+        
+        const totalStockElement = document.querySelector('.text-2xl.font-bold.text-green-600');
+        if (totalStockElement) {
+            totalStockElement.textContent = totalStock;
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+        
+        // Set colors based on type
+        if (type === 'success') {
+            notification.classList.add('bg-green-500', 'text-white');
+        } else if (type === 'error') {
+            notification.classList.add('bg-red-500', 'text-white');
+        } else {
+            notification.classList.add('bg-blue-500', 'text-white');
+        }
+        
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} mr-3"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Animate out and remove
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Update total stock when stock inputs change
+    document.querySelectorAll('.variant-stock').forEach(input => {
+        input.addEventListener('input', updateTotalStock);
+    });
+});
+</script>
+
+<?php
+// Footer dahil et
+include 'includes/footer.php';
+?>
