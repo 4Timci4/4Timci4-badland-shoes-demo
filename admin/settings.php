@@ -46,28 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         
-        // İletişim ayarları güncelleme
-        if (isset($_POST['action']) && $_POST['action'] === 'update_contact_settings') {
-            $contact_settings = [
-                'default_email' => $_POST['default_email'] ?? '',
-                'support_email' => $_POST['support_email'] ?? '',
-                'phone_1' => $_POST['phone_1'] ?? '',
-                'phone_2' => $_POST['phone_2'] ?? '',
-                'address' => $_POST['address'] ?? '',
-                'working_hours' => $_POST['working_hours'] ?? '',
-                'currency' => $_POST['currency'] ?? '',
-                'currency_symbol' => $_POST['currency_symbol'] ?? ''
-            ];
-            
-            if ($settingsService->updateMultipleSettings($contact_settings, 'contact')) {
-                set_flash_message('success', 'İletişim ayarları başarıyla güncellendi.');
-            } else {
-                set_flash_message('error', 'İletişim ayarları güncellenirken bir hata oluştu.');
-            }
-            header('Location: settings.php#contact');
-            exit;
-        }
-        
         // Teknik ayarlar güncelleme
         if (isset($_POST['action']) && $_POST['action'] === 'update_technical_settings') {
             $technical_settings = [
@@ -92,13 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Mevcut ayarları getir
 $general_settings = $settingsService->getSettingsByGroup('general');
-$contact_settings = $settingsService->getSettingsByGroup('contact');
 $technical_settings = $settingsService->getSettingsByGroup('technical');
 
 // Varsayılan değerlerle birleştir
 $defaults = $settingsService->getDefaultSiteSettings();
 $general_settings = array_merge($defaults, $general_settings);
-$contact_settings = array_merge($defaults, $contact_settings);
 $technical_settings = array_merge($defaults, $technical_settings);
 
 // Gerekli CSS ve JS
@@ -131,12 +107,6 @@ include 'includes/header.php';
                         class="tab-button py-4 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600">
                     <i class="fas fa-globe mr-2"></i>
                     Site Bilgileri
-                </button>
-                <button onclick="showTab('contact')" 
-                        id="tab-contact" 
-                        class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                    <i class="fas fa-address-book mr-2"></i>
-                    İletişim & İş
                 </button>
                 <button onclick="showTab('technical')" 
                         id="tab-technical" 
@@ -249,102 +219,6 @@ include 'includes/header.php';
                             class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors">
                         <i class="fas fa-save mr-2"></i>
                         Site Bilgilerini Kaydet
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Contact Settings Tab -->
-        <div id="content-contact" class="tab-content p-6 hidden">
-            <form method="POST">
-                <input type="hidden" name="action" value="update_contact_settings">
-                <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-                
-                <div class="space-y-8">
-                    
-                    <!-- Email Settings -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">E-posta Ayarları</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Varsayılan E-posta</label>
-                                <input type="email" 
-                                       name="default_email" 
-                                       value="<?= htmlspecialchars($contact_settings['default_email'] ?? '') ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Destek E-posta</label>
-                                <input type="email" 
-                                       name="support_email" 
-                                       value="<?= htmlspecialchars($contact_settings['support_email'] ?? '') ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Phone & Address -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">İletişim Bilgileri</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Telefon 1</label>
-                                <input type="text" 
-                                       name="phone_1" 
-                                       value="<?= htmlspecialchars($contact_settings['phone_1'] ?? '') ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Telefon 2</label>
-                                <input type="text" 
-                                       name="phone_2" 
-                                       value="<?= htmlspecialchars($contact_settings['phone_2'] ?? '') ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Adres</label>
-                                <textarea name="address" 
-                                          rows="3"
-                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><?= htmlspecialchars($contact_settings['address'] ?? '') ?></textarea>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Çalışma Saatleri</label>
-                                <textarea name="working_hours" 
-                                          rows="2"
-                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><?= htmlspecialchars($contact_settings['working_hours'] ?? '') ?></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Currency -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Para Birimi</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Para Birimi Kodu</label>
-                                <select name="currency" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                                    <option value="TRY" <?= ($contact_settings['currency'] ?? '') === 'TRY' ? 'selected' : '' ?>>TRY - Türk Lirası</option>
-                                    <option value="USD" <?= ($contact_settings['currency'] ?? '') === 'USD' ? 'selected' : '' ?>>USD - Amerikan Doları</option>
-                                    <option value="EUR" <?= ($contact_settings['currency'] ?? '') === 'EUR' ? 'selected' : '' ?>>EUR - Euro</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Para Birimi Sembolü</label>
-                                <input type="text" 
-                                       name="currency_symbol" 
-                                       value="<?= htmlspecialchars($contact_settings['currency_symbol'] ?? '') ?>"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-8 pt-6 border-t border-gray-200">
-                    <button type="submit" 
-                            class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors">
-                        <i class="fas fa-save mr-2"></i>
-                        İletişim Ayarlarını Kaydet
                     </button>
                 </div>
             </form>
@@ -500,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check URL hash to show correct tab
     const hash = window.location.hash.substring(1);
-    if (hash === 'contact' || hash === 'technical') {
+    if (hash === 'technical') {
         showTab(hash);
     }
 });
