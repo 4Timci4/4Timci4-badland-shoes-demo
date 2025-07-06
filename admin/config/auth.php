@@ -170,7 +170,7 @@ function get_admin_menu() {
                 [
                     'title' => 'Hakkında Sayfası',
                     'url' => 'about.php',
-                    'active' => is_active_page('about.php')
+                    'active' => is_active_page('about.php') || is_active_page('about-content-add.php') || is_active_page('about-content-edit.php')
                 ]
             ]
         ],

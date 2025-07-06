@@ -101,10 +101,25 @@ class CategoryService {
      */
     public function createCategory($data) {
         try {
+            // Debug: Gönderilen veriyi logla
+            error_log("CategoryService::createCategory - Gönderilen data: " . json_encode($data));
+            
             $response = $this->supabase->request('categories', 'POST', $data);
-            return !empty($response);
+            
+            // Debug: Dönen yanıtı logla
+            error_log("CategoryService::createCategory - Supabase response: " . json_encode($response));
+            
+            // Response'da body varsa ve boş değilse başarılı
+            if (isset($response['body']) && !empty($response['body'])) {
+                return true;
+            }
+            
+            error_log("CategoryService::createCategory - Empty response body received");
+            return false;
+            
         } catch (Exception $e) {
-            error_log("Kategori oluşturma hatası: " . $e->getMessage());
+            error_log("CategoryService::createCategory - Exception: " . $e->getMessage());
+            error_log("CategoryService::createCategory - Exception Code: " . $e->getCode());
             return false;
         }
     }

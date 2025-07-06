@@ -21,7 +21,7 @@ if (file_exists($envFile)) {
 // Supabase Bağlantı Bilgileri
 // Vercel ortam değişkenlerinden veya yerel geliştirme için doğrudan tanımlanır
 define('SUPABASE_URL', getenv('SUPABASE_URL') ?: 'https://rfxleyiyvpygdpdbnmib.supabase.co');
-define('SUPABASE_KEY', getenv('SUPABASE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmeGxleWl5dnB5Z2RwZGJubWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NTQ1ODYsImV4cCI6MjA2NzAzMDU4Nn0.ze5ip-K5ZwYpajdasSSGQayPUiFJILvkX9LJVrKsu08');
+define('SUPABASE_KEY', getenv('SUPABASE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmeGxleWl5dnB5Z2RwZGJubWliIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTQ1NDU4NiwiZXhwIjoyMDY3MDMwNTg2fQ.MX3WymdKFlrk7LnYX4qRFgRhfSEyK0aIGLzjua6j2iU');
 
 // Uygulamanın çalıştığı ortam (development, production, testing)
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
