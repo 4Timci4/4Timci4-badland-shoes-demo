@@ -11,6 +11,7 @@ check_admin_auth();
 require_once '../config/database.php';
 require_once '../services/ProductService.php';
 require_once '../services/CategoryService.php';
+require_once '../services/GenderService.php';
 require_once '../services/VariantService.php';
 
 // Düzenleme modu kontrolü
@@ -46,9 +47,10 @@ if ($_POST) {
         $name = trim($_POST['name'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $base_price = floatval($_POST['base_price'] ?? 0);
-        $category_id = intval($_POST['category_id'] ?? 0);
+        $category_ids = $_POST['category_ids'] ?? []; // Çoklu kategori seçimi
         $is_featured = isset($_POST['is_featured']) ? 1 : 0;
         $features = trim($_POST['features'] ?? '');
+        $gender_ids = $_POST['gender_ids'] ?? []; // Çoklu cinsiyet seçimi
         
         // Validation
         $errors = [];
@@ -65,46 +67,79 @@ if ($_POST) {
             $errors[] = 'Geçerli bir fiyat giriniz.';
         }
         
-        if ($category_id <= 0) {
-            $errors[] = 'Bir kategori seçiniz.';
+        if (empty($category_ids) || !is_array($category_ids)) {
+            $errors[] = 'En az bir kategori seçiniz.';
         }
         
         if (empty($errors)) {
             try {
+                // Artık category_id olmayacak - sadece çoklu kategori sistemi
                 $product_data = [
                     'name' => $name,
                     'description' => $description,
                     'base_price' => $base_price,
-                    'category_id' => $category_id,
                     'is_featured' => $is_featured,
                     'features' => $features
                 ];
                 
                 if ($edit_mode) {
-                    // Güncelleme işlemi - doğru tablo adı: product_models
+                    // Güncelleme işlemi
                     try {
+                        // 1. Ürün bilgilerini güncelle
                         $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $product_data);
                         if ($response && !empty($response['body'])) {
+                            
+                            // 2. Mevcut kategori ilişkilerini sil
+                            $delete_response = supabase()->request('product_categories?product_id=eq.' . $product_id, 'DELETE');
+                            
+                            // 3. Yeni kategori ilişkilerini ekle
+                            foreach ($category_ids as $category_id) {
+                                $category_data = [
+                                    'product_id' => $product_id,
+                                    'category_id' => intval($category_id)
+                                ];
+                                supabase()->request('product_categories', 'POST', $category_data);
+                            }
+                            
                             set_flash_message('success', 'Ürün başarıyla güncellendi.');
                             header('Location: products.php');
                             exit;
                         } else {
-                            throw new Exception('Supabase response boş döndü');
+                            throw new Exception('Ürün güncelleme başarısız');
                         }
                     } catch (Exception $e) {
                         error_log("Product update error: " . $e->getMessage());
                         $errors[] = 'Ürün güncellenirken bir hata oluştu: ' . $e->getMessage();
                     }
                 } else {
-                    // Yeni ürün ekleme - doğru tablo adı: product_models
+                    // Yeni ürün ekleme
                     try {
+                        // 1. Önce ürünü ekle
                         $response = supabase()->request('product_models', 'POST', $product_data);
                         if ($response && !empty($response['body'])) {
-                            // Yeni ürünün ID'sini al
+                            // 2. Yeni ürünün ID'sini al
                             $new_product = $response['body'][0] ?? null;
                             $new_product_id = $new_product['id'] ?? null;
                             
                             if ($new_product_id) {
+                                // 3. Kategori ilişkilerini ekle
+                                foreach ($category_ids as $category_id) {
+                                    $category_data = [
+                                        'product_id' => $new_product_id,
+                                        'category_id' => intval($category_id)
+                                    ];
+                                    supabase()->request('product_categories', 'POST', $category_data);
+                                }
+                                
+                                // 4. Cinsiyet ilişkilerini ekle
+                                foreach ($gender_ids as $gender_id) {
+                                    $gender_data = [
+                                        'product_id' => $new_product_id,
+                                        'gender_id' => intval($gender_id)
+                                    ];
+                                    supabase()->request('product_genders', 'POST', $gender_data);
+                                }
+                                
                                 set_flash_message('success', 'Ürün başarıyla eklendi! Şimdi renk/beden varyantlarını ekleyebilirsiniz.');
                                 header('Location: product-edit.php?id=' . $new_product_id);
                             } else {
@@ -113,7 +148,7 @@ if ($_POST) {
                             }
                             exit;
                         } else {
-                            throw new Exception('Supabase response boş döndü');
+                            throw new Exception('Ürün ekleme başarısız');
                         }
                     } catch (Exception $e) {
                         error_log("Product add error: " . $e->getMessage());
@@ -133,8 +168,9 @@ if ($_POST) {
     }
 }
 
-// Kategorileri getir
+// Kategorileri ve cinsiyetleri getir
 $categories = category_service()->getAllCategories();
+$genders = gender_service()->getAllGenders();
 
 // Header dahil et
 include 'includes/header.php';
@@ -240,23 +276,106 @@ include 'includes/header.php';
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     
-                    <!-- Category Selection -->
-                    <div>
-                        <label for="category_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-folder mr-2"></i>Kategori *
+                    <!-- Multi-Category Selection -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-box mr-2"></i>Ürün Kategorileri *
                         </label>
-                        <select id="category_id" 
-                                name="category_id" 
-                                required
-                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                            <option value="">Kategori Seçin</option>
-                            <?php foreach ($categories as $category): ?>
-                                <option value="<?= htmlspecialchars($category['id']) ?>" 
-                                        <?= (isset($product['category_id']) && $product['category_id'] == $category['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($category['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <p class="text-xs text-gray-500 mb-4">Ürününüzün tipini seçin (örn: Sneaker, Bot, Sandalet, vb.)</p>
+                        
+                        <?php 
+                        // Düzenleme modunda mevcut kategorileri al
+                        $selected_categories = [];
+                        if ($edit_mode && $product_id) {
+                            try {
+                                $response = supabase()->request('product_categories?select=category_id&product_id=eq.' . $product_id);
+                                $category_relations = $response['body'] ?? [];
+                                $selected_categories = array_column($category_relations, 'category_id');
+                            } catch (Exception $e) {
+                                error_log("Error fetching product categories: " . $e->getMessage());
+                            }
+                        }
+                        ?>
+                        
+                        <div class="space-y-6">
+                            <div class="border border-gray-200 rounded-xl p-4">
+                                <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-box text-blue-500 mr-2"></i>
+                                    Ürün Tipleri
+                                    <span class="ml-2 text-xs text-gray-500">(<?= count($categories) ?> kategori)</span>
+                                </h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    <?php foreach ($categories as $category): ?>
+                                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                            <input type="checkbox" 
+                                                   name="category_ids[]" 
+                                                   value="<?= htmlspecialchars($category['id']) ?>"
+                                                   <?= in_array($category['id'], $selected_categories) ? 'checked' : '' ?>
+                                                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                                            <span class="ml-2 text-sm font-medium text-gray-700">
+                                                <?= htmlspecialchars($category['name']) ?>
+                                            </span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Categories Preview -->
+                        <div id="selected-categories-preview" class="mt-4 p-3 bg-gray-50 rounded-lg hidden">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Seçilen Kategoriler:</p>
+                            <div id="selected-categories-list" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gender Selection -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-venus-mars mr-2"></i>Cinsiyetler *
+                        </label>
+                        <p class="text-xs text-gray-500 mb-4">Ürününüzün hitap ettiği cinsiyetleri seçin (örn: Erkek, Kadın, Çocuk, Unisex)</p>
+                        
+                        <?php 
+                        // Düzenleme modunda mevcut cinsiyetleri al
+                        $selected_genders = [];
+                        if ($edit_mode && $product_id) {
+                            try {
+                                $response = supabase()->request('product_genders?select=gender_id&product_id=eq.' . $product_id);
+                                $gender_relations = $response['body'] ?? [];
+                                $selected_genders = array_column($gender_relations, 'gender_id');
+                            } catch (Exception $e) {
+                                error_log("Error fetching product genders: " . $e->getMessage());
+                            }
+                        }
+                        ?>
+                        
+                        <div class="border border-gray-200 rounded-xl p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <i class="fas fa-venus-mars text-purple-500 mr-2"></i>
+                                Cinsiyetler
+                                <span class="ml-2 text-xs text-gray-500">(<?= count($genders) ?> cinsiyet)</span>
+                            </h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <?php foreach ($genders as $gender): ?>
+                                    <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" 
+                                               name="gender_ids[]" 
+                                               value="<?= htmlspecialchars($gender['id']) ?>"
+                                               <?= in_array($gender['id'], $selected_genders) ? 'checked' : '' ?>
+                                               class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2">
+                                        <span class="ml-2 text-sm font-medium text-gray-700">
+                                            <?= htmlspecialchars($gender['name']) ?>
+                                        </span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Genders Preview -->
+                        <div id="selected-genders-preview" class="mt-4 p-3 bg-gray-50 rounded-lg hidden">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Seçilen Cinsiyetler:</p>
+                            <div id="selected-genders-list" class="flex flex-wrap gap-2"></div>
+                        </div>
                     </div>
 
                     <!-- Base Price -->
@@ -384,13 +503,128 @@ document.addEventListener('DOMContentLoaded', function() {
         validateField(this, price > 0, 'Geçerli bir fiyat giriniz.');
     });
     
-    // Category validation
-    categorySelect.addEventListener('change', function() {
-        validateField(this, this.value !== '', 'Bir kategori seçiniz.');
+    // Multi-category selection handling
+    const categoryCheckboxes = document.querySelectorAll('input[name="category_ids[]"]');
+    const selectedPreview = document.getElementById('selected-categories-preview');
+    const selectedList = document.getElementById('selected-categories-list');
+    
+    // Multi-gender selection handling
+    const genderCheckboxes = document.querySelectorAll('input[name="gender_ids[]"]');
+    const selectedGenderPreview = document.getElementById('selected-genders-preview');
+    const selectedGenderList = document.getElementById('selected-genders-list');
+    
+    function updateCategoryPreview() {
+        const selected = Array.from(categoryCheckboxes).filter(cb => cb.checked);
+        
+        if (selected.length > 0) {
+            selectedPreview.classList.remove('hidden');
+            selectedList.innerHTML = '';
+            
+            selected.forEach(checkbox => {
+                const label = checkbox.parentNode.querySelector('span').textContent;
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+                badge.textContent = label;
+                selectedList.appendChild(badge);
+            });
+        } else {
+            selectedPreview.classList.add('hidden');
+        }
+    }
+    
+    function updateGenderPreview() {
+        const selected = Array.from(genderCheckboxes).filter(cb => cb.checked);
+        
+        if (selected.length > 0) {
+            selectedGenderPreview.classList.remove('hidden');
+            selectedGenderList.innerHTML = '';
+            
+            selected.forEach(checkbox => {
+                const label = checkbox.parentNode.querySelector('span').textContent;
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800';
+                badge.textContent = label;
+                selectedGenderList.appendChild(badge);
+            });
+        } else {
+            selectedGenderPreview.classList.add('hidden');
+        }
+    }
+    
+    // Category selection validation and preview
+    categoryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateCategoryPreview();
+            
+            // Validation: en az bir kategori seçilmeli
+            const anySelected = Array.from(categoryCheckboxes).some(cb => cb.checked);
+            
+            if (anySelected) {
+                // Remove validation errors from all category sections
+                document.querySelectorAll('.category-validation-error').forEach(error => error.remove());
+            }
+        });
+    });
+    
+    // Gender selection validation and preview
+    genderCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateGenderPreview();
+            
+            // Validation: en az bir cinsiyet seçilmeli
+            const anySelected = Array.from(genderCheckboxes).some(cb => cb.checked);
+            
+            if (anySelected) {
+                // Remove validation errors from all gender sections
+                document.querySelectorAll('.gender-validation-error').forEach(error => error.remove());
+            }
+        });
     });
     
     // Form submission
     form.addEventListener('submit', function(e) {
+        // Category validation
+        const anyCategorySelected = Array.from(categoryCheckboxes).some(cb => cb.checked);
+        if (!anyCategorySelected) {
+            e.preventDefault();
+            
+            // Show error message
+            const categorySection = document.querySelector('input[name="category_ids[]"]').closest('.lg\\:col-span-2');
+            const existingError = categorySection.querySelector('.category-validation-error');
+            
+            if (!existingError) {
+                const error = document.createElement('p');
+                error.className = 'category-validation-error text-red-600 text-sm mt-2 font-medium';
+                error.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>En az bir kategori seçmelisiniz!';
+                categorySection.appendChild(error);
+            }
+            
+            // Scroll to category section
+            categorySection.scrollIntoView({ behavior: 'smooth' });
+            return false;
+        }
+        
+        // Gender validation
+        const anyGenderSelected = Array.from(genderCheckboxes).some(cb => cb.checked);
+        if (!anyGenderSelected) {
+            e.preventDefault();
+            
+            // Show error message
+            const genderSection = document.querySelector('input[name="gender_ids[]"]').closest('.lg\\:col-span-2');
+            const existingError = genderSection.querySelector('.gender-validation-error');
+            
+            if (!existingError) {
+                const error = document.createElement('p');
+                error.className = 'gender-validation-error text-red-600 text-sm mt-2 font-medium';
+                error.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>En az bir cinsiyet seçmelisiniz!';
+                genderSection.appendChild(error);
+            }
+            
+            // Scroll to gender section
+            genderSection.scrollIntoView({ behavior: 'smooth' });
+            return false;
+        }
+        
         const submitBtn = this.querySelector('button[type="submit"]');
         const btnText = submitBtn.innerHTML;
         
@@ -398,12 +632,16 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Kaydediliyor...';
         
-        // Re-enable after 3 seconds as fallback
+        // Re-enable after 5 seconds as fallback
         setTimeout(() => {
             submitBtn.disabled = false;
             submitBtn.innerHTML = btnText;
-        }, 3000);
+        }, 5000);
     });
+    
+    // Initialize previews on page load
+    updateCategoryPreview();
+    updateGenderPreview();
     
     // Auto-resize textareas
     document.querySelectorAll('textarea').forEach(textarea => {

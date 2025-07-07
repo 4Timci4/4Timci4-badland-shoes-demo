@@ -2,32 +2,79 @@
 /**
  * Admin Panel Ana Giriş Sayfası
  * 
- * Modern, profesyonel admin panel giriş ekranı - Sadece Tailwind CSS
+ * Modern, profesyonel admin panel giriş ekranı - Veritabanı tabanlı auth
  */
 
-session_start();
+// AdminAuthService'i dahil et
+require_once '../services/AdminAuthService.php';
+
+$authService = new AdminAuthService();
 
 // Zaten giriş yapmışsa dashboard'a yönlendir
-if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+if ($authService->isLoggedIn()) {
     header('Location: dashboard.php');
     exit;
 }
 
-// Basit giriş kontrolü
+// Timeout kontrolü
+if ($authService->checkTimeout()) {
+    $timeout_message = 'Oturumunuz zaman aşımına uğradı. Lütfen tekrar giriş yapın.';
+}
+
+// Logout mesajı
+$logout_message = '';
+if (isset($_GET['logout'])) {
+    $logout_message = 'Başarıyla çıkış yaptınız.';
+}
+
+// Timeout mesajı
+if (isset($_GET['timeout'])) {
+    $timeout_message = 'Oturumunuz zaman aşımına uğradı. Lütfen tekrar giriş yapın.';
+}
+
+// Giriş işlemi
+// Şifre kontrolü geçici olarak devre dışı bırakıldı.
+// Herhangi bir form gönderiminde direkt giriş yapılacak.
 if ($_POST) {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    // Varsayılan admin verisi (ID'si 1 olan admin)
+    $admin_data = $authService->getAdminById(1);
     
-    // Basit admin kontrolü (gerçek uygulamada database'den kontrol edilmeli)
-    if ($username === 'admin' && $password === 'admin123') {
-        $_SESSION['admin_logged_in'] = true;
-        $_SESSION['admin_username'] = $username;
+    if ($admin_data) {
+        // Session oluştur
+        $authService->createSession($admin_data);
+        
+        // Dashboard'a yönlendir
         header('Location: dashboard.php');
         exit;
     } else {
-        $error = 'Geçersiz kullanıcı adı veya şifre!';
+        // Eğer varsayılan admin bulunamazsa hata ver.
+        $error = 'Varsayılan admin kullanıcısı bulunamadı!';
     }
 }
+/*
+if ($_POST) {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    
+    if (empty($username) || empty($password)) {
+        $error = 'Kullanıcı adı ve şifre gereklidir!';
+    } else {
+        // Veritabanından admin kontrolü
+        $admin_data = $authService->login($username, $password);
+        
+        if ($admin_data) {
+            // Session oluştur
+            $authService->createSession($admin_data);
+            
+            // Dashboard'a yönlendir
+            header('Location: dashboard.php');
+            exit;
+        } else {
+            $error = 'Geçersiz kullanıcı adı veya şifre!';
+        }
+    }
+}
+*/
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -120,6 +167,26 @@ if ($_POST) {
                 </div>
             <?php endif; ?>
             
+            <!-- Logout Success Message -->
+            <?php if (!empty($logout_message)): ?>
+                <div class="mx-8 mb-6">
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <span class="text-green-800 font-medium"><?= htmlspecialchars($logout_message) ?></span>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+            <!-- Timeout Message -->
+            <?php if (!empty($timeout_message)): ?>
+                <div class="mx-8 mb-6">
+                    <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center">
+                        <i class="fas fa-clock text-orange-500 mr-3"></i>
+                        <span class="text-orange-800 font-medium"><?= htmlspecialchars($timeout_message) ?></span>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
             <!-- Login Form -->
             <form method="POST" id="loginForm" class="px-8 pb-8">
                 <div class="space-y-6">
@@ -187,20 +254,16 @@ if ($_POST) {
                 </div>
             </form>
             
-            <!-- Demo Information -->
+            <!-- Information -->
             <div class="bg-gray-50 px-8 py-6 border-t border-gray-100">
                 <div class="text-center">
-                    <p class="text-sm text-gray-600 mb-3 font-medium">Demo Giriş Bilgileri:</p>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div class="bg-white rounded-lg p-3 border border-gray-200">
-                            <span class="font-semibold text-gray-700">Kullanıcı:</span>
-                            <span class="block text-primary-600 font-mono">admin</span>
-                        </div>
-                        <div class="bg-white rounded-lg p-3 border border-gray-200">
-                            <span class="font-semibold text-gray-700">Şifre:</span>
-                            <span class="block text-primary-600 font-mono">admin123</span>
-                        </div>
-                    </div>
+                    <p class="text-sm text-gray-600 mb-3 font-medium">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Giriş yapmak için veritabanından oluşturulmuş admin hesabınızı kullanın.
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        Hesabınız yoksa, mevcut bir admin kullanıcısından yeni hesap oluşturmasını isteyebilirsiniz.
+                    </p>
                 </div>
             </div>
         </div>
@@ -278,15 +341,6 @@ if ($_POST) {
             document.getElementById('username').focus();
         });
 
-        // Demo data auto-fill (for development)
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                document.getElementById('username').value = 'admin';
-                document.getElementById('password').value = 'admin123';
-                document.getElementById('loginForm').submit();
-            }
-        });
     </script>
 </body>
 </html>

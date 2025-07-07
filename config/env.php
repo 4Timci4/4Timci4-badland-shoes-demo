@@ -38,5 +38,4 @@ function debug_connection_info() {
     $url_parts = parse_url(SUPABASE_URL);
     $masked_key = substr(SUPABASE_KEY, 0, 5) . '...' . substr(SUPABASE_KEY, -5);
     
-    error_log("Debug - Supabase Bağlantı: {$url_parts['host']}, API Anahtarı: {$masked_key}");
 }

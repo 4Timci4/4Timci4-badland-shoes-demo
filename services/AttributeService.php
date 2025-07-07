@@ -128,7 +128,7 @@ class AttributeService {
      */
     public function getAllSizes() {
         try {
-            $response = $this->supabase->request('sizes?select=*&order=id.asc');
+            $response = $this->supabase->request('sizes?select=*&order=display_order.asc,id.asc');
             return $response['body'] ?? [];
         } catch (Exception $e) {
             error_log("Bedenleri getirme hatası: " . $e->getMessage());
@@ -287,16 +287,37 @@ class AttributeService {
     }
     
     /**
-     * Renkleri kullanım sayılarıyla getir
+     * Renkleri kullanım sayılarıyla getir - Optimize edilmiş versiyon
      * 
      * @return array Renkler ve kullanım sayıları
      */
     public function getColorsWithUsageCounts() {
         try {
-            $colors = $this->getAllColors();
+            // Tüm renkleri al
+            $colors_response = $this->supabase->request('colors?select=*&order=name.asc');
+            $colors = $colors_response['body'] ?? [];
             
+            if (empty($colors)) {
+                return [];
+            }
+            
+            // Tüm kullanım sayılarını tek sorguda al
+            $variants_response = $this->supabase->request('product_variants?select=color_id');
+            $variants = $variants_response['body'] ?? [];
+            
+            // Kullanım sayılarını hesapla
+            $usage_counts = [];
+            foreach ($variants as $variant) {
+                $color_id = $variant['color_id'];
+                if (!isset($usage_counts[$color_id])) {
+                    $usage_counts[$color_id] = 0;
+                }
+                $usage_counts[$color_id]++;
+            }
+            
+            // Renklere kullanım sayılarını ekle
             foreach ($colors as &$color) {
-                $color['usage_count'] = $this->getColorUsageCount($color['id']);
+                $color['usage_count'] = $usage_counts[$color['id']] ?? 0;
             }
             
             return $colors;
@@ -307,16 +328,37 @@ class AttributeService {
     }
     
     /**
-     * Bedenleri kullanım sayılarıyla getir
+     * Bedenleri kullanım sayılarıyla getir - Optimize edilmiş versiyon
      * 
      * @return array Bedenler ve kullanım sayıları
      */
     public function getSizesWithUsageCounts() {
         try {
-            $sizes = $this->getAllSizes();
+            // Tüm bedenleri al
+            $sizes_response = $this->supabase->request('sizes?select=*&order=display_order.asc,id.asc');
+            $sizes = $sizes_response['body'] ?? [];
             
+            if (empty($sizes)) {
+                return [];
+            }
+            
+            // Tüm kullanım sayılarını tek sorguda al
+            $variants_response = $this->supabase->request('product_variants?select=size_id');
+            $variants = $variants_response['body'] ?? [];
+            
+            // Kullanım sayılarını hesapla
+            $usage_counts = [];
+            foreach ($variants as $variant) {
+                $size_id = $variant['size_id'];
+                if (!isset($usage_counts[$size_id])) {
+                    $usage_counts[$size_id] = 0;
+                }
+                $usage_counts[$size_id]++;
+            }
+            
+            // Bedenlere kullanım sayılarını ekle
             foreach ($sizes as &$size) {
-                $size['usage_count'] = $this->getSizeUsageCount($size['id']);
+                $size['usage_count'] = $usage_counts[$size['id']] ?? 0;
             }
             
             return $sizes;

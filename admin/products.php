@@ -11,6 +11,7 @@ check_admin_auth();
 require_once '../config/database.php';
 require_once '../services/ProductService.php';
 require_once '../services/CategoryService.php';
+require_once '../services/GenderService.php';
 
 // Sayfa bilgileri
 $page_title = 'Ürün Yönetimi';
@@ -18,13 +19,10 @@ $breadcrumb_items = [
     ['title' => 'Ürün Yönetimi', 'url' => '#', 'icon' => 'fas fa-box']
 ];
 
-// Filtreleme ve sayfalama parametreleri
+// Sayfalama parametreleri
 $page = max(1, intval($_GET['page'] ?? 1));
 $limit = 20;
 $offset = ($page - 1) * $limit;
-$search = trim($_GET['search'] ?? '');
-$category_filter = $_GET['category'] ?? '';
-$status_filter = $_GET['status'] ?? '';
 
 // POST işlemleri
 if ($_POST) {
@@ -63,9 +61,6 @@ if ($_POST) {
             // Redirect to prevent form resubmission
             $redirect_url = 'products.php?';
             $params = [];
-            if (!empty($search)) $params[] = 'search=' . urlencode($search);
-            if (!empty($category_filter)) $params[] = 'category=' . urlencode($category_filter);
-            if (!empty($status_filter)) $params[] = 'status=' . urlencode($status_filter);
             if ($page > 1) $params[] = 'page=' . $page;
             
             header('Location: ' . $redirect_url . implode('&', $params));
@@ -75,7 +70,7 @@ if ($_POST) {
 }
 
 // Ürün ve kategori verilerini getir
-$products_data = get_admin_products($limit, $offset, $search, $category_filter, $status_filter);
+$products_data = get_admin_products($limit, $offset);
 $products = $products_data['products'];
 $total_products = $products_data['total'];
 $total_pages = ceil($total_products / $limit);
@@ -118,101 +113,38 @@ include 'includes/header.php';
         </div>
     <?php endif; ?>
 
-    <!-- Filters and Search -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <form method="GET" class="space-y-4 lg:space-y-0 lg:flex lg:items-end lg:space-x-4">
-            
-            <!-- Search -->
-            <div class="flex-1">
-                <label for="search" class="block text-sm font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-search mr-2"></i>Ürün Ara
-                </label>
-                <input type="text" 
-                       id="search" 
-                       name="search" 
-                       value="<?= htmlspecialchars($search) ?>"
-                       placeholder="Ürün adı ile arayın..."
-                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-            </div>
-
-            <!-- Category Filter -->
-            <div class="lg:w-48">
-                <label for="category" class="block text-sm font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-tags mr-2"></i>Kategori
-                </label>
-                <select id="category" 
-                        name="category"
-                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                    <option value="">Tüm Kategoriler</option>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?= htmlspecialchars($category['id']) ?>" <?= $category_filter == $category['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($category['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <!-- Status Filter -->
-            <div class="lg:w-48">
-                <label for="status" class="block text-sm font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-star mr-2"></i>Durum
-                </label>
-                <select id="status" 
-                        name="status"
-                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                    <option value="">Tüm Durumlar</option>
-                    <option value="featured" <?= $status_filter === 'featured' ? 'selected' : '' ?>>Öne Çıkan</option>
-                    <option value="normal" <?= $status_filter === 'normal' ? 'selected' : '' ?>>Normal</option>
-                </select>
-            </div>
-
-            <!-- Search Button -->
-            <div class="lg:w-auto">
-                <button type="submit" 
-                        class="w-full lg:w-auto px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
-                    <i class="fas fa-search mr-2"></i>
-                    Filtrele
-                </button>
-            </div>
-
-            <!-- Reset Button -->
-            <?php if (!empty($search) || !empty($category_filter) || !empty($status_filter)): ?>
-                <div class="lg:w-auto">
-                    <a href="products.php" 
-                       class="w-full lg:w-auto px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
-                        <i class="fas fa-times mr-2"></i>
-                        Temizle
-                    </a>
-                </div>
-            <?php endif; ?>
-        </form>
-    </div>
-
     <!-- Results Summary -->
     <div class="flex items-center justify-between text-sm text-gray-600">
         <div>
             <span class="font-semibold"><?= number_format($total_products) ?></span> ürün bulundu
-            <?php if (!empty($search)): ?>
-                "<span class="font-semibold"><?= htmlspecialchars($search) ?></span>" için
-            <?php endif; ?>
         </div>
         <div>
             Sayfa <span class="font-semibold"><?= $page ?></span> / <span class="font-semibold"><?= $total_pages ?></span>
         </div>
     </div>
 
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-2xl p-8 shadow-xl">
+            <div class="flex items-center space-x-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div class="text-gray-900 font-semibold">Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Products Table -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <div id="products-container" class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <?php if (!empty($products)): ?>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Ürün</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Cinsiyet</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Fiyat</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Durum</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Oluşturma</th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">İşlemler</th>
                         </tr>
                     </thead>
@@ -221,8 +153,18 @@ include 'includes/header.php';
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                            <i class="fas fa-box text-gray-400"></i>
+                                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                            <?php if (!empty($product['image_url'])): ?>
+                                                <img src="<?= htmlspecialchars($product['image_url']) ?>" 
+                                                     alt="<?= htmlspecialchars($product['name']) ?>" 
+                                                     class="w-full h-full object-cover rounded-xl"
+                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="w-full h-full flex items-center justify-center" style="display: none;">
+                                                    <i class="fas fa-image text-gray-400"></i>
+                                                </div>
+                                            <?php else: ?>
+                                                <i class="fas fa-image text-gray-400"></i>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="min-w-0">
                                             <h4 class="font-semibold text-gray-900 truncate"><?= htmlspecialchars($product['name']) ?></h4>
@@ -231,7 +173,25 @@ include 'includes/header.php';
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
+                                    <?php 
+                                    // Cinsiyet bilgilerini görüntüle - artık doğrudan product dizisinden
+                                    if (!empty($product['genders'])):
+                                        $gender_names = array_map(function($gender) {
+                                            return $gender['name'];
+                                        }, $product['genders']);
+                                        $gender_text = implode(', ', $gender_names);
+                                    ?>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            <i class="fas fa-venus-mars mr-1"></i>
+                                            <?= htmlspecialchars($gender_text) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-gray-400 text-sm">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-box mr-1"></i>
                                         <?= htmlspecialchars($product['categories']['name'] ?? 'Kategorisiz') ?>
                                     </span>
                                 </td>
@@ -249,9 +209,6 @@ include 'includes/header.php';
                                             <?= $product['is_featured'] ? 'Öne Çıkan' : 'Normal' ?>
                                         </button>
                                     </form>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="text-sm text-gray-500"><?= date('d.m.Y', strtotime($product['created_at'])) ?></span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end space-x-2">
@@ -288,15 +245,7 @@ include 'includes/header.php';
                         </div>
                         <div class="flex items-center space-x-2">
                             <?php if ($page > 1): ?>
-                                <?php
-                                $prev_params = [];
-                                if (!empty($search)) $prev_params[] = 'search=' . urlencode($search);
-                                if (!empty($category_filter)) $prev_params[] = 'category=' . urlencode($category_filter);
-                                if (!empty($status_filter)) $prev_params[] = 'status=' . urlencode($status_filter);
-                                $prev_params[] = 'page=' . ($page - 1);
-                                ?>
-                                <a href="products.php?<?= implode('&', $prev_params) ?>" 
-                                   class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                <a href="javascript:void(0)" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors pagination-link" data-page="<?= $page - 1 ?>">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             <?php endif; ?>
@@ -306,30 +255,15 @@ include 'includes/header.php';
                             $end_page = min($total_pages, $page + 2);
                             
                             for ($i = $start_page; $i <= $end_page; $i++):
-                                $page_params = [];
-                                if (!empty($search)) $page_params[] = 'search=' . urlencode($search);
-                                if (!empty($category_filter)) $page_params[] = 'category=' . urlencode($category_filter);
-                                if (!empty($status_filter)) $page_params[] = 'status=' . urlencode($status_filter);
-                                if ($i > 1) $page_params[] = 'page=' . $i;
-                                
                                 $is_current = ($i == $page);
                             ?>
-                                <a href="products.php?<?= implode('&', $page_params) ?>" 
-                                   class="px-3 py-2 rounded-lg transition-colors <?= $is_current ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>">
+                                <a href="javascript:void(0)" class="px-3 py-2 rounded-lg transition-colors pagination-link <?= $is_current ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>" data-page="<?= $i ?>">
                                     <?= $i ?>
                                 </a>
                             <?php endfor; ?>
 
                             <?php if ($page < $total_pages): ?>
-                                <?php
-                                $next_params = [];
-                                if (!empty($search)) $next_params[] = 'search=' . urlencode($search);
-                                if (!empty($category_filter)) $next_params[] = 'category=' . urlencode($category_filter);
-                                if (!empty($status_filter)) $next_params[] = 'status=' . urlencode($status_filter);
-                                $next_params[] = 'page=' . ($page + 1);
-                                ?>
-                                <a href="products.php?<?= implode('&', $next_params) ?>" 
-                                   class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                <a href="javascript:void(0)" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors pagination-link" data-page="<?= $page + 1 ?>">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             <?php endif; ?>

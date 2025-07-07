@@ -2,20 +2,30 @@
 /**
  * Admin Panel Authentication ve Configuration
  * 
- * Session yönetimi ve güvenlik kontrolleri
+ * Veritabanı tabanlı session yönetimi ve güvenlik kontrolleri
  */
 
-// Session başlatma
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// AdminAuthService'i dahil et
+require_once __DIR__ . '/../../services/AdminAuthService.php';
+
+// Global auth service instance
+$auth_service = new AdminAuthService();
 
 /**
  * Admin girişi kontrolü
  * Eğer kullanıcı giriş yapmamışsa login sayfasına yönlendir
  */
 function check_admin_auth() {
-    if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    global $auth_service;
+    
+    // Timeout kontrolü yap
+    if ($auth_service->checkTimeout()) {
+        header('Location: index.php?timeout=1');
+        exit;
+    }
+    
+    // Giriş kontrolü
+    if (!$auth_service->isLoggedIn()) {
         header('Location: index.php');
         exit;
     }
@@ -25,7 +35,8 @@ function check_admin_auth() {
  * Admin çıkışı
  */
 function admin_logout() {
-    session_destroy();
+    global $auth_service;
+    $auth_service->destroySession();
     header('Location: index.php');
     exit;
 }
@@ -34,17 +45,16 @@ function admin_logout() {
  * CSRF Token oluşturma
  */
 function generate_csrf_token() {
-    if (!isset($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
+    global $auth_service;
+    return $auth_service->getCsrfToken();
 }
 
 /**
  * CSRF Token doğrulama
  */
 function verify_csrf_token($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    global $auth_service;
+    return $auth_service->verifyCsrfToken($token);
 }
 
 /**
@@ -91,15 +101,24 @@ function get_flash_message() {
 }
 
 /**
- * Admin bilgileri
+ * Admin bilgileri - Sadece veritabanından gerçek veriler
  */
 function get_admin_info() {
+    global $auth_service;
+    
+    $current_admin = $auth_service->getCurrentAdmin();
+    
+    if (!$current_admin) {
+        return null; // Giriş yapılmamışsa null döndür
+    }
+    
     return [
-        'username' => $_SESSION['admin_username'] ?? 'Admin',
-        'email' => 'admin@example.com',
-        'avatar' => 'assets/img/avatars/admin.jpg',
-        'role' => 'Super Admin',
-        'last_login' => $_SESSION['admin_last_login'] ?? date('Y-m-d H:i:s')
+        'id' => $current_admin['id'],
+        'username' => $current_admin['username'],
+        'full_name' => $current_admin['full_name'] ?? $current_admin['username'],
+        'role' => 'Admin', // Tüm adminler aynı yetkide
+        'last_login' => $current_admin['last_login'] ? date('d.m.Y H:i', strtotime($current_admin['last_login'])) : 'İlk giriş',
+        'login_time' => $current_admin['login_time'] ? date('d.m.Y H:i', $current_admin['login_time']) : date('d.m.Y H:i')
     ];
 }
 
@@ -140,6 +159,11 @@ function get_admin_menu() {
                     'title' => 'Kategoriler',
                     'url' => 'categories.php',
                     'active' => is_active_page('categories.php')
+                ],
+                [
+                    'title' => 'Cinsiyetler',
+                    'url' => 'genders.php',
+                    'active' => is_active_page('genders.php')
                 ],
                 [
                     'title' => 'Renkler & Bedenler',
@@ -203,6 +227,22 @@ function get_admin_menu() {
                     'title' => 'SEO Ayarları',
                     'url' => 'seo-settings.php',
                     'active' => is_active_page('seo-settings.php')
+                ]
+            ]
+        ],
+        [
+            'title' => 'Admin Yönetimi',
+            'icon' => 'fas fa-users-cog',
+            'submenu' => [
+                [
+                    'title' => 'Tüm Adminler',
+                    'url' => 'admins.php',
+                    'active' => is_active_page('admins.php')
+                ],
+                [
+                    'title' => 'Yeni Admin Ekle',
+                    'url' => 'admin-add.php',
+                    'active' => is_active_page('admin-add.php')
                 ]
             ]
         ]
@@ -308,7 +348,22 @@ function get_recent_blogs($limit = 5) {
  * Logout işlemi
  */
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    admin_logout();
+    // Session'ı tamamen yok et
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Tüm session verilerini temizle
+    session_unset();
+    session_destroy();
+    
+    // Yeni session başlat ve güvenlik için
+    session_start();
+    session_regenerate_id(true);
+    
+    // Login sayfasına yönlendir
+    header('Location: index.php?logout=1');
+    exit;
 }
 
 // Auto-logout after 2 hours of inactivity

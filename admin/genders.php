@@ -1,7 +1,7 @@
 <?php
 /**
- * Kategori Yönetimi Sayfası
- * Modern, kullanıcı dostu kategori yönetim paneli
+ * Cinsiyet Yönetimi Sayfası
+ * Modern, kullanıcı dostu cinsiyet yönetim paneli
  */
 
 require_once 'config/auth.php';
@@ -9,12 +9,12 @@ check_admin_auth();
 
 // Veritabanı bağlantısı
 require_once '../config/database.php';
-require_once '../services/CategoryService.php';
+require_once '../services/GenderService.php';
 
 // Sayfa bilgileri
-$page_title = 'Kategori Yönetimi';
+$page_title = 'Cinsiyet Yönetimi';
 $breadcrumb_items = [
-    ['title' => 'Kategori Yönetimi', 'url' => '#', 'icon' => 'fas fa-tags']
+    ['title' => 'Cinsiyet Yönetimi', 'url' => '#', 'icon' => 'fas fa-venus-mars']
 ];
 
 // POST işlemleri
@@ -26,90 +26,105 @@ if ($_POST) {
     } else {
         $action = $_POST['action'] ?? '';
         
-                switch ($action) {
+        switch ($action) {
             case 'add':
                 $name = trim($_POST['name'] ?? '');
                 $description = trim($_POST['description'] ?? '');
-                $category_type = $_POST['category_type'] ?? 'product_type';
                 
                 if (empty($name)) {
-                    set_flash_message('error', 'Kategori adı zorunludur.');
+                    set_flash_message('error', 'Cinsiyet adı zorunludur.');
                 } else {
-                    $slug = category_service()->generateSlug($name);
+                    $slug = gender_service()->generateSlug($name);
                     
-                    $category_data = [
+                    $gender_data = [
                         'name' => $name,
                         'slug' => $slug,
-                        'description' => $description,
-                        'category_type' => $category_type
+                        'description' => $description
                     ];
                     
-                    if (category_service()->createCategory($category_data)) {
-                        set_flash_message('success', 'Kategori başarıyla eklendi.');
+                    if (gender_service()->createGender($gender_data)) {
+                        set_flash_message('success', 'Cinsiyet başarıyla eklendi.');
                     } else {
-                        set_flash_message('error', 'Kategori eklenirken bir hata oluştu.');
+                        set_flash_message('error', 'Cinsiyet eklenirken bir hata oluştu.');
                     }
                 }
                 break;
                 
             case 'edit':
-                $category_id = intval($_POST['category_id'] ?? 0);
+                $gender_id = intval($_POST['gender_id'] ?? 0);
                 $name = trim($_POST['name'] ?? '');
                 $description = trim($_POST['description'] ?? '');
-                // Not: Kategori tipi düzenlemede değiştirilemez (veri tutarlılığı için)
                 
-                if ($category_id > 0 && !empty($name)) {
-                    $slug = category_service()->generateSlug($name);
+                if ($gender_id > 0 && !empty($name)) {
+                    $slug = gender_service()->generateSlug($name);
                     
-                    $category_data = [
+                    $gender_data = [
                         'name' => $name,
                         'slug' => $slug,
                         'description' => $description
-                        // category_type düzenlemede değiştirilmez
                     ];
                     
-                    if (category_service()->updateCategory($category_id, $category_data)) {
-                        set_flash_message('success', 'Kategori başarıyla güncellendi.');
+                    if (gender_service()->updateGender($gender_id, $gender_data)) {
+                        set_flash_message('success', 'Cinsiyet başarıyla güncellendi.');
                     } else {
-                        set_flash_message('error', 'Kategori güncellenirken bir hata oluştu.');
+                        set_flash_message('error', 'Cinsiyet güncellenirken bir hata oluştu.');
                     }
                 } else {
-                    set_flash_message('error', 'Geçersiz kategori bilgileri.');
+                    set_flash_message('error', 'Geçersiz cinsiyet bilgileri.');
                 }
                 break;
                 
             case 'delete':
-                $category_id = intval($_POST['category_id'] ?? 0);
+                $gender_id = intval($_POST['gender_id'] ?? 0);
                 
-                if ($category_id > 0) {
-                    if (category_service()->deleteCategory($category_id)) {
-                        set_flash_message('success', 'Kategori başarıyla silindi.');
+                if ($gender_id > 0) {
+                    if (gender_service()->deleteGender($gender_id)) {
+                        set_flash_message('success', 'Cinsiyet başarıyla silindi.');
                     } else {
-                        set_flash_message('error', 'Kategori silinemedi. Bu kategoriye ait ürünler mevcut olabilir.');
+                        set_flash_message('error', 'Cinsiyet silinemedi. Bu cinsiyete ait ürünler mevcut olabilir.');
                     }
                 } else {
-                    set_flash_message('error', 'Geçersiz kategori ID.');
+                    set_flash_message('error', 'Geçersiz cinsiyet ID.');
                 }
                 break;
         }
         
         // Redirect to prevent form resubmission
-        header('Location: categories.php');
+        header('Location: genders.php');
         exit;
     }
 }
 
-// Kategorileri getir
-$categories = category_service()->getCategoriesWithProductCounts();
+// Cinsiyetleri getir
+// Bu fonksiyonu ProductGender sayısını da hesaplayacak şekilde güncelleyeceğiz
+function getGendersWithProductCounts() {
+    try {
+        $genders = gender_service()->getAllGenders();
+        
+        foreach ($genders as &$gender) {
+            // Her cinsiyet için ürün sayısını hesapla
+            $products_response = supabase()->request('product_genders?select=product_id&gender_id=eq.' . $gender['id']);
+            $products = $products_response['body'] ?? [];
+            $gender['product_count'] = count($products);
+        }
+        
+        return $genders;
+    } catch (Exception $e) {
+        error_log("Cinsiyetler ve ürün sayıları getirme hatası: " . $e->getMessage());
+        return [];
+    }
+}
+
+$genders = getGendersWithProductCounts();
 
 // Düzenleme modu kontrolü
 $edit_mode = isset($_GET['edit']) && !empty($_GET['edit']);
-$edit_category = null;
+$edit_gender = null;
 
 if ($edit_mode) {
     $edit_id = intval($_GET['edit']);
-    $edit_category = category_service()->getCategoryById($edit_id);
-    if (empty($edit_category)) {
+    $edit_gender = gender_service()->getGenderById($edit_id);
+    if (empty($edit_gender)) {
         $edit_mode = false;
     }
 }
@@ -118,14 +133,14 @@ if ($edit_mode) {
 include 'includes/header.php';
 ?>
 
-<!-- Categories Management Content -->
+<!-- Genders Management Content -->
 <div class="space-y-6">
     
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Kategori Yönetimi</h1>
-            <p class="text-gray-600">Ürün kategorilerini yönetin ve düzenleyin</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Cinsiyet Yönetimi</h1>
+            <p class="text-gray-600">Ürün cinsiyetlerini yönetin ve düzenleyin</p>
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="products.php" class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
@@ -154,10 +169,10 @@ include 'includes/header.php';
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="p-6 border-b border-gray-100">
             <h3 class="text-xl font-bold text-gray-900 mb-1">
-                <?= $edit_mode ? 'Kategori Düzenle' : 'Yeni Kategori Ekle' ?>
+                <?= $edit_mode ? 'Cinsiyet Düzenle' : 'Yeni Cinsiyet Ekle' ?>
             </h3>
             <p class="text-gray-600 text-sm">
-                <?= $edit_mode ? 'Mevcut kategori bilgilerini güncelleyin' : 'Hızlıca yeni bir kategori oluşturun' ?>
+                <?= $edit_mode ? 'Mevcut cinsiyet bilgilerini güncelleyin' : 'Hızlıca yeni bir cinsiyet oluşturun' ?>
             </p>
         </div>
         <div class="p-6">
@@ -165,52 +180,34 @@ include 'includes/header.php';
                 <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                 <input type="hidden" name="action" value="<?= $edit_mode ? 'edit' : 'add' ?>">
                 <?php if ($edit_mode): ?>
-                    <input type="hidden" name="category_id" value="<?= $edit_category['id'] ?>">
+                    <input type="hidden" name="gender_id" value="<?= $edit_gender['id'] ?>">
                 <?php endif; ?>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    <!-- Category Name -->
+                    <!-- Gender Name -->
                     <div>
                         <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-tag mr-2"></i>Kategori Adı *
+                            <i class="fas fa-venus-mars mr-2"></i>Cinsiyet Adı *
                         </label>
                         <input type="text" 
                                id="name" 
                                name="name" 
                                required
-                               value="<?= htmlspecialchars($edit_category['name'] ?? '') ?>"
-                               placeholder="Örn: Spor Ayakkabıları"
+                               value="<?= htmlspecialchars($edit_gender['name'] ?? '') ?>"
+                               placeholder="Örn: Erkek, Kadın, Çocuk"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                     </div>
 
-                    <!-- Category Type -->
-                    <div>
-                        <label for="category_type" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-layer-group mr-2"></i>Kategori Tipi *
-                        </label>
-                        <select id="category_type" 
-                                name="category_type" 
-                                required
-                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                                <?= $edit_mode ? 'disabled' : '' ?>>
-                            <option value="product_type" <?= ($edit_mode && $edit_category['category_type'] == 'product_type') ? 'selected' : '' ?>>Ürün Tipi (Ayakkabı, Bot, vs.)</option>
-                            <option value="gender" <?= ($edit_mode && $edit_category['category_type'] == 'gender') ? 'selected' : '' ?>>Cinsiyet (Erkek, Kadın, Çocuk)</option>
-                        </select>
-                        <?php if ($edit_mode): ?>
-                            <p class="text-xs text-gray-500 mt-1">Kategori tipi düzenlenemez.</p>
-                        <?php endif; ?>
-                    </div>
-
                     <!-- Description -->
-                    <div>
+                    <div class="lg:col-span-2">
                         <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-align-left mr-2"></i>Açıklama
                         </label>
                         <input type="text" 
                                id="description" 
                                name="description" 
-                               value="<?= htmlspecialchars($edit_category['description'] ?? '') ?>"
-                               placeholder="Kategori açıklaması (opsiyonel)"
+                               value="<?= htmlspecialchars($edit_gender['description'] ?? '') ?>"
+                               placeholder="Cinsiyet açıklaması (opsiyonel)"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                     </div>
 
@@ -223,7 +220,7 @@ include 'includes/header.php';
                                 <?= $edit_mode ? 'Güncelle' : 'Ekle' ?>
                             </button>
                             <?php if ($edit_mode): ?>
-                                <a href="categories.php" 
+                                <a href="genders.php" 
                                    class="bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
                                     <i class="fas fa-times"></i>
                                 </a>
@@ -235,27 +232,26 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <!-- Categories List -->
+    <!-- Genders List -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="p-6 border-b border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-1">Kategoriler</h3>
-                    <p class="text-gray-600 text-sm">Mevcut kategorilerin listesi</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">Cinsiyetler</h3>
+                    <p class="text-gray-600 text-sm">Mevcut cinsiyetlerin listesi</p>
                 </div>
                 <div class="text-sm text-gray-500">
-                    Toplam: <span class="font-semibold"><?= count($categories) ?></span> kategori
+                    Toplam: <span class="font-semibold"><?= count($genders) ?></span> cinsiyet
                 </div>
             </div>
         </div>
 
-        <?php if (!empty($categories)): ?>
+        <?php if (!empty($genders)): ?>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tip</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Cinsiyet</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Slug</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Açıklama</th>
                             <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Ürün Sayısı</th>
@@ -263,65 +259,49 @@ include 'includes/header.php';
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <?php foreach ($categories as $category): ?>
-                            <tr class="hover:bg-gray-50 transition-colors <?= ($edit_mode && $edit_category['id'] == $category['id']) ? 'bg-blue-50' : '' ?>">
+                        <?php foreach ($genders as $gender): ?>
+                            <tr class="hover:bg-gray-50 transition-colors <?= ($edit_mode && $edit_gender['id'] == $gender['id']) ? 'bg-blue-50' : '' ?>">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                            <i class="fas fa-folder text-primary-600"></i>
+                                        <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-venus-mars text-purple-600"></i>
                                         </div>
                                         <div>
-                                            <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($category['name']) ?></h4>
-                                            <p class="text-sm text-gray-500">ID: #<?= $category['id'] ?></p>
+                                            <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($gender['name']) ?></h4>
+                                            <p class="text-sm text-gray-500">ID: #<?= $gender['id'] ?></p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php
-                                    $type_labels = [
-                                        'product_type' => 'Ürün Tipi',
-                                        'gender' => 'Cinsiyet'
-                                    ];
-                                    $type_colors = [
-                                        'product_type' => 'bg-blue-100 text-blue-800',
-                                        'gender' => 'bg-purple-100 text-purple-800'
-                                    ];
-                                    $category_type = $category['category_type'] ?? 'product_type';
-                                    ?>
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?= $type_colors[$category_type] ?? 'bg-gray-100 text-gray-800' ?>">
-                                        <?= $type_labels[$category_type] ?? 'Bilinmiyor' ?>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
                                     <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
-                                        <?= htmlspecialchars($category['slug']) ?>
+                                        <?= htmlspecialchars($gender['slug']) ?>
                                     </code>
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="text-gray-600 text-sm">
-                                        <?= htmlspecialchars($category['description'] ?: 'Açıklama yok') ?>
+                                        <?= htmlspecialchars($gender['description'] ?: 'Açıklama yok') ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-                                        <?= $category['product_count'] > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' ?>">
+                                        <?= $gender['product_count'] > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' ?>">
                                         <i class="fas fa-box mr-1"></i>
-                                        <?= $category['product_count'] ?>
+                                        <?= $gender['product_count'] ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <a href="categories.php?edit=<?= $category['id'] ?>" 
+                                        <a href="genders.php?edit=<?= $gender['id'] ?>" 
                                            class="inline-flex items-center justify-center w-24 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>
                                             Düzenle
                                         </a>
                                         
-                                        <?php if ($category['product_count'] == 0): ?>
-                                            <form method="POST" class="inline-block" onsubmit="return confirm('Bu kategoriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
+                                        <?php if ($gender['product_count'] == 0): ?>
+                                            <form method="POST" class="inline-block" onsubmit="return confirm('Bu cinsiyeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
                                                 <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                 <input type="hidden" name="action" value="delete">
-                                                <input type="hidden" name="category_id" value="<?= $category['id'] ?>">
+                                                <input type="hidden" name="gender_id" value="<?= $gender['id'] ?>">
                                                 <button type="submit" 
                                                         class="inline-flex items-center justify-center w-24 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
                                                     <i class="fas fa-trash mr-1"></i>
@@ -330,7 +310,7 @@ include 'includes/header.php';
                                             </form>
                                         <?php else: ?>
                                             <span class="inline-flex items-center justify-center w-24 px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
-                                                  title="Bu kategoriye ait ürünler mevcut, silinemez">
+                                                  title="Bu cinsiyete ait ürünler mevcut, silinemez">
                                                 <i class="fas fa-ban mr-1"></i>
                                                 Silinemez
                                             </span>
@@ -346,36 +326,36 @@ include 'includes/header.php';
             <!-- Empty State -->
             <div class="text-center py-16">
                 <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-folder-open text-gray-400 text-3xl"></i>
+                    <i class="fas fa-venus-mars text-gray-400 text-3xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Henüz kategori yok</h3>
-                <p class="text-gray-600 mb-6">İlk kategorinizi oluşturarak başlayın</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Henüz cinsiyet yok</h3>
+                <p class="text-gray-600 mb-6">İlk cinsiyeti oluşturarak başlayın</p>
                 <button onclick="document.getElementById('name').focus()" 
                         class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
                     <i class="fas fa-plus mr-2"></i>
-                    İlk Kategoriyi Ekle
+                    İlk Cinsiyeti Ekle
                 </button>
             </div>
         <?php endif; ?>
     </div>
 
     <!-- Statistics Card -->
-    <?php if (!empty($categories)): ?>
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
+    <?php if (!empty($genders)): ?>
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-2"><?= count($categories) ?></div>
-                    <div class="text-blue-100">Toplam Kategori</div>
+                    <div class="text-3xl font-bold mb-2"><?= count($genders) ?></div>
+                    <div class="text-purple-100">Toplam Cinsiyet</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-2"><?= array_sum(array_column($categories, 'product_count')) ?></div>
-                    <div class="text-blue-100">Toplam Ürün</div>
+                    <div class="text-3xl font-bold mb-2"><?= array_sum(array_column($genders, 'product_count')) ?></div>
+                    <div class="text-purple-100">Toplam Ürün</div>
                 </div>
                 <div class="text-center">
                     <div class="text-3xl font-bold mb-2">
-                        <?= count(array_filter($categories, function($cat) { return $cat['product_count'] > 0; })) ?>
+                        <?= count(array_filter($genders, function($gender) { return $gender['product_count'] > 0; })) ?>
                     </div>
-                    <div class="text-blue-100">Aktif Kategori</div>
+                    <div class="text-purple-100">Aktif Cinsiyet</div>
                 </div>
             </div>
         </div>

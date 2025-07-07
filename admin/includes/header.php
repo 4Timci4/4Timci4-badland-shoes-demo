@@ -6,6 +6,12 @@ $page_title = $page_title ?? 'Dashboard';
 $breadcrumb_items = $breadcrumb_items ?? [];
 
 $admin_info = get_admin_info();
+
+// Admin bilgisi yoksa (giriş yapılmamış) login sayfasına yönlendir
+if (!$admin_info) {
+    header('Location: index.php');
+    exit;
+}
 $flash_message = get_flash_message();
 ?>
 <!DOCTYPE html>
@@ -211,14 +217,6 @@ $flash_message = get_flash_message();
                     <!-- Right side -->
                     <div class="flex items-center space-x-4">
                         
-                        <!-- Search -->
-                        <div class="relative hidden md:block">
-                            <input type="text" 
-                                   placeholder="Ara... (Ctrl+/)" 
-                                   class="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                        
                         <!-- Quick Actions -->
                         <div class="relative">
                             <button id="quick-actions-toggle" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
@@ -297,20 +295,20 @@ $flash_message = get_flash_message();
                         <!-- User Dropdown -->
                         <div class="relative">
                             <button id="user-menu-toggle" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                <img src="https://ui-avatars.com/api/?name=<?= urlencode($admin_info['username']) ?>&background=7367f0&color=fff&size=32" 
+                                <img src="https://ui-avatars.com/api/?name=<?= urlencode($admin_info['full_name']) ?>&background=7367f0&color=fff&size=32" 
                                      alt="Avatar" 
                                      class="w-8 h-8 rounded-full">
                                 <div class="hidden sm:block text-left">
-                                    <div class="font-medium text-gray-900"><?= htmlspecialchars($admin_info['username']) ?></div>
-                                    <div class="text-sm text-gray-500"><?= htmlspecialchars($admin_info['role']) ?></div>
+                                    <div class="font-medium text-gray-900"><?= htmlspecialchars($admin_info['full_name']) ?></div>
+                                    <div class="text-sm text-gray-500">@<?= htmlspecialchars($admin_info['username']) ?></div>
                                 </div>
                                 <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
                             </button>
                             
                             <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                                 <div class="px-4 py-3 border-b border-gray-200">
-                                    <div class="font-medium text-gray-900"><?= htmlspecialchars($admin_info['username']) ?></div>
-                                    <div class="text-sm text-gray-500"><?= htmlspecialchars($admin_info['role']) ?></div>
+                                    <div class="font-medium text-gray-900"><?= htmlspecialchars($admin_info['full_name']) ?></div>
+                                    <div class="text-sm text-gray-500">@<?= htmlspecialchars($admin_info['username']) ?></div>
                                 </div>
                                 <a href="settings.php" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
                                     <i class="fas fa-user mr-3 text-gray-400"></i>

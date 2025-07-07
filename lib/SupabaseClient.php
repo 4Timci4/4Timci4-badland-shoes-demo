@@ -67,10 +67,10 @@ class SupabaseClient {
      * @return array Yanıt verisi veya hata durumunda boş dizi
      * @throws Exception İstek başarısız olduğunda
      */
-    public function request($endpoint, $method = 'GET', $data = null, $headers = []) {
+    public function request($endpoint, $method = 'GET', $data = null, $headers = [], $useCache = true) {
         $url = $this->baseUrl . '/' . ltrim($endpoint, '/');
         $cacheKey = null;
-        $useCache = $this->useCache && !isset($headers['Prefer']); // Prefer header varsa cache kullanma
+        $useCache = $this->useCache && $useCache && !isset($headers['Prefer']); // Prefer header varsa cache kullanma
 
         // GET istekleri için önbelleği kontrol et
         if ($method === 'GET' && $useCache) {
@@ -122,7 +122,7 @@ class SupabaseClient {
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout);
         
         // SSL doğrulamasını sadece geliştirme ortamında devre dışı bırak
-        if (APP_ENV === 'development') {
+        if (defined('APP_ENV') && APP_ENV === 'development') {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         } else {
@@ -167,10 +167,14 @@ class SupabaseClient {
         $error_message = "Supabase API Error: HTTP $http_code";
         $decoded_response = json_decode($response, true);
         
-        if ($decoded_response && isset($decoded_response['message'])) {
-            $error_message .= " - " . $decoded_response['message'];
-        } else if (!empty($response)) {
-            $error_message .= " - " . $response;
+        // Hata mesajını daha güvenli bir şekilde işle
+        if ($decoded_response) {
+            // Gelen JSON yanıtını (array veya object) güvenli bir şekilde string'e çevir
+            $error_details = json_encode($decoded_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+            $error_message .= " - Details: " . $error_details;
+        } elseif (!empty($response)) {
+            // JSON değilse, ham yanıtı ekle
+            $error_message .= " - Response: " . $response;
         }
 
         error_log($error_message);

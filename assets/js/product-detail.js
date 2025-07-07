@@ -9,6 +9,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sayfa yüklendiğinde ilk rengi seç
     if (productColors.length > 0) {
         selectedColor = productColors[0].id;
+        // Seçili rengi UI'da da göster
+        const firstColorButton = document.querySelector('.color-option[data-color-id="'+selectedColor+'"]');
+        if (firstColorButton) {
+            firstColorButton.classList.remove('border-gray-300');
+            firstColorButton.classList.add('border-secondary');
+            document.getElementById('selected-color').textContent = firstColorButton.dataset.colorName;
+        }
     }
     
     // Stok olmayan bedenlerin üstünü çiz
@@ -62,13 +69,37 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Önce bedenlerin görünümünü güncelle
             updateSizeButtonsBasedOnStock();
-            updateStockStatus();
+            
+            // Beden seçimini sıfırla
+            selectedSize = null;
+            document.getElementById('selected-size').textContent = '-';
+            document.querySelectorAll('.size-option').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+                btn.classList.add('border-gray-300');
+            });
+            
+            // Stok olmayan ilk uygun bedeni otomatik seç
+            const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
+            if (firstAvailableSizeButton) {
+                firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
+            } else {
+                updateStockStatus(); // Uygun beden yoksa stok durumunu güncelle
+            }
         });
     });
     
-    // Sayfa yüklendiğinde bedenleri güncelle
+    // Sayfa yüklendiğinde bedenleri güncelle ve ilk uygun bedeni seç
     if (selectedColor) {
         updateSizeButtonsBasedOnStock();
+        // Stokta olan ilk bedeni otomatik seç
+        setTimeout(() => {
+            const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
+            if (firstAvailableSizeButton) {
+                firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
+            } else {
+                updateStockStatus(); // Uygun beden yoksa stok durumunu güncelle
+            }
+        }, 100); // Kısa bir gecikme ile çalıştır
     }
     
     // Beden seçimi

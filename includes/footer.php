@@ -43,6 +43,223 @@ $footer_info = $contactService->getFooterInfo();
             </div>
         </div>
     </footer>
+    <?php
+    // SEO structured data'yı render et
+    if (isset($seo)) {
+        echo $seo->renderStructuredData();
+    }
+    ?>
+    
+    <!-- Loading Spinner -->
+    <div class="page-loading">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <!-- Smooth Page Transition JavaScript -->
+    <script>
+        // Page transition system
+        class PageTransition {
+            constructor() {
+                this.init();
+            }
+            
+            init() {
+                // Sayfa yüklendiğinde fade-in efekti
+                this.fadeInPage();
+                
+                // İç linklere event listener ekle
+                this.attachLinkHandlers();
+                
+                // Mobile menu toggle
+                this.initMobileMenu();
+                
+                // Back/forward button handling
+                this.handleBrowserNavigation();
+            }
+            
+            fadeInPage() {
+                // Sayfa tamamen yüklendiğinde
+                window.addEventListener('load', () => {
+                    document.body.classList.add('loaded');
+                });
+                
+                // DOM hazır olduğunda (daha hızlı)
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Kısa bir gecikme ile daha smooth görünüm
+                        setTimeout(() => {
+                            document.body.classList.add('loaded');
+                        }, 100);
+                    });
+                } else {
+                    // Zaten yüklenmişse hemen göster
+                    document.body.classList.add('loaded');
+                }
+            }
+            
+            attachLinkHandlers() {
+                // Tüm iç linkleri seç (aynı domain içerisinde)
+                const internalLinks = document.querySelectorAll('a[href]');
+                
+                internalLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    
+                    // İç link kontrolü (external linkler hariç)
+                    if (this.isInternalLink(href)) {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this.navigateToPage(href);
+                        });
+                    }
+                });
+            }
+            
+            isInternalLink(href) {
+                // Boş, anchor (#), external (http), mailto, tel linklerini hariç tut
+                if (!href || 
+                    href.startsWith('#') || 
+                    href.startsWith('http') || 
+                    href.startsWith('mailto:') || 
+                    href.startsWith('tel:') ||
+                    href.startsWith('javascript:')) {
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            navigateToPage(url) {
+                // Loading spinner göster
+                const loader = document.querySelector('.page-loading');
+                loader.classList.add('active');
+                
+                // Fade out efekti
+                document.body.classList.add('fade-out');
+                
+                // Kısa animasyon sonrası yönlendir
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 400); // CSS transition süresi ile aynı
+            }
+            
+            initMobileMenu() {
+                const mobileMenuButton = document.getElementById('mobile-menu-button');
+                const mobileMenu = document.getElementById('mobile-menu');
+                
+                if (mobileMenuButton && mobileMenu) {
+                    mobileMenuButton.addEventListener('click', () => {
+                        const isHidden = mobileMenu.classList.contains('hidden');
+                        
+                        if (isHidden) {
+                            // Menüyü göster
+                            mobileMenu.classList.remove('hidden');
+                            setTimeout(() => {
+                                mobileMenu.classList.add('show');
+                            }, 10); // Kısa gecikme ile smooth animation
+                        } else {
+                            // Menüyü gizle
+                            mobileMenu.classList.remove('show');
+                            setTimeout(() => {
+                                mobileMenu.classList.add('hidden');
+                            }, 300); // Animation süresi
+                        }
+                    });
+                    
+                    // Menü dışına tıklanınca kapat
+                    document.addEventListener('click', (e) => {
+                        if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                            if (!mobileMenu.classList.contains('hidden')) {
+                                mobileMenu.classList.remove('show');
+                                setTimeout(() => {
+                                    mobileMenu.classList.add('hidden');
+                                }, 300);
+                            }
+                        }
+                    });
+                }
+            }
+            
+            handleBrowserNavigation() {
+                // Browser back/forward button handling
+                window.addEventListener('popstate', () => {
+                    // Loading spinner göster
+                    const loader = document.querySelector('.page-loading');
+                    loader.classList.add('active');
+                    
+                    // Sayfa yeniden yüklenecek, smooth geçiş için hazırla
+                    document.body.classList.add('fade-out');
+                });
+                
+                // Page visibility API ile sekme değişimini handle et
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        // Sekme aktif olduğunda smooth gösterim
+                        document.body.classList.add('loaded');
+                    }
+                });
+            }
+        }
+        
+        // Smooth scrolling for anchor links
+        function initSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Form submissions için smooth handling
+        function initFormTransitions() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    // Form submit edilirken loading göster
+                    const loader = document.querySelector('.page-loading');
+                    if (loader) {
+                        setTimeout(() => {
+                            loader.classList.add('active');
+                        }, 100);
+                    }
+                });
+            });
+        }
+        
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', () => {
+            new PageTransition();
+            initSmoothScrolling();
+            initFormTransitions();
+        });
+        
+        // Performance optimization - preload next pages
+        function preloadPages() {
+            const links = document.querySelectorAll('nav a[href]');
+            links.forEach(link => {
+                link.addEventListener('mouseenter', function() {
+                    const href = this.getAttribute('href');
+                    if (href && !href.startsWith('#') && !href.startsWith('http')) {
+                        // DNS prefetch
+                        const linkElement = document.createElement('link');
+                        linkElement.rel = 'prefetch';
+                        linkElement.href = href;
+                        document.head.appendChild(linkElement);
+                    }
+                });
+            });
+        }
+        
+        // Initialize preloading after page load
+        window.addEventListener('load', preloadPages);
+    </script>
+    
     <script src="/assets/js/script.js"></script>
 </body>
 </html>

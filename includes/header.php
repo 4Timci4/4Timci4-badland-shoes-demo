@@ -1,13 +1,103 @@
 <?php
-session_start();
+// Session'ı sadece gerekirse başlat
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// SEO Manager'ı dahil et
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/SEOManager.php';
+$seo = seo();
+
+// Sayfa bazlı SEO ayarları
+switch($current_page) {
+    case 'index.php':
+        $seo->setTitle('Bandland Shoes | Türkiye\'nin En Kaliteli Ayakkabı Markası', false)
+            ->setDescription('Modern tasarım, konfor ve dayanıklılığı bir araya getiren ayakkabı koleksiyonları. En trend modeller ve uygun fiyatlarla.')
+            ->setKeywords(['ayakkabı', 'spor ayakkabı', 'klasik ayakkabı', 'kadın ayakkabı', 'erkek ayakkabı', 'Türkiye'])
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/')
+            ->setOpenGraph([
+                'type' => 'website',
+                'image' => '/assets/images/og-homepage.jpg'
+            ])
+            ->setTwitterCard([])
+            ->addOrganizationSchema()
+            ->addLocalBusinessSchema();
+        break;
+        
+    case 'products.php':
+        $seo->setTitle('Ayakkabı Koleksiyonu')
+            ->setDescription('Geniş ayakkabı koleksiyonumuzdan size uygun modeli bulun. Spor, klasik, casual ve özel tasarım ayakkabılar.')
+            ->setKeywords(['ayakkabı koleksiyonu', 'ayakkabı modelleri', 'online ayakkabı'])
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/products.php')
+            ->setOpenGraph(['type' => 'website']);
+        break;
+        
+    case 'about.php':
+        $seo->setTitle('Hakkımızda')
+            ->setDescription('Bandland Shoes\'un hikayesi, değerleri ve kalite anlayışı. Müşteri memnuniyeti odaklı hizmet yaklaşımımız.')
+            ->setKeywords(['hakkımızda', 'bandland shoes', 'kalite', 'müşteri memnuniyeti'])
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/about.php');
+        break;
+        
+    case 'blog.php':
+        $seo->setTitle('Blog')
+            ->setDescription('Ayakkabı bakımı, moda trendleri ve stil önerileri hakkında güncel yazılarımızı okuyun.')
+            ->setKeywords(['ayakkabı blog', 'moda', 'stil önerileri', 'ayakkabı bakımı'])
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/blog.php')
+            ->setOpenGraph(['type' => 'website']);
+        break;
+        
+    case 'contact.php':
+        $seo->setTitle('İletişim')
+            ->setDescription('Bizimle iletişime geçin. Mağaza adresimiz, telefon numaralarımız ve iletişim formu.')
+            ->setKeywords(['iletişim', 'adres', 'telefon', 'mağaza'])
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/contact.php');
+        break;
+        
+    default:
+        $seo->setTitle('Bandland Shoes', false)
+            ->setDescription('Türkiye\'nin en kaliteli ayakkabı markası')
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+}
+
+// Breadcrumb için sayfa bazlı tanımlar
+$breadcrumbs = [];
+switch($current_page) {
+    case 'products.php':
+        $breadcrumbs = [
+            ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
+            ['name' => 'Ürünler', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/products.php']
+        ];
+        break;
+    case 'about.php':
+        $breadcrumbs = [
+            ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
+            ['name' => 'Hakkımızda', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/about.php']
+        ];
+        break;
+    case 'blog.php':
+        $breadcrumbs = [
+            ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
+            ['name' => 'Blog', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/blog.php']
+        ];
+        break;
+    case 'contact.php':
+        $breadcrumbs = [
+            ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
+            ['name' => 'İletişim', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/contact.php']
+        ];
+        break;
+}
+
+if (!empty($breadcrumbs)) {
+    $seo->addBreadcrumbSchema($breadcrumbs);
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bandland Shoes | Türkiye'nin En Kaliteli Ayakkabı Markası</title>
+    <?php echo $seo->renderMetaTags(); ?>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,6 +125,76 @@ $current_page = basename($_SERVER['PHP_SELF']);
             }
         }
     </script>
+    
+    <!-- Smooth Page Transition CSS -->
+    <style>
+        /* Body fade transition */
+        body {
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+        
+        body.loaded {
+            opacity: 1;
+        }
+        
+        body.fade-out {
+            opacity: 0;
+        }
+        
+        /* Loading spinner */
+        .page-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .page-loading.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #e91e63;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Header links smooth hover */
+        header nav a {
+            transition: all 0.3s ease;
+        }
+        
+        /* Mobile menu smooth animation */
+        #mobile-menu {
+            transition: all 0.3s ease;
+            transform: translateY(-10px);
+            opacity: 0;
+        }
+        
+        #mobile-menu.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
 </head>
 <body class="font-sans bg-gray-50">
     <header class="bg-white shadow-md sticky top-0 z-50">

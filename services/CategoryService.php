@@ -40,14 +40,78 @@ class CategoryService {
     /**
      * Tüm kategorileri getiren metod (Admin panel için)
      * 
+     * @param string|null $category_type Kategori tipi filtresi (geriye uyumluluk için)
+     * @param int|null $parent_id Üst kategori filtresi (NULL ise ana kategoriler)
      * @return array Kategoriler
      */
-    public function getAllCategories() {
+    public function getAllCategories($category_type = null, $parent_id = null) {
         try {
-            $response = $this->supabase->request('categories?select=*&order=name.asc');
+            $query = 'categories?select=*';
+            
+            // Kategori tipi (eski) veya üst kategori (yeni) filtresi
+            if ($category_type) {
+                $query .= '&category_type=eq.' . $category_type;
+            }
+            
+            // parent_id parametresi belirtilmişse, buna göre filtrele
+            if ($parent_id !== null) {
+                if ($parent_id === 0) {
+                    // Ana kategoriler (parent_id IS NULL)
+                    $query .= '&parent_id=is.null';
+                } else {
+                    // Belirli bir üst kategorinin alt kategorileri
+                    $query .= '&parent_id=eq.' . intval($parent_id);
+                }
+            }
+            
+            $query .= '&order=name.asc';
+            
+            $response = $this->supabase->request($query);
             return $response['body'] ?? [];
         } catch (Exception $e) {
             error_log("Tüm kategorileri getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Ana kategorileri getiren metod (parent_id = NULL)
+     * 
+     * @return array Ana kategoriler
+     */
+    public function getMainCategories() {
+        return $this->getAllCategories(null, 0); // 0 = ana kategoriler (parent_id IS NULL)
+    }
+    
+    /**
+     * Belirli bir ana kategoriye ait alt kategorileri getir
+     * 
+     * @param int $parent_id Ana kategori ID
+     * @return array Alt kategoriler
+     */
+    public function getSubcategories($parent_id) {
+        if (!$parent_id) return [];
+        return $this->getAllCategories(null, $parent_id);
+    }
+    
+    /**
+     * Tüm kategorileri hiyerarşik yapıda getir
+     * 
+     * @return array Ana kategoriler ve alt kategorileri içeren hiyerarşik yapı
+     */
+    public function getCategoriesHierarchy() {
+        try {
+            // Ana kategorileri al
+            $main_categories = $this->getMainCategories();
+            
+            // Her ana kategori için alt kategorileri ekle
+            foreach ($main_categories as &$main_category) {
+                $main_category['subcategories'] = $this->getSubcategories($main_category['id']);
+            }
+            
+            return $main_categories;
+        } catch (Exception $e) {
+            error_log("Kategorileri hiyerarşik yapıda getirme hatası: " . $e->getMessage());
             return [];
         }
     }
@@ -101,20 +165,15 @@ class CategoryService {
      */
     public function createCategory($data) {
         try {
-            // Debug: Gönderilen veriyi logla
-            error_log("CategoryService::createCategory - Gönderilen data: " . json_encode($data));
             
             $response = $this->supabase->request('categories', 'POST', $data);
             
-            // Debug: Dönen yanıtı logla
-            error_log("CategoryService::createCategory - Supabase response: " . json_encode($response));
             
             // Response'da body varsa ve boş değilse başarılı
             if (isset($response['body']) && !empty($response['body'])) {
                 return true;
             }
             
-            error_log("CategoryService::createCategory - Empty response body received");
             return false;
             
         } catch (Exception $e) {
@@ -149,8 +208,8 @@ class CategoryService {
      */
     public function deleteCategory($category_id) {
         try {
-            // Önce bu kategoriye ait ürün var mı kontrol et
-            $products_response = $this->supabase->request('product_models?select=id&category_id=eq.' . intval($category_id) . '&limit=1');
+            // Önce bu kategoriye ait ürün var mı kontrol et (yeni çoklu kategori sistemi)
+            $products_response = $this->supabase->request('product_categories?select=product_id&category_id=eq.' . intval($category_id) . '&limit=1');
             $products = $products_response['body'] ?? [];
             
             if (!empty($products)) {
@@ -208,18 +267,74 @@ class CategoryService {
     }
     
     /**
+     * Kategorileri tipine göre gruplu olarak getir (Eski kategori yapısı ile uyumlu)
+     * Stil kategorileri hariç tutulur.
+     * 
+     * @return array Kategori tipi anahtarlı, kategoriler değerli dizi
+     */
+    public function getCategoriesGroupedByType() {
+        try {
+            $categories = $this->getAllCategories();
+            $grouped = [];
+            
+            foreach ($categories as $category) {
+                $type = $category['category_type'] ?? 'product_type';
+                // Stil kategorilerini hariç tut
+                if ($type !== 'style') {
+                    if (!isset($grouped[$type])) {
+                        $grouped[$type] = [];
+                    }
+                    $grouped[$type][] = $category;
+                }
+            }
+            
+            return $grouped;
+        } catch (Exception $e) {
+            error_log("Kategorileri gruplama hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Admin için kategorileri ürün sayılarıyla getir
      * 
+     * @param bool $hierarchical Hiyerarşik yapıda döndürülsün mü?
      * @return array Kategoriler ve ürün sayıları
      */
-    public function getCategoriesWithProductCounts() {
+    public function getCategoriesWithProductCounts($hierarchical = false) {
         try {
             $categories = $this->getAllCategories();
             
             foreach ($categories as &$category) {
-                $products_response = $this->supabase->request('product_models?select=id&category_id=eq.' . $category['id']);
+                // Ürün sayılarını ekle
+                $products_response = $this->supabase->request('product_categories?select=product_id&category_id=eq.' . $category['id']);
                 $products = $products_response['body'] ?? [];
                 $category['product_count'] = count($products);
+            }
+            
+            // Hiyerarşik yapı isteniyorsa düzenle
+            if ($hierarchical) {
+                $hierarchy = [];
+                $categories_indexed = [];
+                
+                // Kategorileri ID'ye göre indeksle
+                foreach ($categories as $category) {
+                    $categories_indexed[$category['id']] = $category;
+                    $categories_indexed[$category['id']]['subcategories'] = [];
+                }
+                
+                // Hiyerarşik yapıyı oluştur
+                foreach ($categories as $category) {
+                    if ($category['parent_id'] === null) {
+                        // Ana kategori
+                        $hierarchy[] = &$categories_indexed[$category['id']];
+                    } else if (isset($categories_indexed[$category['parent_id']])) {
+                        // Alt kategori
+                        $categories_indexed[$category['parent_id']]['subcategories'][] = $category;
+                    }
+                }
+                
+                return $hierarchy;
             }
             
             return $categories;

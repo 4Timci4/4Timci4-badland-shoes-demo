@@ -1,284 +1,345 @@
 /*--------------------------------------------------------------
-# Blog Detay Sayfası Stilleri
+# Blog Detay Sayfası Stilleri (Modernize Edildi)
 --------------------------------------------------------------*/
 
-/* Genel Ayarlar */
-body {
-    background-color: #f9fafb;
-    color: #374151;
-}
-
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-
-/* Blog Detay Bölümü */
-.blog-detail {
-    padding: 3rem 0;
-}
-
-/* Blog Başlığı */
-.blog-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.blog-header .category {
-    display: inline-block;
-    background-color: #fee2e2;
-    color: #ef4444;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.blog-header h1 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1.2;
-    color: #111827;
-    margin-bottom: 1rem;
-}
-
-.blog-header .blog-meta {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.5rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.blog-header .blog-meta span {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Öne Çıkan Görsel */
-.blog-featured-image {
-    margin-bottom: 2.5rem;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-}
-
-.blog-featured-image img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
-/* Blog İçeriği */
-.blog-content {
+/* Prose (Blog İçeriği) Stilleri - Tailwind CSS ile Uyumlu */
+.prose {
     font-size: 1.125rem;
-    line-height: 1.8;
+    line-height: 1.75;
     color: #374151;
+    max-width: none;
 }
 
-.blog-content p {
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    color: #1f2937;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-family: 'Poppins', sans-serif;
+}
+
+.prose h2 { 
+    font-size: 1.875rem; 
+}
+
+.prose h3 { 
+    font-size: 1.5rem; 
+}
+
+.prose h4 { 
+    font-size: 1.25rem; 
+}
+
+.prose p {
     margin-bottom: 1.5rem;
 }
 
-.blog-content h2, .blog-content h3, .blog-content h4 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    color: #111827;
-    margin-top: 2.5rem;
-    margin-bottom: 1rem;
+.prose ul, .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
 }
 
-.blog-content h2 { font-size: 1.75rem; }
-.blog-content h3 { font-size: 1.5rem; }
-.blog-content h4 { font-size: 1.25rem; }
+.prose li {
+    margin-bottom: 0.5rem;
+}
 
-.blog-content a {
+.prose blockquote {
+    border-left: 4px solid #e91e63;
+    padding-left: 1rem;
+    margin: 2rem 0;
+    font-style: italic;
+    background-color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.prose strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.prose em {
+    font-style: italic;
+}
+
+.prose a {
     color: #e91e63;
     text-decoration: underline;
     transition: color 0.3s ease;
 }
 
-.blog-content a:hover {
+.prose a:hover {
     color: #c2185b;
 }
 
-.blog-content ul, .blog-content ol {
-    margin-bottom: 1.5rem;
-    padding-left: 1.5rem;
+.prose img {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin: 1.5rem 0;
 }
 
-.blog-content li {
-    margin-bottom: 0.5rem;
+/* Utility Classes - Tailwind CSS Extension */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.blog-content blockquote {
-    border-left: 4px solid #e91e63;
-    padding-left: 1.5rem;
-    margin: 2rem 0;
-    font-style: italic;
-    color: #6b7280;
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* Etiketler */
-.blog-tags {
-    margin-top: 3rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
+/* Progress Bar (Reading Progress) */
+.reading-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #e91e63, #ff6b9d);
+    z-index: 9999;
+    transition: width 0.1s ease;
+    box-shadow: 0 2px 4px rgba(233, 30, 99, 0.3);
 }
 
-.blog-tags h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.blog-tags .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.blog-tags .tag {
-    display: inline-block;
-    background-color: #f3f4f6;
-    color: #4b5563;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.blog-tags .tag:hover {
-    background-color: #e91e63;
-    color: #ffffff;
-}
-
-/* Paylaşım Linkleri */
-.blog-share {
-    margin-top: 2rem;
-    text-align: center;
-}
-
-.blog-share h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.social-share {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-}
-
-.social-share a {
-    display: flex;
+/* Social Share Buttons Enhancement */
+.social-share-button {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
-    background-color: #f3f4f6;
-    color: #4b5563;
-    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.social-share a:hover {
-    transform: translateY(-3px);
-    color: #ffffff;
+.social-share-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.social-share .facebook:hover { background-color: #1877f2; }
-.social-share .twitter:hover { background-color: #1da1f2; }
-.social-share .linkedin:hover { background-color: #0a66c2; }
-.social-share .whatsapp:hover { background-color: #25d366; }
-.social-share .email:hover { background-color: #888; }
-
-/* Benzer Yazılar */
-.related-posts {
-    margin-top: 4rem;
-    padding-top: 3rem;
-    border-top: 1px solid #e5e7eb;
+.social-share-button:active {
+    transform: translateY(0);
 }
 
-.related-posts h2 {
-    text-align: center;
-    font-family: 'Poppins', sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 2rem;
-}
-
-.related-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-}
-
-.related-card {
-    background-color: #ffffff;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.related-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-}
-
-.related-image {
-    height: 150px;
+/* Blog Header Enhancements */
+.blog-category-badge {
+    background: linear-gradient(135deg, #e91e63, #ff6b9d);
+    color: white;
+    position: relative;
     overflow: hidden;
 }
 
-.related-image img {
+.blog-category-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
 }
 
-.related-card:hover .related-image img {
+.blog-category-badge:hover::before {
+    left: 100%;
+}
+
+/* Featured Image Enhancement */
+.blog-featured-image {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.blog-featured-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(233, 30, 99, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.blog-featured-image:hover::after {
+    opacity: 1;
+}
+
+/* Related Posts Cards Enhancement */
+.related-post-card {
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.related-post-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.related-post-card .post-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.related-post-card .post-image img {
+    transition: transform 0.3s ease;
+}
+
+.related-post-card:hover .post-image img {
     transform: scale(1.05);
 }
 
-.related-content {
-    padding: 1rem;
-}
-
-.related-content h3 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.4;
-    margin-bottom: 0.5rem;
-}
-
-.related-content .date {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-bottom: 0.75rem;
-}
-
-.related-content .read-more {
-    font-size: 0.875rem;
-    font-weight: 600;
+/* Tag Styles */
+.blog-tag {
+    background: rgba(233, 30, 99, 0.1);
     color: #e91e63;
-    transition: color 0.3s ease;
+    border: 1px solid rgba(233, 30, 99, 0.2);
+    transition: all 0.3s ease;
 }
 
-.related-content .read-more:hover {
-    color: #c2185b;
+.blog-tag:hover {
+    background: #e91e63;
+    color: white;
+    transform: translateY(-1px);
 }
 
-/* Yorumlar Bölümü (Yorumlar kaldırıldığı için stiller de kaldırıldı) */
-.comments-section {
-    display: none;
+/* Notification Styles */
+.notification {
+    backdrop-filter: blur(10px);
+    background: rgba(34, 197, 94, 0.9);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Responsive Optimizations */
+@media (max-width: 768px) {
+    .prose {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    
+    .prose h2 { 
+        font-size: 1.5rem; 
+    }
+    
+    .prose h3 { 
+        font-size: 1.25rem; 
+    }
+    
+    .prose h4 { 
+        font-size: 1.125rem; 
+    }
+    
+    .prose blockquote {
+        margin: 1.5rem 0;
+        padding: 0.75rem;
+    }
+    
+    .social-share-button {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .prose {
+        font-size: 0.95rem;
+    }
+    
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Dark Mode Support (Future Enhancement) */
+@media (prefers-color-scheme: dark) {
+    .prose {
+        color: #d1d5db;
+    }
+    
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        color: #f9fafb;
+    }
+    
+    .prose blockquote {
+        background-color: #1f2937;
+        border-left-color: #e91e63;
+    }
+    
+    .related-post-card {
+        background: #1f2937;
+    }
+}
+
+/* Performance Optimizations */
+.prose img {
+    will-change: transform;
+}
+
+.social-share-button,
+.related-post-card,
+.blog-tag {
+    will-change: transform;
+}
+
+/* Accessibility Improvements */
+.prose a:focus,
+.social-share-button:focus,
+.blog-tag:focus {
+    outline: 2px solid #e91e63;
+    outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+    .reading-progress,
+    .social-share-button,
+    .blog-tag {
+        display: none;
+    }
+    
+    .prose {
+        font-size: 12pt;
+        line-height: 1.4;
+        color: black;
+    }
+    
+    .prose a {
+        color: black;
+        text-decoration: underline;
+    }
 }

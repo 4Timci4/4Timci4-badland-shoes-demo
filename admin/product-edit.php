@@ -11,6 +11,7 @@ check_admin_auth();
 require_once '../config/database.php';
 require_once '../services/ProductService.php';
 require_once '../services/CategoryService.php';
+require_once '../services/GenderService.php';
 require_once '../services/VariantService.php';
 
 // ID parametresi zorunlu kontrolü
@@ -40,18 +41,7 @@ $breadcrumb_items = [
     ['title' => 'Düzenle', 'url' => '#', 'icon' => 'fas fa-edit']
 ];
 
-// Orijinal verileri sakla (değişiklik tespiti için)
-$original_data = [
-    'name' => $product['name'],
-    'description' => $product['description'],
-    'base_price' => floatval($product['base_price']),
-    'category_id' => intval($product['category_id']),
-    'is_featured' => (bool)$product['is_featured'],
-    'features' => $product['features'] ?? ''
-];
-
 // Form işleme
-$changes_detected = false;
 if ($_POST) {
     $csrf_token = $_POST['csrf_token'] ?? '';
     
@@ -62,21 +52,10 @@ if ($_POST) {
         $name = trim($_POST['name'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $base_price = floatval($_POST['base_price'] ?? 0);
-        $category_id = intval($_POST['category_id'] ?? 0);
+        $category_ids = $_POST['category_ids'] ?? []; // Çoklu kategori seçimi
+        $gender_ids = $_POST['gender_ids'] ?? []; // Çoklu cinsiyet seçimi
         $is_featured = isset($_POST['is_featured']) ? true : false;
         $features = trim($_POST['features'] ?? '');
-        
-        // Değişiklik tespiti
-        $new_data = [
-            'name' => $name,
-            'description' => $description,
-            'base_price' => $base_price,
-            'category_id' => $category_id,
-            'is_featured' => $is_featured,
-            'features' => $features
-        ];
-        
-        $changes_detected = ($original_data !== $new_data);
         
         // Validation
         $errors = [];
@@ -93,49 +72,65 @@ if ($_POST) {
             $errors[] = 'Geçerli bir fiyat giriniz.';
         }
         
-        if ($category_id <= 0) {
-            $errors[] = 'Bir kategori seçiniz.';
+        if (empty($category_ids) || !is_array($category_ids)) {
+            $errors[] = 'En az bir kategori seçiniz.';
         }
         
         if (empty($errors)) {
-            if (!$changes_detected) {
-                set_flash_message('info', 'Herhangi bir değişiklik yapılmadı.');
-            } else {
-                try {
-                    $update_data = [
-                        'name' => $name,
-                        'description' => $description,
-                        'base_price' => $base_price,
-                        'category_id' => $category_id,
-                        'is_featured' => $is_featured,
-                        'features' => $features,
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ];
+            try {
+                $update_data = [
+                    'name' => $name,
+                    'description' => $description,
+                    'base_price' => $base_price,
+                    'is_featured' => $is_featured,
+                    'features' => $features,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+                
+                // Supabase UPDATE işlemi
+                $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $update_data);
+                
+                if ($response && !empty($response['body'])) {
+                    // Mevcut kategori ilişkilerini sil
+                    $delete_response = supabase()->request('product_categories?product_id=eq.' . $product_id, 'DELETE');
                     
-                    // Supabase UPDATE işlemi
-                    $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $update_data);
-                    
-                    if ($response && !empty($response['body'])) {
-                        set_flash_message('success', 'Ürün başarıyla güncellendi.');
-                        
-                        // Önbelleği temizle
-                        supabase()->clearCache();
-                        
-                        // Devam et mi yoksa listeye dön mü?
-                        if (isset($_POST['save_and_continue'])) {
-                            header('Location: product-edit.php?id=' . $product_id);
-                        } else {
-                            header('Location: products.php');
-                        }
-                        exit;
-                    } else {
-                        throw new Exception('Supabase güncelleme işlemi başarısız');
+                    // Yeni kategori ilişkilerini ekle
+                    foreach ($category_ids as $category_id) {
+                        $category_data = [
+                            'product_id' => $product_id,
+                            'category_id' => intval($category_id)
+                        ];
+                        supabase()->request('product_categories', 'POST', $category_data);
                     }
                     
-                } catch (Exception $e) {
-                    error_log("Product update error: " . $e->getMessage());
-                    $errors[] = 'Ürün güncellenirken bir hata oluştu: ' . $e->getMessage();
+                    // Mevcut cinsiyet ilişkilerini sil
+                    $delete_gender_response = supabase()->request('product_genders?product_id=eq.' . $product_id, 'DELETE');
+                    
+                    // Yeni cinsiyet ilişkilerini ekle
+                    foreach ($gender_ids as $gender_id) {
+                        $gender_data = [
+                            'product_id' => $product_id,
+                            'gender_id' => intval($gender_id)
+                        ];
+                        supabase()->request('product_genders', 'POST', $gender_data);
+                    }
+                    
+                    set_flash_message('success', 'Ürün başarıyla güncellendi.');
+                    
+                    // Devam et mi yoksa listeye dön mü?
+                    if (isset($_POST['save_and_continue'])) {
+                        header('Location: product-edit.php?id=' . $product_id);
+                    } else {
+                        header('Location: products.php');
+                    }
+                    exit;
+                } else {
+                    throw new Exception('Supabase güncelleme işlemi başarısız');
                 }
+                
+            } catch (Exception $e) {
+                error_log("Product update error: " . $e->getMessage());
+                $errors[] = 'Ürün güncellenirken bir hata oluştu: ' . $e->getMessage();
             }
         }
         
@@ -146,8 +141,9 @@ if ($_POST) {
     }
 }
 
-// Kategorileri getir
+// Kategorileri ve cinsiyetleri getir
 $categories = category_service()->getAllCategories();
+$genders = gender_service()->getAllGenders();
 
 // Header dahil et
 include 'includes/header.php';
@@ -255,7 +251,6 @@ include 'includes/header.php';
                            value="<?= htmlspecialchars($product['name']) ?>"
                            placeholder="Örn: Nike Air Max 270"
                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                    <div class="text-xs text-gray-500 mt-1">Orijinal: <?= htmlspecialchars($original_data['name']) ?></div>
                 </div>
 
                 <!-- Description -->
@@ -296,23 +291,102 @@ include 'includes/header.php';
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     
-                    <!-- Category Selection -->
-                    <div>
-                        <label for="category_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-folder mr-2"></i>Kategori *
+                    <!-- Multi-Category Selection -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-box mr-2"></i>Ürün Kategorileri *
                         </label>
-                        <select id="category_id" 
-                                name="category_id" 
-                                required
-                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                            <option value="">Kategori Seçin</option>
-                            <?php foreach ($categories as $category): ?>
-                                <option value="<?= htmlspecialchars($category['id']) ?>" 
-                                        <?= ($product['category_id'] == $category['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($category['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <p class="text-xs text-gray-500 mb-4">Ürününüzün tipini seçin (örn: Sneaker, Bot, Sandalet, vb.)</p>
+                        
+                        <?php 
+                        // Mevcut kategorileri al
+                        $selected_categories = [];
+                        try {
+                            $response = supabase()->request('product_categories?select=category_id&product_id=eq.' . $product_id);
+                            $category_relations = $response['body'] ?? [];
+                            $selected_categories = array_column($category_relations, 'category_id');
+                        } catch (Exception $e) {
+                            error_log("Error fetching product categories: " . $e->getMessage());
+                        }
+                        ?>
+                        
+                        <div class="space-y-6">
+                            <div class="border border-gray-200 rounded-xl p-4">
+                                <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-box text-blue-500 mr-2"></i>
+                                    Ürün Tipleri
+                                    <span class="ml-2 text-xs text-gray-500">(<?= count($categories) ?> kategori)</span>
+                                </h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    <?php foreach ($categories as $category): ?>
+                                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                            <input type="checkbox" 
+                                                   name="category_ids[]" 
+                                                   value="<?= htmlspecialchars($category['id']) ?>"
+                                                   <?= in_array($category['id'], $selected_categories) ? 'checked' : '' ?>
+                                                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                                            <span class="ml-2 text-sm font-medium text-gray-700">
+                                                <?= htmlspecialchars($category['name']) ?>
+                                            </span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Categories Preview -->
+                        <div id="selected-categories-preview" class="mt-4 p-3 bg-gray-50 rounded-lg hidden">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Seçilen Kategoriler:</p>
+                            <div id="selected-categories-list" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gender Selection -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-venus-mars mr-2"></i>Cinsiyetler *
+                        </label>
+                        <p class="text-xs text-gray-500 mb-4">Ürününüzün hitap ettiği cinsiyetleri seçin (örn: Erkek, Kadın, Çocuk, Unisex)</p>
+                        
+                        <?php 
+                        // Mevcut cinsiyetleri al
+                        $selected_genders = [];
+                        try {
+                            $response = supabase()->request('product_genders?select=gender_id&product_id=eq.' . $product_id);
+                            $gender_relations = $response['body'] ?? [];
+                            $selected_genders = array_column($gender_relations, 'gender_id');
+                        } catch (Exception $e) {
+                            error_log("Error fetching product genders: " . $e->getMessage());
+                        }
+                        ?>
+                        
+                        <div class="border border-gray-200 rounded-xl p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <i class="fas fa-venus-mars text-purple-500 mr-2"></i>
+                                Cinsiyetler
+                                <span class="ml-2 text-xs text-gray-500">(<?= count($genders) ?> cinsiyet)</span>
+                            </h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <?php foreach ($genders as $gender): ?>
+                                    <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" 
+                                               name="gender_ids[]" 
+                                               value="<?= htmlspecialchars($gender['id']) ?>"
+                                               <?= in_array($gender['id'], $selected_genders) ? 'checked' : '' ?>
+                                               class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2">
+                                        <span class="ml-2 text-sm font-medium text-gray-700">
+                                            <?= htmlspecialchars($gender['name']) ?>
+                                        </span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Genders Preview -->
+                        <div id="selected-genders-preview" class="mt-4 p-3 bg-gray-50 rounded-lg hidden">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Seçilen Cinsiyetler:</p>
+                            <div id="selected-genders-list" class="flex flex-wrap gap-2"></div>
+                        </div>
                     </div>
 
                     <!-- Base Price -->
@@ -329,7 +403,6 @@ include 'includes/header.php';
                                value="<?= htmlspecialchars($product['base_price']) ?>"
                                placeholder="0.00"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                        <div class="text-xs text-gray-500 mt-1">Orijinal: ₺<?= number_format($original_data['base_price'], 2) ?></div>
                     </div>
                 </div>
             </div>
@@ -358,9 +431,6 @@ include 'includes/header.php';
                             <i class="fas fa-star text-yellow-500 mr-2"></i>Öne Çıkarılmış Ürün
                         </label>
                         <p class="text-gray-500">Bu ürün ana sayfada öne çıkarılmış ürünler bölümünde görünecektir.</p>
-                        <p class="text-xs text-gray-400 mt-1">
-                            Mevcut durum: <?= $original_data['is_featured'] ? 'Öne çıkarılmış' : 'Normal' ?>
-                        </p>
                     </div>
                 </div>
             </div>
@@ -609,48 +679,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.querySelector('#name');
     const descriptionInput = document.querySelector('#description');
     const priceInput = document.querySelector('#base_price');
-    const categorySelect = document.querySelector('#category_id');
-    
-    // Orijinal değerler
-    const originalValues = {
-        name: <?= json_encode($original_data['name']) ?>,
-        description: <?= json_encode($original_data['description']) ?>,
-        base_price: <?= json_encode($original_data['base_price']) ?>,
-        category_id: <?= json_encode($original_data['category_id']) ?>,
-        is_featured: <?= json_encode($original_data['is_featured']) ?>,
-        features: <?= json_encode($original_data['features']) ?>
-    };
+    const categoryCheckboxes = document.querySelectorAll('input[name="category_ids[]"]');
     
     // Değişiklik tespiti
     function detectChanges() {
-        const currentValues = {
-            name: nameInput.value.trim(),
-            description: descriptionInput.value.trim(),
-            base_price: parseFloat(priceInput.value) || 0,
-            category_id: parseInt(categorySelect.value) || 0,
-            is_featured: document.querySelector('#is_featured').checked,
-            features: document.querySelector('#features').value.trim()
-        };
-        
-        const hasChanges = JSON.stringify(currentValues) !== JSON.stringify(originalValues);
-        
-        // Submit butonlarını güncelle
-        const saveButtons = document.querySelectorAll('button[type="submit"]');
-        saveButtons.forEach(btn => {
-            if (hasChanges) {
-                btn.classList.remove('opacity-50');
-                btn.disabled = false;
-            } else {
-                btn.classList.add('opacity-50');
-                btn.disabled = true;
-            }
-        });
-        
-        return hasChanges;
+        // Bu fonksiyonu şimdilik devre dışı bırakıyoruz
+        return true;
     }
     
     // Form alanlarını izle
-    [nameInput, descriptionInput, priceInput, categorySelect, document.querySelector('#is_featured'), document.querySelector('#features')].forEach(element => {
+    [nameInput, descriptionInput, priceInput, ...categoryCheckboxes, document.querySelector('#is_featured'), document.querySelector('#features')].forEach(element => {
         element.addEventListener('input', detectChanges);
         element.addEventListener('change', detectChanges);
     });
@@ -714,10 +752,6 @@ document.addEventListener('DOMContentLoaded', function() {
     priceInput.addEventListener('blur', function() {
         const price = parseFloat(this.value);
         validateField(this, price > 0, 'Geçerli bir fiyat giriniz.');
-    });
-    
-    categorySelect.addEventListener('change', function() {
-        validateField(this, this.value !== '', 'Bir kategori seçiniz.');
     });
     
     // Form submission loading

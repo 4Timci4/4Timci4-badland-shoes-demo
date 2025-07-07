@@ -23,6 +23,7 @@
         initConfirmDialogs();
         initFormValidation();
         initTableFeatures();
+        // initProductsPage(); // Kaldırıldı
         setActiveMenuItem();
     }
 
@@ -360,15 +361,21 @@
     }
     
     function showAlert(message, type = 'info') {
-        // Bootstrap alert oluştur
-        const alertClass = type === 'error' ? 'danger' : type;
+        // Tailwind CSS alert oluştur
+        const bgColor = type === 'success' ? 'bg-green-50 border-green-200' : (type === 'error' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200');
+        const textColor = type === 'success' ? 'text-green-800' : (type === 'error' ? 'text-red-800' : 'text-blue-800');
+        const iconColor = type === 'success' ? 'text-green-500' : (type === 'error' ? 'text-red-500' : 'text-blue-500');
+        const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-triangle' : 'info-circle');
+        
+        const alertId = 'alert-' + Date.now();
         const alertHTML = `
-            <div class="alert alert-${alertClass} alert-dismissible fade show position-fixed" 
-                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')} me-2"></i>
-                    <div class="flex-grow-1">${message}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div id="${alertId}" class="fixed top-4 right-4 z-50 max-w-sm w-full ${bgColor} border rounded-xl p-4 shadow-lg transition-all duration-300 transform translate-x-0">
+                <div class="flex items-center">
+                    <i class="fas fa-${icon} ${iconColor} mr-3"></i>
+                    <div class="flex-1 ${textColor} font-medium">${message}</div>
+                    <button type="button" class="ml-2 ${textColor} hover:${textColor.replace('800', '900')} transition-colors" onclick="document.getElementById('${alertId}').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -377,9 +384,10 @@
         
         // 5 saniye sonra otomatik kapat
         setTimeout(() => {
-            const alert = document.querySelector('.alert');
+            const alert = document.getElementById(alertId);
             if (alert) {
-                alert.remove();
+                alert.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => alert.remove(), 300);
             }
         }, 5000);
     }

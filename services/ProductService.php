@@ -24,7 +24,168 @@ class ProductService {
     }
     
     /**
-     * Ürün modellerini getiren metod
+     * Ürün modellerini getir
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @param array $filters Filtreler
+     * @return array Ürün modelleri
+     */
+    public function getProductModels($limit = 20, $offset = 0, $filters = []) {
+        try {
+            $query = [
+                'select' => '*,categories(name)',
+                'order' => 'created_at.desc',
+                'limit' => $limit,
+                'offset' => $offset
+            ];
+            
+            // Filtreler
+            if (!empty($filters['category_id'])) {
+                $category_id = intval($filters['category_id']);
+                // Kategori ID'ye göre ürünleri getir
+                $product_ids_response = $this->supabase->request("product_categories?select=product_id&category_id=eq.$category_id");
+                
+                if (!empty($product_ids_response['body'])) {
+                    $product_ids = array_column($product_ids_response['body'], 'product_id');
+                    $query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                } else {
+                    // Eşleşen ürün yoksa boş dizi döndür
+                    return [];
+                }
+            }
+            
+            if (!empty($filters['category_slug'])) {
+                $category_slug = $filters['category_slug'];
+                
+                // Önce kategori ID'sini bul
+                $category_response = $this->supabase->request("categories?select=id&slug=eq.$category_slug");
+                
+                if (!empty($category_response['body'])) {
+                    $category_id = $category_response['body'][0]['id'];
+                    
+                    // Sonra bu kategoriye ait ürünleri getir
+                    $product_ids_response = $this->supabase->request("product_categories?select=product_id&category_id=eq.$category_id");
+                    
+                    if (!empty($product_ids_response['body'])) {
+                        $product_ids = array_column($product_ids_response['body'], 'product_id');
+                        $query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                    } else {
+                        // Eşleşen ürün yoksa boş dizi döndür
+                        return [];
+                    }
+                } else {
+                    // Kategori bulunamadıysa boş dizi döndür
+                    return [];
+                }
+            }
+            
+            // Cinsiyet filtresi
+            if (!empty($filters['gender_id'])) {
+                $gender_id = intval($filters['gender_id']);
+                // Cinsiyet ID'ye göre ürünleri getir
+                $product_ids_response = $this->supabase->request("product_genders?select=product_id&gender_id=eq.$gender_id");
+                
+                if (!empty($product_ids_response['body'])) {
+                    $product_ids = array_column($product_ids_response['body'], 'product_id');
+                    
+                    // Eğer zaten başka bir filtre uygulanmışsa, kesişim al
+                    if (isset($query['id'])) {
+                        $existing_ids = explode(',', str_replace(['in.(', ')'], '', $query['id']));
+                        $product_ids = array_intersect($product_ids, $existing_ids);
+                    }
+                    
+                    if (!empty($product_ids)) {
+                        $query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                    } else {
+                        // Eşleşen ürün yoksa boş dizi döndür
+                        return [];
+                    }
+                } else {
+                    // Eşleşen ürün yoksa boş dizi döndür
+                    return [];
+                }
+            }
+            
+            if (!empty($filters['gender_slug'])) {
+                $gender_slug = $filters['gender_slug'];
+                
+                // Önce cinsiyet ID'sini bul
+                $gender_response = $this->supabase->request("genders?select=id&slug=eq.$gender_slug");
+                
+                if (!empty($gender_response['body'])) {
+                    $gender_id = $gender_response['body'][0]['id'];
+                    
+                    // Sonra bu cinsiyete ait ürünleri getir
+                    $product_ids_response = $this->supabase->request("product_genders?select=product_id&gender_id=eq.$gender_id");
+                    
+                    if (!empty($product_ids_response['body'])) {
+                        $product_ids = array_column($product_ids_response['body'], 'product_id');
+                        
+                        // Eğer zaten başka bir filtre uygulanmışsa, kesişim al
+                        if (isset($query['id'])) {
+                            $existing_ids = explode(',', str_replace(['in.(', ')'], '', $query['id']));
+                            $product_ids = array_intersect($product_ids, $existing_ids);
+                        }
+                        
+                        if (!empty($product_ids)) {
+                            $query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                        } else {
+                            // Eşleşen ürün yoksa boş dizi döndür
+                            return [];
+                        }
+                    } else {
+                        // Eşleşen ürün yoksa boş dizi döndür
+                        return [];
+                    }
+                } else {
+                    // Cinsiyet bulunamadıysa boş dizi döndür
+                    return [];
+                }
+            }
+            
+            $response = $this->supabase->request('product_models?' . http_build_query($query));
+            
+            $products = $response['body'] ?? [];
+            
+            // Ürünleri zenginleştir: Kategori ve cinsiyet bilgilerini ekle
+            foreach ($products as &$product) {
+                // Ana kategori bilgisini almak için product_categories tablosuna sorgu
+                $category_response = $this->supabase->request("product_categories?select=categories(name,slug)&product_id=eq.{$product['id']}&limit=1");
+                
+                if (!empty($category_response['body']) && isset($category_response['body'][0]['categories'])) {
+                    $product['category_name'] = $category_response['body'][0]['categories']['name'];
+                    $product['category_slug'] = $category_response['body'][0]['categories']['slug'];
+                } else {
+                    $product['category_name'] = null;
+                    $product['category_slug'] = null;
+                }
+                
+                // Cinsiyet bilgilerini almak için product_genders tablosuna sorgu
+                $gender_response = $this->supabase->request("product_genders?select=genders(id,name,slug)&product_id=eq.{$product['id']}");
+                
+                if (!empty($gender_response['body'])) {
+                    $genders = [];
+                    foreach ($gender_response['body'] as $relation) {
+                        if (isset($relation['genders'])) {
+                            $genders[] = $relation['genders'];
+                        }
+                    }
+                    $product['genders'] = $genders;
+                } else {
+                    $product['genders'] = [];
+                }
+            }
+            
+            return $products;
+        } catch (Exception $e) {
+            error_log("ProductService::getProductModels - Exception: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Çoklu kategori desteği ile ürün modelleri getiren metod
      * 
      * @param int $limit Maksimum ürün sayısı
      * @param int $offset Başlangıç indeksi
@@ -33,99 +194,418 @@ class ProductService {
      * @param string|null $sort Sıralama seçeneği (opsiyonel)
      * @return array Ürün modelleri
      */
-    public function getProductModels($limit = 10, $offset = 0, $category_slugs = null, $featured = null, $sort = null) {
-        $params = [];
-        $whereConditions = [];
-        
-        // Temel SQL sorgusu
-        $sql = "
-        SELECT
-            pm.id, 
-            pm.name, 
-            pm.description, 
-            pm.base_price,
-            pm.is_featured,
-            c.name as category_name,
-            c.slug as category_slug,
-            pi.image_url
-        FROM 
-            product_models pm
-        JOIN 
-            categories c ON pm.category_id = c.id
-        LEFT JOIN 
-            (SELECT DISTINCT ON (model_id) model_id, image_url FROM product_images WHERE is_primary = true) pi 
-            ON pm.id = pi.model_id
-        ";
-        
-        // Kategori filtresi ekle
-        if (!empty($category_slugs)) {
-            if (is_array($category_slugs)) {
-                $whereConditions[] = "c.slug IN :categories";
-                $params[':categories'] = $category_slugs;
-            } else {
-                $whereConditions[] = "c.slug = :category";
-                $params[':category'] = $category_slugs;
-            }
-        }
-        
-        // Öne çıkan filtresi ekle
-        if ($featured !== null) {
-            $whereConditions[] = "pm.is_featured = :featured";
-            $params[':featured'] = $featured;
-        }
-        
-        // WHERE koşullarını ekle
-        if (!empty($whereConditions)) {
-            $sql .= " WHERE " . implode(' AND ', $whereConditions);
-        }
-        
-        // Sıralama seçeneği
-        if ($sort) {
-            switch ($sort) {
-                case 'price_asc':
-                    $sql .= " ORDER BY pm.base_price ASC";
-                    break;
-                case 'price_desc':
-                    $sql .= " ORDER BY pm.base_price DESC";
-                    break;
-                case 'name_asc':
-                    $sql .= " ORDER BY pm.name ASC";
-                    break;
-                case 'name_desc':
-                    $sql .= " ORDER BY pm.name DESC";
-                    break;
-                case 'newest':
-                    $sql .= " ORDER BY pm.created_at DESC";
-                    break;
-                default:
-                    $sql .= " ORDER BY pm.id ASC";
-            }
-        } else {
-            $sql .= " ORDER BY pm.id ASC";
-        }
-        
-        // Sayfalama
-        $sql .= " LIMIT :limit OFFSET :offset";
-        $params[':limit'] = (int)$limit;
-        $params[':offset'] = (int)$offset;
-        
+    public function getProductModelsWithMultiCategory($limit = 10, $offset = 0, $category_slugs = null, $featured = null, $sort = null) {
         try {
-            // SQL sorgusu çalıştır
-            $response = $this->supabase->executeRawSql($sql, $params);
-            return $response['body'] ?? [];
-        } catch (Exception $e) {
-            error_log("Ürün modelleri getirme hatası: " . $e->getMessage());
+            // Ürünleri getirme sorgusu oluştur
+            $query = [
+                'select' => 'id,name,description,features,base_price,is_featured,created_at',
+                'limit' => $limit,
+                'offset' => $offset
+            ];
             
-            // Plan B: Temel REST API çağrısı
-            try {
-                return $this->getProductModelsWithFallback($limit, $offset, $category_slugs, $featured, $sort);
-            } catch (Exception $fallbackError) {
-                error_log("Ürün modelleri yedek getirme hatası: " . $fallbackError->getMessage());
-                return [];
+            // Öne çıkan filtresi
+            if ($featured !== null) {
+                $query['is_featured'] = 'eq.' . ($featured ? 'true' : 'false');
             }
+            
+            // Sıralama
+            if ($sort) {
+                $orderMap = [
+                    'price_asc' => 'base_price.asc',
+                    'price_desc' => 'base_price.desc',
+                    'name_asc' => 'name.asc',
+                    'name_desc' => 'name.desc',
+                    'newest' => 'created_at.desc'
+                ];
+                
+                $query['order'] = $orderMap[$sort] ?? 'created_at.desc';
+            } else {
+                $query['order'] = 'created_at.desc';
+            }
+            
+            // Kategori filtresi
+            if (!empty($category_slugs)) {
+                $category_ids = $this->getCategoryIdsBySlugs($category_slugs);
+                
+                if (!empty($category_ids)) {
+                    $product_ids = $this->getProductIdsByCategories($category_ids);
+                    
+                    if (!empty($product_ids)) {
+                        $query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                    } else {
+                        return []; // Eşleşen ürün yoksa boş dizi döndür
+                    }
+                } else {
+                    return []; // Kategori bulunamadıysa boş dizi döndür
+                }
+            }
+            
+            $response = $this->supabase->request('product_models?' . http_build_query($query));
+            $products = $response['body'] ?? [];
+            
+            // Her ürün için ek verileri getir
+            foreach ($products as &$product) {
+                // Kategori bilgilerini getir
+                $cat_response = $this->supabase->request('product_categories?select=categories(id,name,slug,parent_id)&product_id=eq.' . $product['id']);
+                $cat_relations = $cat_response['body'] ?? [];
+                
+                // Alt kategori ve ana kategori bilgilerini ayır
+                $subcategory = null;
+                $main_category = null;
+                
+                if (!empty($cat_relations)) {
+                    // Alt kategori bulmaya çalış (parent_id'si olan)
+                    foreach ($cat_relations as $relation) {
+                        if (!empty($relation['categories']) && !empty($relation['categories']['parent_id'])) {
+                            $subcategory = $relation['categories'];
+                            break;
+                        }
+                    }
+                    
+                    // Eğer alt kategori bulunamazsa, ana kategori varsa onu kullan
+                    if (!$subcategory) {
+                        foreach ($cat_relations as $relation) {
+                            if (!empty($relation['categories']) && empty($relation['categories']['parent_id'])) {
+                                $main_category = $relation['categories'];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Kategori bilgilerini ürüne ekle
+                    if ($subcategory) {
+                        $product['category_name'] = $subcategory['name'];
+                        $product['category_slug'] = $subcategory['slug'];
+                        $product['subcategory_id'] = $subcategory['id'];
+                    }
+                    
+                    if ($main_category) {
+                        $product['main_category_name'] = $main_category['name'];
+                        $product['main_category_slug'] = $main_category['slug'];
+                        $product['main_category_id'] = $main_category['id'];
+                    }
+                    
+                    // Tüm kategorileri de ekle
+                    $product['categories'] = array_map(function($rel) {
+                        return $rel['categories'];
+                    }, $cat_relations);
+                }
+                
+                // Görsel bilgisi
+                $img_query = [
+                    'select' => 'image_url',
+                    'model_id' => 'eq.' . $product['id'],
+                    'is_primary' => 'eq.true',
+                    'limit' => 1
+                ];
+                $img_response = $this->supabase->request('product_images?' . http_build_query($img_query));
+                $img_result = $img_response['body'] ?? [];
+                
+                if (!empty($img_result)) {
+                    $product['image_url'] = $img_result[0]['image_url'];
+                }
+                
+                // Fiyat alanını tutarlı tutmak için
+                $product['price'] = $product['base_price'];
+            }
+            
+            return $products;
+            
+        } catch (Exception $e) {
+            error_log("Çoklu kategori ürün getirme hatası: " . $e->getMessage());
+            return [];
         }
     }
     
+    /**
+     * API için ürünleri getiren, filtreleme, sıralama ve sayfalama destekli metod
+     * 
+     * @param array $params Filtreleme, sıralama ve sayfalama parametreleri
+     * @return array Ürünler ve toplam ürün sayısı
+     */
+    public function getProductsForApi($params = []) {
+        try {
+            // Varsayılan parametreler
+            $defaults = [
+                'page' => 1,
+                'limit' => 9,
+                'categories' => [],
+                'genders' => [],
+                'sort' => 'created_at-desc'
+            ];
+            
+            // Parametreleri birleştir
+            $params = array_merge($defaults, $params);
+            
+            // Sayfalama parametrelerini hesapla
+            $page = max(1, intval($params['page']));
+            $limit = max(1, intval($params['limit']));
+            $offset = ($page - 1) * $limit;
+            
+            // Sorgu oluştur - Tek seferde tüm ilişkili verileri çekecek şekilde
+            $select_parts = [
+                'id,name,description,base_price,is_featured,created_at',
+                'product_categories:product_categories(categories:categories(id,name,slug,parent_id))',
+                'product_genders:product_genders(genders:genders(id,name,slug))',
+                'product_images:product_images(image_url,is_primary)'
+            ];
+            
+            $query = [
+                'select' => implode(',', $select_parts)
+            ];
+            
+            // Filtreleri uygula
+            
+            // 1. Kategori filtresi
+            if (!empty($params['categories'])) {
+                $category_ids = $this->getCategoryIdsBySlugs($params['categories']);
+                if (!empty($category_ids)) {
+                    $product_ids = $this->getProductIdsByCategories($category_ids);
+                    if (!empty($product_ids)) {
+                        $query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                    } else {
+                        // Kategorilere ait ürün bulunamadı
+                        return [
+                            'products' => [],
+                            'total' => 0,
+                            'page' => $page,
+                            'limit' => $limit,
+                            'pages' => 0
+                        ];
+                    }
+                }
+            }
+            
+            // 2. Cinsiyet filtresi
+            if (!empty($params['genders'])) {
+                // Cinsiyet ID'lerini al
+                $gender_slugs = is_array($params['genders']) ? $params['genders'] : [$params['genders']];
+                $gender_ids = [];
+                
+                foreach ($gender_slugs as $gender_slug) {
+                    $gender_response = $this->supabase->request("genders?select=id&slug=eq.$gender_slug");
+                    if (!empty($gender_response['body'])) {
+                        $gender_ids[] = $gender_response['body'][0]['id'];
+                    }
+                }
+                
+                if (!empty($gender_ids)) {
+                    // Bu cinsiyetlere ait ürün ID'lerini al
+                    $gender_filter = 'in.(' . implode(',', $gender_ids) . ')';
+                    $gender_products_response = $this->supabase->request("product_genders?select=product_id&gender_id=$gender_filter");
+                    
+                    if (!empty($gender_products_response['body'])) {
+                        $gender_product_ids = array_column($gender_products_response['body'], 'product_id');
+                        
+                        // Eğer zaten kategori filtresi uygulanmışsa, kesişim al
+                        if (isset($query['id'])) {
+                            $existing_ids = explode(',', str_replace(['in.(', ')'], '', $query['id']));
+                            $gender_product_ids = array_intersect($gender_product_ids, $existing_ids);
+                            
+                            if (empty($gender_product_ids)) {
+                                // Filtrelerle eşleşen ürün yok
+                                return [
+                                    'products' => [],
+                                    'total' => 0,
+                                    'page' => $page,
+                                    'limit' => $limit,
+                                    'pages' => 0
+                                ];
+                            }
+                        }
+                        
+                        $query['id'] = 'in.(' . implode(',', $gender_product_ids) . ')';
+                    } else {
+                        // Bu cinsiyetlere ait ürün yok
+                        return [
+                            'products' => [],
+                            'total' => 0,
+                            'page' => $page,
+                            'limit' => $limit,
+                            'pages' => 0
+                        ];
+                    }
+                }
+            }
+            
+            // 3. Sıralama
+            if (!empty($params['sort'])) {
+                $sort_parts = explode('-', $params['sort']);
+                if (count($sort_parts) == 2) {
+                    $sort_column = $sort_parts[0];
+                    $sort_direction = $sort_parts[1];
+                    
+                    // Sıralama sütununu ayarla
+                    if ($sort_column == 'price') {
+                        $sort_column = 'base_price';
+                    }
+                    
+                    // Sıralama sorgusu oluştur
+                    $query['order'] = $sort_column . '.' . $sort_direction;
+                }
+            } else {
+                $query['order'] = 'created_at.desc';
+            }
+            
+            // Önce toplam ürün sayısını almak için sorgu yap
+            $count_query = $query;
+            unset($count_query['select']);
+            $count_response = $this->supabase->request('product_models?' . http_build_query($count_query), 'GET', null, ['Prefer' => 'count=exact']);
+            
+            $total_count = 0;
+            if (isset($count_response['headers']['content-range'])) {
+                $range = explode('/', $count_response['headers']['content-range']);
+                $total_count = isset($range[1]) ? intval($range[1]) : 0;
+            } else {
+                // Fallback olarak tüm ürünleri say
+                $total_count = count($count_response['body'] ?? []);
+            }
+            
+            // Sayfalama parametrelerini ekle
+            $query['limit'] = $limit;
+            $query['offset'] = $offset;
+            
+            // Ürünleri getir
+            $response = $this->supabase->request('product_models?' . http_build_query($query));
+            $products = $response['body'] ?? [];
+            
+            // Ürün verilerini formatla
+            $formatted_products = [];
+            foreach ($products as $product) {
+                $formatted_product = [
+                    'id' => $product['id'],
+                    'name' => $product['name'],
+                    'description' => $product['description'],
+                    'base_price' => $product['base_price'],
+                    'price' => $product['base_price'], // Tutarlılık için
+                    'is_featured' => $product['is_featured'],
+                    'created_at' => $product['created_at']
+                ];
+                
+                // Kategori bilgilerini ekle
+                if (!empty($product['product_categories'])) {
+                    $main_category = null;
+                    $subcategory = null;
+                    
+                    foreach ($product['product_categories'] as $cat_relation) {
+                        if (!empty($cat_relation['categories'])) {
+                            $category = $cat_relation['categories'];
+                            
+                            // Alt kategori bulmaya çalış (parent_id'si olan)
+                            if (!empty($category['parent_id'])) {
+                                $subcategory = $category;
+                            } elseif ($main_category === null) {
+                                // Ana kategori
+                                $main_category = $category;
+                            }
+                        }
+                    }
+                    
+                    // Öncelik alt kategoriye, yoksa ana kategoriye
+                    if ($subcategory) {
+                        $formatted_product['category_name'] = $subcategory['name'];
+                        $formatted_product['category_slug'] = $subcategory['slug'];
+                    } elseif ($main_category) {
+                        $formatted_product['category_name'] = $main_category['name'];
+                        $formatted_product['category_slug'] = $main_category['slug'];
+                    }
+                    
+                    // Tüm kategorileri de ekle
+                    $formatted_product['categories'] = array_map(function($rel) {
+                        return $rel['categories'];
+                    }, $product['product_categories']);
+                }
+                
+                // Cinsiyet bilgilerini ekle
+                if (!empty($product['product_genders'])) {
+                    $formatted_product['genders'] = array_map(function($rel) {
+                        return $rel['genders'];
+                    }, $product['product_genders']);
+                } else {
+                    $formatted_product['genders'] = [];
+                }
+                
+                // Görsel bilgisini ekle
+                if (!empty($product['product_images'])) {
+                    // Önce birincil resmi ara
+                    foreach ($product['product_images'] as $image) {
+                        if (isset($image['is_primary']) && $image['is_primary'] === true) {
+                            $formatted_product['image_url'] = $image['image_url'];
+                            break;
+                        }
+                    }
+                    
+                    // Eğer birincil resim yoksa, ilk resmi kullan
+                    if (!isset($formatted_product['image_url']) && !empty($product['product_images'][0]['image_url'])) {
+                        $formatted_product['image_url'] = $product['product_images'][0]['image_url'];
+                    }
+                }
+                
+                $formatted_products[] = $formatted_product;
+            }
+            
+            // Toplam sayfa sayısını hesapla
+            $total_pages = $limit > 0 ? ceil($total_count / $limit) : 0;
+            
+            // Sonuçları döndür
+            return [
+                'products' => $formatted_products,
+                'total' => $total_count,
+                'page' => $page,
+                'limit' => $limit,
+                'pages' => $total_pages
+            ];
+            
+        } catch (Exception $e) {
+            error_log("API için ürün getirme hatası: " . $e->getMessage());
+            return [
+                'products' => [],
+                'total' => 0,
+                'page' => $params['page'] ?? 1,
+                'limit' => $params['limit'] ?? 9,
+                'pages' => 0
+            ];
+        }
+    }
+    
+    /**
+     * Kategori slug'larından ID'leri getir
+     */
+    private function getCategoryIdsBySlugs($category_slugs) {
+        try {
+            $slugs = is_array($category_slugs) ? $category_slugs : [$category_slugs];
+            $slug_query = 'in.(' . implode(',', array_map(function($slug) { return '"' . $slug . '"'; }, $slugs)) . ')';
+            
+            $response = $this->supabase->request('categories?select=id&slug=' . $slug_query);
+            $categories = $response['body'] ?? [];
+            
+            return array_column($categories, 'id');
+        } catch (Exception $e) {
+            error_log("Kategori ID getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Belirli kategorilere ait ürün ID'lerini getir
+     */
+    private function getProductIdsByCategories($category_ids) {
+        try {
+            if (empty($category_ids)) {
+                return [];
+            }
+            
+            $ids_query = 'in.(' . implode(',', $category_ids) . ')';
+            $response = $this->supabase->request('product_categories?select=product_id&category_id=' . $ids_query);
+            $relations = $response['body'] ?? [];
+            
+            return array_unique(array_column($relations, 'product_id'));
+        } catch (Exception $e) {
+            error_log("Kategori ürün ID getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Yedek ürün getirme metodu (API hata verdiğinde)
      */
@@ -136,18 +616,14 @@ class ProductService {
             'offset' => $offset
         ];
         
-        // Kategori filtresi
+        // Kategori filtresi - çoklu kategori desteği
         if (!empty($category_slugs)) {
-            $category_query = [
-                'select' => 'id',
-                'slug' => is_array($category_slugs) ? 'in.(' . implode(',', $category_slugs) . ')' : 'eq.' . $category_slugs
-            ];
-            $category_response = $this->supabase->request('categories?' . http_build_query($category_query));
-            $category_result = $category_response['body'] ?? [];
-            
-            if (!empty($category_result)) {
-                $category_ids = array_column($category_result, 'id');
-                $basic_query['category_id'] = 'in.(' . implode(',', $category_ids) . ')';
+            $category_ids = $this->getCategoryIdsBySlugs($category_slugs);
+            if (!empty($category_ids)) {
+                $product_ids = $this->getProductIdsByCategories($category_ids);
+                if (!empty($product_ids)) {
+                    $basic_query['id'] = 'in.(' . implode(',', $product_ids) . ')';
+                }
             }
         }
         
@@ -176,18 +652,13 @@ class ProductService {
         
         // Kategori ve görsel bilgilerini ekle
         foreach ($products as &$product) {
-            // Kategori bilgisi
-            $cat_query = [
-                'select' => 'name,slug',
-                'id' => 'eq.' . $product['category_id'],
-                'limit' => 1
-            ];
-            $cat_response = $this->supabase->request('categories?' . http_build_query($cat_query));
-            $cat_result = $cat_response['body'] ?? [];
+            // Çoklu kategori bilgisini getir
+            $cat_response = $this->supabase->request('product_categories?select=category_id,categories(name,slug)&product_id=eq.' . $product['id']);
+            $cat_relations = $cat_response['body'] ?? [];
             
-            if (!empty($cat_result)) {
-                $product['category_name'] = $cat_result[0]['name'];
-                $product['category_slug'] = $cat_result[0]['slug'];
+            if (!empty($cat_relations)) {
+                $product['category_name'] = $cat_relations[0]['categories']['name'] ?? '';
+                $product['category_slug'] = $cat_relations[0]['categories']['slug'] ?? '';
             }
             
             // Görsel bilgisi
@@ -215,54 +686,21 @@ class ProductService {
      * @return array|null Ürün modeli veya bulunamazsa boş dizi
      */
     public function getProductModel($model_id) {
-        $sql = "
-        SELECT
-            pm.*,
-            c.name as category_name,
-            c.slug as category_slug,
-            pi.image_url
-        FROM 
-            product_models pm
-        JOIN 
-            categories c ON pm.category_id = c.id
-        LEFT JOIN 
-            (SELECT DISTINCT ON (model_id) model_id, image_url FROM product_images WHERE is_primary = true) pi 
-            ON pm.id = pi.model_id
-        WHERE 
-            pm.id = :model_id
-        LIMIT 1
-        ";
-        
         try {
-            $response = $this->supabase->executeRawSql($sql, [':model_id' => $model_id]);
-            $result = $response['body'] ?? [];
-            
-            if (!empty($result)) {
-                // base_price -> price olarak da ekle (tutarlılık için)
-                $result[0]['price'] = $result[0]['base_price'];
-                return $result;
-            }
-            
-            return [];
+            // Çoklu kategori desteği ile ürün getir
+            return $this->getProductModelWithMultiCategory($model_id);
         } catch (Exception $e) {
             error_log("Ürün modeli getirme hatası: " . $e->getMessage());
-            
-            // Yedek yöntem ile tekrar dene
-            try {
-                return $this->getProductModelWithFallback($model_id);
-            } catch (Exception $fallbackError) {
-                error_log("Ürün modeli yedek getirme hatası: " . $fallbackError->getMessage());
-                return [];
-            }
+            return [];
         }
     }
     
     /**
-     * Yedek ürün modeli getirme metodu
+     * Çoklu kategori desteği ile ürün modeli getirme metodu
      */
-    private function getProductModelWithFallback($model_id) {
+    private function getProductModelWithMultiCategory($model_id) {
         $query = [
-            'select' => 'id,name,description,features,base_price,is_featured,created_at,category_id',
+            'select' => 'id,name,description,features,base_price,is_featured,created_at',
             'id' => 'eq.' . $model_id,
             'limit' => 1
         ];
@@ -274,16 +712,23 @@ class ProductService {
             return [];
         }
         
-        // Kategori bilgisini al
-        $category_id = isset($product_result[0]['category_id']) ? $product_result[0]['category_id'] : 0;
-        $category_query = [
-            'select' => 'name,slug',
-            'id' => 'eq.' . $category_id,
-            'limit' => 1
-        ];
+        $product = $product_result[0];
+        $product['price'] = $product['base_price']; // Tutarlılık için
         
-        $category_response = $this->supabase->request('categories?' . http_build_query($category_query));
-        $category_result = $category_response['body'] ?? [];
+        // Çoklu kategori bilgilerini getir
+        $cat_response = $this->supabase->request('product_categories?select=category_id,categories(name,slug)&product_id=eq.' . $model_id);
+        $cat_relations = $cat_response['body'] ?? [];
+        
+        if (!empty($cat_relations)) {
+            // İlk kategoriyi ana kategori olarak kullan (backward compatibility)
+            $product['category_name'] = $cat_relations[0]['categories']['name'] ?? '';
+            $product['category_slug'] = $cat_relations[0]['categories']['slug'] ?? '';
+            
+            // Tüm kategorileri de ekle
+            $product['categories'] = array_map(function($rel) {
+                return $rel['categories'];
+            }, $cat_relations);
+        }
         
         // Ürün görselini al
         $image_query = [
@@ -295,15 +740,6 @@ class ProductService {
         
         $image_response = $this->supabase->request('product_images?' . http_build_query($image_query));
         $image_result = $image_response['body'] ?? [];
-        
-        // Ürün ve kategori verilerini birleştir
-        $product = $product_result[0];
-        $product['price'] = $product['base_price']; // Tutarlılık için
-        
-        if (!empty($category_result)) {
-            $product['category_name'] = $category_result[0]['name'];
-            $product['category_slug'] = $category_result[0]['slug'];
-        }
         
         if (!empty($image_result)) {
             $product['image_url'] = $image_result[0]['image_url'];
@@ -352,32 +788,30 @@ class ProductService {
      * @return int Toplam ürün sayısı
      */
     public function getTotalProductCount($category_slugs = null, $featured = null) {
-        $query = [
-            'select' => 'count',
-        ];
-        
-        if (!empty($category_slugs)) {
-            if (is_array($category_slugs)) {
-                $query['category_slug'] = 'in.(' . implode(',', $category_slugs) . ')';
-            } else {
-                $query['category_slug'] = 'eq.' . $category_slugs;
-            }
-        }
-        
-        if ($featured !== null) {
-            $query['is_featured'] = 'eq.' . ($featured ? 'true' : 'false');
-        }
-        
         try {
-            $queryString = http_build_query($query);
-            $response = $this->supabase->request('product_models_view?' . $queryString);
-            $result = $response['body'] ?? [];
+            $query_parts = [];
             
-            if (is_array($result) && isset($result[0]['count'])) {
-                return (int)$result[0]['count'];
+            // Kategori filtresi - çoklu kategori desteği
+            if (!empty($category_slugs)) {
+                $category_ids = $this->getCategoryIdsBySlugs($category_slugs);
+                if (!empty($category_ids)) {
+                    $product_ids = $this->getProductIdsByCategories($category_ids);
+                    if (!empty($product_ids)) {
+                        $query_parts[] = 'id=in.(' . implode(',', $product_ids) . ')';
+                    } else {
+                        return 0; // Kategoriye ait ürün yok
+                    }
+                }
             }
             
-            return 0;
+            if ($featured !== null) {
+                $query_parts[] = 'is_featured=eq.' . ($featured ? 'true' : 'false');
+            }
+            
+            $query_string = empty($query_parts) ? '' : '?' . implode('&', $query_parts);
+            $response = $this->supabase->request('product_models' . $query_string);
+            
+            return count($response['body'] ?? []);
         } catch (Exception $e) {
             error_log("Toplam ürün sayısı getirme hatası: " . $e->getMessage());
             return 0;
@@ -385,76 +819,75 @@ class ProductService {
     }
     
     /**
-     * Admin panel için ürünleri getiren metod
+     * Admin panel için ürünleri getiren metod - Optimize Edilmiş
      * 
      * @param int $limit Limit
      * @param int $offset Offset
-     * @param string $search Arama terimi
-     * @param string $category_filter Kategori filtresi
-     * @param string $status_filter Durum filtresi
      * @return array Ürünler ve pagination bilgisi
      */
-    public function getAdminProducts($limit = 20, $offset = 0, $search = '', $category_filter = '', $status_filter = '') {
+    public function getAdminProductsOptimized($limit = 20, $offset = 0) {
         try {
-            // Product models tablosundan veri çek, kategorilerle birlikte
-            $query_parts = ['select=id,name,base_price,is_featured,created_at,category_id,categories(name)'];
-            
-            // Arama filtresi
-            if (!empty($search)) {
-                $query_parts[] = 'name=ilike.*' . urlencode($search) . '*';
-            }
-            
-            // Kategori filtresi
-            if (!empty($category_filter) && $category_filter !== 'all') {
-                $query_parts[] = 'category_id=eq.' . intval($category_filter);
-            }
-            
-            // Durum filtresi
-            if (!empty($status_filter) && $status_filter !== 'all') {
-                if ($status_filter === 'featured') {
-                    $query_parts[] = 'is_featured=eq.true';
-                } elseif ($status_filter === 'normal') {
-                    $query_parts[] = 'is_featured=eq.false';
-                }
-            }
-            
-            // Sıralama ve sayfalama
-            $query_parts[] = 'order=created_at.desc';
-            $query_parts[] = 'limit=' . intval($limit);
-            $query_parts[] = 'offset=' . intval($offset);
+            // Tek bir sorguda ürünleri, kategorileri, cinsiyetleri ve görselleri çek
+            $query_parts = [
+                'select=id,name,base_price,is_featured,created_at',
+                'product_categories:product_categories(categories:categories(name)),',
+                'product_genders:product_genders(genders:genders(id,name,slug)),',
+                'product_images:product_images(image_url,is_primary)',
+                'order=created_at.desc',
+                'limit=' . intval($limit),
+                'offset=' . intval($offset)
+            ];
             
             $query_string = implode('&', $query_parts);
-            $response = $this->supabase->request('product_models?' . $query_string);
+            $response = $this->supabase->request('product_models?' . $query_string, 'GET', null, ['Prefer' => 'count=exact']);
             $products = $response['body'] ?? [];
             
-            // Kategori bilgilerini manuel olarak ekle (join çalışmazsa)
+            // Sonuçları formatla
             foreach ($products as &$product) {
-                if (!isset($product['categories']) && isset($product['category_id'])) {
-                    $cat_response = $this->supabase->request('categories?select=name&id=eq.' . $product['category_id'] . '&limit=1');
-                    $cat_data = $cat_response['body'] ?? [];
-                    $product['categories'] = !empty($cat_data) ? $cat_data[0] : ['name' => 'Kategorisiz'];
+                // Kategori bilgisini ekle
+                if (!empty($product['product_categories']) && !empty($product['product_categories'][0]['categories'])) {
+                    $product['categories'] = $product['product_categories'][0]['categories'];
+                } else {
+                    $product['categories'] = ['name' => 'Kategorisiz'];
                 }
+                
+                // Cinsiyet bilgilerini ekle
+                $product['genders'] = [];
+                if (!empty($product['product_genders'])) {
+                    foreach ($product['product_genders'] as $gender_relation) {
+                        if (isset($gender_relation['genders'])) {
+                            $product['genders'][] = $gender_relation['genders'];
+                        }
+                    }
+                }
+                
+                // Ana ürün görselini ekle
+                $product['image_url'] = null;
+                if (!empty($product['product_images'])) {
+                    foreach ($product['product_images'] as $image) {
+                        if (isset($image['is_primary']) && $image['is_primary'] === true) {
+                            $product['image_url'] = $image['image_url'];
+                            break;
+                        }
+                    }
+                    
+                    // Eğer birincil resim yoksa, ilk resmi kullan
+                    if ($product['image_url'] === null && !empty($product['product_images'][0]['image_url'])) {
+                        $product['image_url'] = $product['product_images'][0]['image_url'];
+                    }
+                }
+                
+                // İlişkili veri dizilerini kaldır (temizlik için)
+                unset($product['product_categories']);
+                unset($product['product_genders']);
+                unset($product['product_images']);
             }
             
-            // Toplam sayı için basit count sorgusu
-            $count_query_parts = [];
-            if (!empty($search)) {
-                $count_query_parts[] = 'name=ilike.*' . urlencode($search) . '*';
+            $total_count = 0;
+            if (isset($response['headers']['content-range'])) {
+                $range = explode('/', $response['headers']['content-range']);
+                $total_count = isset($range[1]) ? intval($range[1]) : 0;
             }
-            if (!empty($category_filter) && $category_filter !== 'all') {
-                $count_query_parts[] = 'category_id=eq.' . intval($category_filter);
-            }
-            if (!empty($status_filter) && $status_filter !== 'all') {
-                if ($status_filter === 'featured') {
-                    $count_query_parts[] = 'is_featured=eq.true';
-                } elseif ($status_filter === 'normal') {
-                    $count_query_parts[] = 'is_featured=eq.false';
-                }
-            }
-            
-            $count_query_string = empty($count_query_parts) ? '' : '?' . implode('&', $count_query_parts);
-            $count_response = $this->supabase->request('product_models' . $count_query_string);
-            $total_count = count($count_response['body'] ?? []);
             
             return [
                 'products' => $products,
@@ -464,7 +897,7 @@ class ProductService {
             ];
             
         } catch (Exception $e) {
-            error_log("Admin ürünleri getirme hatası: " . $e->getMessage());
+            error_log("Admin ürünleri getirme hatası (optimize): " . $e->getMessage());
             return [
                 'products' => [],
                 'total' => 0,
@@ -475,17 +908,60 @@ class ProductService {
     }
     
     /**
-     * Ürün silme metodu
+     * Admin panel için ürünleri getiren metod
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array Ürünler ve pagination bilgisi
+     */
+    public function getAdminProducts($limit = 20, $offset = 0) {
+        // Optimize edilmiş metodu çağır
+        return $this->getAdminProductsOptimized($limit, $offset);
+    }
+    
+    /**
+     * Ürün silme metodu - Cascade delete ile bağlantılı verileri de siler
      * 
      * @param int $product_id Ürün ID
      * @return bool Başarı durumu
      */
     public function deleteProduct($product_id) {
         try {
-            $response = $this->supabase->request('product_models?id=eq.' . intval($product_id), 'DELETE');
-            return !empty($response);
+            $product_id = intval($product_id);
+            
+            if ($product_id <= 0) {
+                throw new Exception("Geçersiz ürün ID: $product_id");
+            }
+            
+            // 1. Önce ürün kategorilerini sil (çoklu kategori sistemi)
+            $categories_response = $this->supabase->request(
+                'product_categories?product_id=eq.' . $product_id, 
+                'DELETE'
+            );
+            
+            // 2. Ürün görsellerini sil
+            $images_response = $this->supabase->request(
+                'product_images?model_id=eq.' . $product_id, 
+                'DELETE'
+            );
+            
+            // 3. Ürün varyantlarını sil
+            $variants_response = $this->supabase->request(
+                'product_variants?model_id=eq.' . $product_id, 
+                'DELETE'
+            );
+            
+            // 4. En son ana ürün modelini sil
+            $model_response = $this->supabase->request(
+                'product_models?id=eq.' . $product_id, 
+                'DELETE'
+            );
+            
+            // En azından ana ürün silme işlemi başarılı olmalı
+            return !empty($model_response);
+            
         } catch (Exception $e) {
-            error_log("Ürün silme hatası: " . $e->getMessage());
+            error_log("Ürün silme hatası (ID: $product_id): " . $e->getMessage());
             return false;
         }
     }
@@ -532,7 +1008,7 @@ function product_service() {
  * @return array Ürün modelleri
  */
 function get_product_models($limit = 10, $offset = 0, $category_slugs = null, $featured = null, $sort = null) {
-    return product_service()->getProductModels($limit, $offset, $category_slugs, $featured, $sort);
+    return product_service()->getProductModelsWithMultiCategory($limit, $offset, $category_slugs, $featured, $sort);
 }
 
 /**
@@ -586,8 +1062,8 @@ function get_total_product_count($category_slugs = null, $featured = null) {
  * @param string $status_filter Durum filtresi
  * @return array Ürünler ve pagination bilgisi
  */
-function get_admin_products($limit = 20, $offset = 0, $search = '', $category_filter = '', $status_filter = '') {
-    return product_service()->getAdminProducts($limit, $offset, $search, $category_filter, $status_filter);
+function get_admin_products($limit = 20, $offset = 0) {
+    return product_service()->getAdminProducts($limit, $offset);
 }
 
 /**
@@ -609,4 +1085,14 @@ function delete_product($product_id) {
  */
 function update_product_status($product_id, $is_featured) {
     return product_service()->updateProductStatus($product_id, $is_featured);
+}
+
+/**
+ * API için ürünleri filtreleme, sıralama ve sayfalama ile getiren fonksiyon
+ * 
+ * @param array $params Filtreleme, sıralama ve sayfalama parametreleri
+ * @return array Ürünler ve toplam sayfa bilgisi
+ */
+function get_products_for_api($params = []) {
+    return product_service()->getProductsForApi($params);
 }
