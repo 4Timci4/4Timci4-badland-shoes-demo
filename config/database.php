@@ -8,8 +8,8 @@
 // Ortam değişkenlerini içe aktar
 require_once __DIR__ . '/env.php';
 
-// Supabase İstemci sınıfını içe aktar
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+// Database Factory'yi içe aktar
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 // Ürün servisini içe aktar
 require_once __DIR__ . '/../services/ProductService.php';
@@ -30,8 +30,8 @@ require_once __DIR__ . '/../services/ContactService.php';
  */
 function get_colors() {
     try {
-        $response = supabase()->request('colors?select=*');
-        return $response['body'] ?? [];
+        // Yeni database abstraction layer kullan
+        return database()->select('colors', [], ['id', 'name', 'hex_code', 'created_at']);
     } catch (Exception $e) {
         error_log("Renkleri getirme hatası: " . $e->getMessage());
         return [];
@@ -45,8 +45,8 @@ function get_colors() {
  */
 function get_sizes() {
     try {
-        $response = supabase()->request('sizes?select=*');
-        return $response['body'] ?? [];
+        // Yeni database abstraction layer kullan
+        return database()->select('sizes', [], ['id', 'size_value', 'size_type', 'created_at']);
     } catch (Exception $e) {
         error_log("Bedenleri getirme hatası: " . $e->getMessage());
         return [];

@@ -6,7 +6,7 @@
  */
 
 // Gerekli dosyaları dahil et
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 /**
  * Varyant servis sınıfı
@@ -14,13 +14,13 @@ require_once __DIR__ . '/../lib/SupabaseClient.php';
  * Ürün varyantlarıyla ilgili tüm veritabanı işlemlerini içerir
  */
 class VariantService {
-    private $supabase;
+    private $db;
     
     /**
      * VariantService sınıfını başlatır
      */
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
     
     /**
@@ -30,8 +30,7 @@ class VariantService {
      */
     public function getAllColors() {
         try {
-            $response = $this->supabase->request('colors?select=*&order=name.asc');
-            return $response['body'] ?? [];
+            return $this->db->select('colors', [], '*', ['order' => 'name ASC']);
         } catch (Exception $e) {
             error_log("Renkleri getirme hatası: " . $e->getMessage());
             return [];
@@ -45,8 +44,7 @@ class VariantService {
      */
     public function getAllSizes() {
         try {
-            $response = $this->supabase->request('sizes?select=*&order=size_value.asc');
-            return $response['body'] ?? [];
+            return $this->db->select('sizes', [], '*', ['order' => 'size_value ASC']);
         } catch (Exception $e) {
             error_log("Bedenleri getirme hatası: " . $e->getMessage());
             return [];
@@ -61,54 +59,12 @@ class VariantService {
      */
     public function getProductVariants($model_id) {
         try {
-            // REST API ile varyantları çek
-            $variants_query = [
-                'select' => '*',
-                'model_id' => 'eq.' . $model_id,
-                'order' => 'id.asc'
-            ];
-            
-            $variants_response = $this->supabase->request('product_variants?' . http_build_query($variants_query));
-            $variants = $variants_response['body'] ?? [];
-            
-            if (empty($variants)) {
-                return [];
-            }
-            
-            // Her varyant için renk ve beden bilgilerini ekle
-            foreach ($variants as &$variant) {
-                // Renk bilgisi
-                if ($variant['color_id']) {
-                    $color_query = [
-                        'select' => 'id,name,hex_code',
-                        'id' => 'eq.' . $variant['color_id'],
-                        'limit' => 1
-                    ];
-                    $color_response = $this->supabase->request('colors?' . http_build_query($color_query));
-                    $color_result = $color_response['body'] ?? [];
-                    
-                    if (!empty($color_result)) {
-                        $variant['color_name'] = $color_result[0]['name'];
-                        $variant['color_hex'] = $color_result[0]['hex_code'];
-                    }
-                }
-                
-                // Beden bilgisi
-                if ($variant['size_id']) {
-                    $size_query = [
-                        'select' => 'id,size_value,size_type',
-                        'id' => 'eq.' . $variant['size_id'],
-                        'limit' => 1
-                    ];
-                    $size_response = $this->supabase->request('sizes?' . http_build_query($size_query));
-                    $size_result = $size_response['body'] ?? [];
-                    
-                    if (!empty($size_result)) {
-                        $variant['size_value'] = $size_result[0]['size_value'];
-                        $variant['size_type'] = $size_result[0]['size_type'];
-                    }
-                }
-            }
+            $variants = $this->db->selectWithJoins('product_variants', [
+                ['type' => 'LEFT', 'table' => 'colors', 'condition' => 'product_variants.color_id = colors.id'],
+                ['type' => 'LEFT', 'table' => 'sizes', 'condition' => 'product_variants.size_id = sizes.id']
+            ], ['product_variants.model_id' => intval($model_id)], 
+            'product_variants.*, colors.name as color_name, colors.hex_code as color_hex, sizes.size_value, sizes.size_type',
+            ['order' => 'product_variants.id ASC']);
             
             return $variants;
         } catch (Exception $e) {
@@ -130,8 +86,8 @@ class VariantService {
                 $data['sku'] = $this->generateSKU($data['model_id'], $data['color_id'], $data['size_id']);
             }
             
-            $response = $this->supabase->request('product_variants', 'POST', $data);
-            return !empty($response['body']);
+            $result = $this->db->insert('product_variants', $data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Varyant oluşturma hatası: " . $e->getMessage());
             return false;
@@ -147,8 +103,8 @@ class VariantService {
      */
     public function updateVariant($variant_id, $data) {
         try {
-            $response = $this->supabase->request('product_variants?id=eq.' . intval($variant_id), 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('product_variants', $data, ['id' => intval($variant_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Varyant güncelleme hatası: " . $e->getMessage());
             return false;
@@ -163,8 +119,8 @@ class VariantService {
      */
     public function deleteVariant($variant_id) {
         try {
-            $response = $this->supabase->request('product_variants?id=eq.' . intval($variant_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('product_variants', ['id' => intval($variant_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Varyant silme hatası: " . $e->getMessage());
             return false;
@@ -235,55 +191,14 @@ class VariantService {
      */
     public function getVariantById($variant_id) {
         try {
-            // REST API ile varyantı çek
-            $variant_query = [
-                'select' => '*',
-                'id' => 'eq.' . $variant_id,
-                'limit' => 1
-            ];
+            $variants = $this->db->selectWithJoins('product_variants', [
+                ['type' => 'LEFT', 'table' => 'colors', 'condition' => 'product_variants.color_id = colors.id'],
+                ['type' => 'LEFT', 'table' => 'sizes', 'condition' => 'product_variants.size_id = sizes.id']
+            ], ['product_variants.id' => intval($variant_id)], 
+            'product_variants.*, colors.name as color_name, colors.hex_code as color_hex, sizes.size_value, sizes.size_type',
+            ['limit' => 1]);
             
-            $variant_response = $this->supabase->request('product_variants?' . http_build_query($variant_query));
-            $variant_result = $variant_response['body'] ?? [];
-            
-            if (empty($variant_result)) {
-                return null;
-            }
-            
-            $variant = $variant_result[0];
-            
-            // Renk bilgisi ekle
-            if ($variant['color_id']) {
-                $color_query = [
-                    'select' => 'name,hex_code',
-                    'id' => 'eq.' . $variant['color_id'],
-                    'limit' => 1
-                ];
-                $color_response = $this->supabase->request('colors?' . http_build_query($color_query));
-                $color_result = $color_response['body'] ?? [];
-                
-                if (!empty($color_result)) {
-                    $variant['color_name'] = $color_result[0]['name'];
-                    $variant['color_hex'] = $color_result[0]['hex_code'];
-                }
-            }
-            
-            // Beden bilgisi ekle
-            if ($variant['size_id']) {
-                $size_query = [
-                    'select' => 'size_value,size_type',
-                    'id' => 'eq.' . $variant['size_id'],
-                    'limit' => 1
-                ];
-                $size_response = $this->supabase->request('sizes?' . http_build_query($size_query));
-                $size_result = $size_response['body'] ?? [];
-                
-                if (!empty($size_result)) {
-                    $variant['size_value'] = $size_result[0]['size_value'];
-                    $variant['size_type'] = $size_result[0]['size_type'];
-                }
-            }
-            
-            return $variant;
+            return !empty($variants) ? $variants[0] : null;
         } catch (Exception $e) {
             error_log("Varyant getirme hatası: " . $e->getMessage());
             return null;
@@ -298,15 +213,10 @@ class VariantService {
      */
     public function getTotalStock($model_id) {
         try {
-            // REST API ile aktif varyantları çek
-            $variants_query = [
-                'select' => 'stock_quantity',
-                'model_id' => 'eq.' . $model_id,
-                'is_active' => 'eq.true'
-            ];
-            
-            $variants_response = $this->supabase->request('product_variants?' . http_build_query($variants_query));
-            $variants = $variants_response['body'] ?? [];
+            $variants = $this->db->select('product_variants', 
+                ['model_id' => intval($model_id), 'is_active' => 1], 
+                'stock_quantity'
+            );
             
             $total_stock = 0;
             foreach ($variants as $variant) {
@@ -328,40 +238,18 @@ class VariantService {
      */
     public function getProductColors($model_id) {
         try {
-            // Aktif varyantları çek
-            $variants_query = [
-                'select' => 'color_id',
-                'model_id' => 'eq.' . $model_id,
-                'is_active' => 'eq.true'
-            ];
-            
-            $variants_response = $this->supabase->request('product_variants?' . http_build_query($variants_query));
-            $variants = $variants_response['body'] ?? [];
+            $variants = $this->db->select('product_variants', 
+                ['model_id' => intval($model_id), 'is_active' => 1], 
+                'color_id'
+            );
             
             $color_ids = array_unique(array_column($variants, 'color_id'));
-            $colors = [];
             
-            foreach ($color_ids as $color_id) {
-                if (!$color_id) continue;
-                
-                $color_query = [
-                    'select' => 'id,name,hex_code',
-                    'id' => 'eq.' . $color_id,
-                    'limit' => 1
-                ];
-                
-                $color_response = $this->supabase->request('colors?' . http_build_query($color_query));
-                $color_result = $color_response['body'] ?? [];
-                
-                if (!empty($color_result)) {
-                    $colors[] = $color_result[0];
-                }
+            if (empty($color_ids)) {
+                return [];
             }
             
-            // İsme göre sırala
-            usort($colors, function($a, $b) {
-                return strcmp($a['name'], $b['name']);
-            });
+            $colors = $this->db->select('colors', ['id' => ['IN', $color_ids]], '*', ['order' => 'name ASC']);
             
             return $colors;
         } catch (Exception $e) {
@@ -378,40 +266,18 @@ class VariantService {
      */
     public function getProductSizes($model_id) {
         try {
-            // Aktif varyantları çek
-            $variants_query = [
-                'select' => 'size_id',
-                'model_id' => 'eq.' . $model_id,
-                'is_active' => 'eq.true'
-            ];
-            
-            $variants_response = $this->supabase->request('product_variants?' . http_build_query($variants_query));
-            $variants = $variants_response['body'] ?? [];
+            $variants = $this->db->select('product_variants', 
+                ['model_id' => intval($model_id), 'is_active' => 1], 
+                'size_id'
+            );
             
             $size_ids = array_unique(array_column($variants, 'size_id'));
-            $sizes = [];
             
-            foreach ($size_ids as $size_id) {
-                if (!$size_id) continue;
-                
-                $size_query = [
-                    'select' => 'id,size_value,size_type',
-                    'id' => 'eq.' . $size_id,
-                    'limit' => 1
-                ];
-                
-                $size_response = $this->supabase->request('sizes?' . http_build_query($size_query));
-                $size_result = $size_response['body'] ?? [];
-                
-                if (!empty($size_result)) {
-                    $sizes[] = $size_result[0];
-                }
+            if (empty($size_ids)) {
+                return [];
             }
             
-            // Beden değerine göre sırala
-            usort($sizes, function($a, $b) {
-                return intval($a['size_value']) - intval($b['size_value']);
-            });
+            $sizes = $this->db->select('sizes', ['id' => ['IN', $size_ids]], '*', ['order' => 'size_value ASC']);
             
             return $sizes;
         } catch (Exception $e) {

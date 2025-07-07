@@ -6,7 +6,7 @@
  */
 
 // Gerekli dosyaları dahil et
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 /**
  * Kategori servisi
@@ -14,13 +14,13 @@ require_once __DIR__ . '/../lib/SupabaseClient.php';
  * Kategorilerle ilgili tüm veritabanı işlemlerini içerir
  */
 class CategoryService {
-    private $supabase;
+    private $db;
     
     /**
      * CategoryService sınıfını başlatır
      */
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
     
     /**
@@ -30,7 +30,7 @@ class CategoryService {
      */
     public function getCategories() {
         try {
-            return $this->supabase->request('/rest/v1/categories');
+            return $this->db->select('categories', [], '*', ['order' => 'name ASC']);
         } catch (Exception $e) {
             error_log("Kategorileri getirme hatası: " . $e->getMessage());
             return [];
@@ -46,28 +46,25 @@ class CategoryService {
      */
     public function getAllCategories($category_type = null, $parent_id = null) {
         try {
-            $query = 'categories?select=*';
+            $conditions = [];
             
-            // Kategori tipi (eski) veya üst kategori (yeni) filtresi
+            // Kategori tipi filtresi (eski sistem için)
             if ($category_type) {
-                $query .= '&category_type=eq.' . $category_type;
+                $conditions['category_type'] = $category_type;
             }
             
             // parent_id parametresi belirtilmişse, buna göre filtrele
             if ($parent_id !== null) {
                 if ($parent_id === 0) {
                     // Ana kategoriler (parent_id IS NULL)
-                    $query .= '&parent_id=is.null';
+                    $conditions['parent_id'] = null;
                 } else {
                     // Belirli bir üst kategorinin alt kategorileri
-                    $query .= '&parent_id=eq.' . intval($parent_id);
+                    $conditions['parent_id'] = intval($parent_id);
                 }
             }
             
-            $query .= '&order=name.asc';
-            
-            $response = $this->supabase->request($query);
-            return $response['body'] ?? [];
+            return $this->db->select('categories', $conditions, '*', ['order' => 'name ASC']);
         } catch (Exception $e) {
             error_log("Tüm kategorileri getirme hatası: " . $e->getMessage());
             return [];
@@ -123,7 +120,16 @@ class CategoryService {
      */
     public function getCategoryProductCounts() {
         try {
-            return $this->supabase->request('/rest/v1/rpc/get_category_product_counts', 'POST');
+            // Bu metod artık basit kategori listesi döndürür
+            $categories = $this->getAllCategories();
+            $counts = [];
+            
+            foreach ($categories as $category) {
+                $count = $this->db->count('product_categories', ['category_id' => $category['id']]);
+                $counts[$category['slug']] = $count;
+            }
+            
+            return $counts;
         } catch (Exception $e) {
             error_log("Kategori ürün sayıları getirme hatası: " . $e->getMessage());
             return [];
@@ -138,13 +144,7 @@ class CategoryService {
      */
     public function getCategoryBySlug($slug) {
         try {
-            $query = [
-                'select' => '*',
-                'slug' => 'eq.' . $slug,
-                'limit' => 1
-            ];
-            
-            $result = $this->supabase->request('/rest/v1/categories?' . http_build_query($query));
+            $result = $this->db->select('categories', ['slug' => $slug], '*', ['limit' => 1]);
             
             if (!empty($result)) {
                 return $result[0];
@@ -165,20 +165,10 @@ class CategoryService {
      */
     public function createCategory($data) {
         try {
-            
-            $response = $this->supabase->request('categories', 'POST', $data);
-            
-            
-            // Response'da body varsa ve boş değilse başarılı
-            if (isset($response['body']) && !empty($response['body'])) {
-                return true;
-            }
-            
-            return false;
-            
+            $result = $this->db->insert('categories', $data, ['returning' => true]);
+            return !empty($result);
         } catch (Exception $e) {
             error_log("CategoryService::createCategory - Exception: " . $e->getMessage());
-            error_log("CategoryService::createCategory - Exception Code: " . $e->getCode());
             return false;
         }
     }
@@ -192,8 +182,8 @@ class CategoryService {
      */
     public function updateCategory($category_id, $data) {
         try {
-            $response = $this->supabase->request('categories?id=eq.' . intval($category_id), 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('categories', $data, ['id' => intval($category_id)]);
+            return !empty($result);
         } catch (Exception $e) {
             error_log("Kategori güncelleme hatası: " . $e->getMessage());
             return false;
@@ -208,16 +198,15 @@ class CategoryService {
      */
     public function deleteCategory($category_id) {
         try {
-            // Önce bu kategoriye ait ürün var mı kontrol et (yeni çoklu kategori sistemi)
-            $products_response = $this->supabase->request('product_categories?select=product_id&category_id=eq.' . intval($category_id) . '&limit=1');
-            $products = $products_response['body'] ?? [];
+            // Önce bu kategoriye ait ürün var mı kontrol et
+            $product_count = $this->db->count('product_categories', ['category_id' => intval($category_id)]);
             
-            if (!empty($products)) {
+            if ($product_count > 0) {
                 return false; // Kategoriye ait ürün varsa silinemez
             }
             
-            $response = $this->supabase->request('categories?id=eq.' . intval($category_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('categories', ['id' => intval($category_id)]);
+            return !empty($result);
         } catch (Exception $e) {
             error_log("Kategori silme hatası: " . $e->getMessage());
             return false;
@@ -232,8 +221,7 @@ class CategoryService {
      */
     public function getCategoryById($category_id) {
         try {
-            $response = $this->supabase->request('categories?id=eq.' . intval($category_id) . '&limit=1');
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('categories', ['id' => intval($category_id)], '*', ['limit' => 1]);
             
             if (!empty($result)) {
                 return $result[0];
@@ -306,10 +294,9 @@ class CategoryService {
             $categories = $this->getAllCategories();
             
             foreach ($categories as &$category) {
-                // Ürün sayılarını ekle
-                $products_response = $this->supabase->request('product_categories?select=product_id&category_id=eq.' . $category['id']);
-                $products = $products_response['body'] ?? [];
-                $category['product_count'] = count($products);
+                // Ürün sayılarını ekle (yeni database interface kullan)
+                $product_count = $this->db->count('product_categories', ['category_id' => $category['id']]);
+                $category['product_count'] = $product_count;
             }
             
             // Hiyerarşik yapı isteniyorsa düzenle

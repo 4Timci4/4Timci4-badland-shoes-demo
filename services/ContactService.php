@@ -5,11 +5,13 @@
  * İletişim bilgileri, sosyal medya linkleri ve footer bilgilerini yönetir.
  */
 
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
+
 class ContactService {
-    private $supabase;
+    private $db;
 
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
 
     /**
@@ -18,8 +20,7 @@ class ContactService {
     public function getFooterInfo() {
         try {
             // Footer ve footer_links bölümlerini getir
-            $response = $this->supabase->request("contact_info?or=(section.eq.footer,section.eq.footer_links)&select=*");
-            $data = $response['body'] ?? [];
+            $data = $this->db->select('contact_info', ['section' => ['IN', ['footer', 'footer_links']]]);
             
             $footer_info = [
                 'footer' => [],
@@ -68,12 +69,11 @@ class ContactService {
             
             // Footer bilgilerini güncelle
             foreach ($footer_data['footer'] as $field => $value) {
-                $response = $this->supabase->request(
-                    "contact_info?section=eq.footer&field=eq.{$field}",
-                    'PATCH',
-                    ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')]
+                $result = $this->db->update('contact_info', 
+                    ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')],
+                    ['section' => 'footer', 'field' => $field]
                 );
-                if (empty($response)) {
+                if ($result === false) {
                     $success = false;
                 }
             }
@@ -81,12 +81,11 @@ class ContactService {
             // Footer links güncelle
             if (isset($footer_data['links'])) {
                 foreach ($footer_data['links'] as $field => $value) {
-                    $response = $this->supabase->request(
-                        "contact_info?section=eq.footer_links&field=eq.{$field}",
-                        'PATCH',
-                        ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')]
+                    $result = $this->db->update('contact_info', 
+                        ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')],
+                        ['section' => 'footer_links', 'field' => $field]
                     );
-                    if (empty($response)) {
+                    if ($result === false) {
                         $success = false;
                     }
                 }
@@ -106,28 +105,21 @@ class ContactService {
      */
     public function getContactInfo() {
         try {
-            // Önbelleği temizle
-            $this->supabase->clearCache('contact_info?select=*');
+            $data = $this->db->select('contact_info');
             
-            $response = $this->supabase->request('contact_info?select=*');
-            
-            if (!empty($response['body'])) {
+            if (!empty($data)) {
                 // Verileri section ve field'a göre organize et
                 $organized = [];
-                foreach ($response['body'] as $item) {
+                foreach ($data as $item) {
                     $organized[$item['section']][$item['field']] = $item['value'];
                 }
                 
                 return $organized;
-            } else {
-                error_log("Veritabanından veri alınamadı - boş response body");
             }
         } catch (Exception $e) {
             error_log("İletişim bilgilerini getirme hatası: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
         }
         
-        // Veritabanından veri gelmezse boş sonuç döndür
         return [];
     }
 
@@ -138,16 +130,11 @@ class ContactService {
      */
     public function getSocialMediaLinks() {
         try {
-            $response = $this->supabase->request('social_media_links?select=*&is_active=eq.true&order=order_index');
-            if (!empty($response['body'])) {
-                return $response['body'];
-            }
+            return $this->db->select('social_media_links', ['is_active' => 1], '*', ['order' => 'order_index ASC']);
         } catch (Exception $e) {
             error_log("Sosyal medya linklerini getirme hatası: " . $e->getMessage());
+            return [];
         }
-        
-        // Veritabanından veri gelmezse boş sonuç döndür
-        return [];
     }
 
     /**
@@ -167,17 +154,12 @@ class ContactService {
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
-            // Veritabanına kaydet (eğer contact_messages tablosu varsa)
-            $response = $this->supabase->request('contact_messages', 'POST', $data);
-            
-            if (!empty($response['body'])) {
-                return true;
-            }
+            $result = $this->db->insert('contact_messages', $data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("İletişim formu gönderme hatası: " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
 
     /**
@@ -190,32 +172,23 @@ class ContactService {
      */
     public function getAllMessages($limit = 20, $offset = 0, $search = '') {
         try {
-            $query_parts = ['select=*', 'order=created_at.desc'];
-            
-            // Arama filtresi
+            $conditions = [];
             if (!empty($search)) {
-                $search_encoded = urlencode($search);
-                $query_parts[] = "or=(name.ilike.*{$search_encoded}*,email.ilike.*{$search_encoded}*,subject.ilike.*{$search_encoded}*)";
+                // Basit bir arama, daha karmaşık senaryolar için uyarlanabilir
+                $conditions['OR'] = [
+                    'name' => ['LIKE', "%{$search}%"],
+                    'email' => ['LIKE', "%{$search}%"],
+                    'subject' => ['LIKE', "%{$search}%"]
+                ];
             }
+
+            $total_count = $this->db->count('contact_messages', $conditions);
             
-            // Sayfalama
-            $query_parts[] = 'limit=' . intval($limit);
-            $query_parts[] = 'offset=' . intval($offset);
-            
-            $query_string = implode('&', $query_parts);
-            $response = $this->supabase->request('contact_messages?' . $query_string);
-            $messages = $response['body'] ?? [];
-            
-            // Toplam sayı için ayrı sorgu
-            $count_query = [];
-            if (!empty($search)) {
-                $search_encoded = urlencode($search);
-                $count_query[] = "or=(name.ilike.*{$search_encoded}*,email.ilike.*{$search_encoded}*,subject.ilike.*{$search_encoded}*)";
-            }
-            
-            $count_query_string = empty($count_query) ? '' : '?' . implode('&', $count_query);
-            $count_response = $this->supabase->request('contact_messages' . $count_query_string);
-            $total_count = count($count_response['body'] ?? []);
+            $messages = $this->db->select('contact_messages', $conditions, '*', [
+                'order' => 'created_at DESC',
+                'limit' => $limit,
+                'offset' => $offset
+            ]);
             
             return [
                 'messages' => $messages,
@@ -243,8 +216,8 @@ class ContactService {
      */
     public function deleteMessage($message_id) {
         try {
-            $response = $this->supabase->request('contact_messages?id=eq.' . intval($message_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('contact_messages', ['id' => intval($message_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Mesaj silme hatası: " . $e->getMessage());
             return false;
@@ -262,27 +235,21 @@ class ContactService {
             $success_count = 0;
             foreach ($data as $section => $fields) {
                 foreach ($fields as $field => $value) {
-                    // Mevcut kaydı güncelle veya yeni oluştur
                     $update_data = [
-                        'section' => $section,
-                        'field' => $field,
                         'value' => htmlspecialchars($value),
                         'updated_at' => date('Y-m-d H:i:s')
                     ];
                     
-                    // Önce kayıt var mı kontrol et
-                    $check_response = $this->supabase->request("contact_info?section=eq.{$section}&field=eq.{$field}");
-                    $existing = $check_response['body'] ?? [];
+                    $existing = $this->db->select('contact_info', ['section' => $section, 'field' => $field], 'id', ['limit' => 1]);
                     
                     if (!empty($existing)) {
-                        // Güncelle
-                        $response = $this->supabase->request("contact_info?section=eq.{$section}&field=eq.{$field}", 'PATCH', ['value' => htmlspecialchars($value), 'updated_at' => date('Y-m-d H:i:s')]);
+                        $result = $this->db->update('contact_info', $update_data, ['section' => $section, 'field' => $field]);
                     } else {
-                        // Yeni oluştur
-                        $response = $this->supabase->request('contact_info', 'POST', $update_data);
+                        $insert_data = array_merge($update_data, ['section' => $section, 'field' => $field]);
+                        $result = $this->db->insert('contact_info', $insert_data);
                     }
                     
-                    if (!empty($response)) {
+                    if ($result !== false) {
                         $success_count++;
                     }
                 }
@@ -309,12 +276,12 @@ class ContactService {
                 'url' => htmlspecialchars($data['url']),
                 'icon_class' => htmlspecialchars($data['icon_class']),
                 'order_index' => intval($data['order_index']),
-                'is_active' => isset($data['is_active']) ? (bool)$data['is_active'] : true,
+                'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
             
-            $response = $this->supabase->request('social_media_links?id=eq.' . intval($link_id), 'PATCH', $update_data);
-            return !empty($response);
+            $result = $this->db->update('social_media_links', $update_data, ['id' => intval($link_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Sosyal medya linki güncelleme hatası: " . $e->getMessage());
             return false;
@@ -329,8 +296,8 @@ class ContactService {
      */
     public function deleteSocialMediaLink($link_id) {
         try {
-            $response = $this->supabase->request('social_media_links?id=eq.' . intval($link_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('social_media_links', ['id' => intval($link_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Sosyal medya linki silme hatası: " . $e->getMessage());
             return false;
@@ -350,13 +317,13 @@ class ContactService {
                 'url' => htmlspecialchars($data['url']),
                 'icon_class' => htmlspecialchars($data['icon_class']),
                 'order_index' => intval($data['order_index']),
-                'is_active' => isset($data['is_active']) ? (bool)$data['is_active'] : true,
+                'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
             
-            $response = $this->supabase->request('social_media_links', 'POST', $insert_data);
-            return !empty($response['body']);
+            $result = $this->db->insert('social_media_links', $insert_data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Sosyal medya linki ekleme hatası: " . $e->getMessage());
             return false;
@@ -370,8 +337,7 @@ class ContactService {
      */
     public function getAllSocialMediaLinks() {
         try {
-            $response = $this->supabase->request('social_media_links?select=*&order=order_index.asc');
-            return $response['body'] ?? [];
+            return $this->db->select('social_media_links', [], '*', ['order' => 'order_index ASC']);
         } catch (Exception $e) {
             error_log("Tüm sosyal medya linklerini getirme hatası: " . $e->getMessage());
             return [];

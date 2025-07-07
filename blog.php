@@ -25,11 +25,11 @@
                 echo '<h3 class="font-bold text-yellow-800">Debug Modu Aktif</h3>';
                 echo '<p class="text-yellow-700">Supabase bağlantısı test ediliyor...</p>';
                 
-                // Supabase bağlantısını test et
-                $testResponse = supabase()->request('blogs?select=count(*)');
+                // Veritabanı bağlantısını test et
+                $testResponse = database()->count('blogs');
                 echo '<pre class="text-sm mt-2">';
-                echo 'Bağlantı testi: ' . (empty($testResponse['body']) ? 'BAŞARISIZ' : 'BAŞARILI') . "\n";
-                echo 'API Yanıtı: ' . json_encode($testResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                echo 'Bağlantı testi: ' . (is_numeric($testResponse) && $testResponse >= 0 ? 'BAŞARILI' : 'BAŞARISIZ') . "\n";
+                echo 'Toplam blog sayısı: ' . $testResponse . "\n";
                 echo '</pre>';
                 echo '</div>';
             }

@@ -1,12 +1,12 @@
 <?php
 
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 class SeasonalCollectionsService {
-    private $client;
+    private $db;
 
     public function __construct() {
-        $this->client = supabase();
+        $this->db = database();
     }
 
     /**
@@ -16,12 +16,7 @@ class SeasonalCollectionsService {
      */
     public function getActiveCollections() {
         try {
-            // Cache'i temizle
-            $this->client->clearCache();
-            
-            $query = 'seasonal_collections?select=*&order=sort_order.asc';
-            $response = $this->client->request($query, 'GET', null, []);
-            return $response['body'] ?? [];
+            return $this->db->select('seasonal_collections', [], '*', ['order' => 'sort_order ASC']);
         } catch (Exception $e) {
             error_log("Sezonluk koleksiyonlar getirme hatası: " . $e->getMessage());
             return [];
@@ -36,11 +31,8 @@ class SeasonalCollectionsService {
      */
     public function getCollectionById($id) {
         try {
-            $query = 'seasonal_collections?select=*&id=eq.' . intval($id);
-            $headers = ['Prefer' => 'return=representation'];
-            $response = $this->client->request($query, 'GET', null, $headers);
-            $data = $response['body'] ?? [];
-            return !empty($data) ? $data[0] : null;
+            $result = $this->db->select('seasonal_collections', ['id' => intval($id)], '*', ['limit' => 1]);
+            return !empty($result) ? $result[0] : null;
         } catch (Exception $e) {
             error_log("Koleksiyon getirme hatası: " . $e->getMessage());
             return null;

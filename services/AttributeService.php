@@ -6,7 +6,7 @@
  */
 
 // Gerekli dosyaları dahil et
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 /**
  * Özellik servis sınıfı
@@ -14,13 +14,13 @@ require_once __DIR__ . '/../lib/SupabaseClient.php';
  * Renkler ve bedenlerle ilgili tüm veritabanı işlemlerini içerir
  */
 class AttributeService {
-    private $supabase;
+    private $db;
     
     /**
      * AttributeService sınıfını başlatır
      */
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
     
     // =================== RENK YÖNETİMİ ===================
@@ -32,8 +32,7 @@ class AttributeService {
      */
     public function getAllColors() {
         try {
-            $response = $this->supabase->request('colors?select=*&order=name.asc');
-            return $response['body'] ?? [];
+            return $this->db->select('colors', [], '*', ['order' => 'name ASC']);
         } catch (Exception $e) {
             error_log("Renkleri getirme hatası: " . $e->getMessage());
             return [];
@@ -48,8 +47,8 @@ class AttributeService {
      */
     public function createColor($data) {
         try {
-            $response = $this->supabase->request('colors', 'POST', $data);
-            return !empty($response);
+            $result = $this->db->insert('colors', $data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Renk oluşturma hatası: " . $e->getMessage());
             return false;
@@ -65,8 +64,8 @@ class AttributeService {
      */
     public function updateColor($color_id, $data) {
         try {
-            $response = $this->supabase->request('colors?id=eq.' . intval($color_id), 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('colors', $data, ['id' => intval($color_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Renk güncelleme hatası: " . $e->getMessage());
             return false;
@@ -82,15 +81,14 @@ class AttributeService {
     public function deleteColor($color_id) {
         try {
             // Bu rengi kullanan varyant var mı kontrol et
-            $variants_response = $this->supabase->request('product_variants?select=id&color_id=eq.' . intval($color_id) . '&limit=1');
-            $variants = $variants_response['body'] ?? [];
+            $usage_count = $this->db->count('product_variants', ['color_id' => intval($color_id)]);
             
-            if (!empty($variants)) {
+            if ($usage_count > 0) {
                 return false; // Rengi kullanan varyant varsa silinemez
             }
             
-            $response = $this->supabase->request('colors?id=eq.' . intval($color_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('colors', ['id' => intval($color_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Renk silme hatası: " . $e->getMessage());
             return false;
@@ -105,14 +103,8 @@ class AttributeService {
      */
     public function getColorById($color_id) {
         try {
-            $response = $this->supabase->request('colors?id=eq.' . intval($color_id) . '&limit=1');
-            $result = $response['body'] ?? [];
-            
-            if (!empty($result)) {
-                return $result[0];
-            }
-            
-            return [];
+            $result = $this->db->select('colors', ['id' => intval($color_id)], '*', ['limit' => 1]);
+            return !empty($result) ? $result[0] : [];
         } catch (Exception $e) {
             error_log("Renk getirme hatası: " . $e->getMessage());
             return [];
@@ -128,8 +120,7 @@ class AttributeService {
      */
     public function getAllSizes() {
         try {
-            $response = $this->supabase->request('sizes?select=*&order=display_order.asc,id.asc');
-            return $response['body'] ?? [];
+            return $this->db->select('sizes', [], '*', ['order' => 'display_order ASC, id ASC']);
         } catch (Exception $e) {
             error_log("Bedenleri getirme hatası: " . $e->getMessage());
             return [];
@@ -155,8 +146,8 @@ class AttributeService {
                 $data['size_type'] = 'EU';
             }
             
-            $response = $this->supabase->request('sizes', 'POST', $data);
-            return !empty($response);
+            $result = $this->db->insert('sizes', $data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Beden oluşturma hatası: " . $e->getMessage());
             return false;
@@ -178,8 +169,8 @@ class AttributeService {
                 unset($data['name']);
             }
             
-            $response = $this->supabase->request('sizes?id=eq.' . intval($size_id), 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('sizes', $data, ['id' => intval($size_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Beden güncelleme hatası: " . $e->getMessage());
             return false;
@@ -195,15 +186,14 @@ class AttributeService {
     public function deleteSize($size_id) {
         try {
             // Bu bedeni kullanan varyant var mı kontrol et
-            $variants_response = $this->supabase->request('product_variants?select=id&size_id=eq.' . intval($size_id) . '&limit=1');
-            $variants = $variants_response['body'] ?? [];
+            $usage_count = $this->db->count('product_variants', ['size_id' => intval($size_id)]);
             
-            if (!empty($variants)) {
+            if ($usage_count > 0) {
                 return false; // Bedeni kullanan varyant varsa silinemez
             }
             
-            $response = $this->supabase->request('sizes?id=eq.' . intval($size_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('sizes', ['id' => intval($size_id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Beden silme hatası: " . $e->getMessage());
             return false;
@@ -218,14 +208,8 @@ class AttributeService {
      */
     public function getSizeById($size_id) {
         try {
-            $response = $this->supabase->request('sizes?id=eq.' . intval($size_id) . '&limit=1');
-            $result = $response['body'] ?? [];
-            
-            if (!empty($result)) {
-                return $result[0];
-            }
-            
-            return [];
+            $result = $this->db->select('sizes', ['id' => intval($size_id)], '*', ['limit' => 1]);
+            return !empty($result) ? $result[0] : [];
         } catch (Exception $e) {
             error_log("Beden getirme hatası: " . $e->getMessage());
             return [];
@@ -241,9 +225,7 @@ class AttributeService {
     public function updateSizeOrder($order_data) {
         try {
             foreach ($order_data as $size_id => $order) {
-                $this->supabase->request('sizes?id=eq.' . intval($size_id), 'PATCH', [
-                    'display_order' => intval($order)
-                ]);
+                $this->db->update('sizes', ['display_order' => intval($order)], ['id' => intval($size_id)]);
             }
             return true;
         } catch (Exception $e) {
@@ -262,8 +244,7 @@ class AttributeService {
      */
     public function getColorUsageCount($color_id) {
         try {
-            $response = $this->supabase->request('product_variants?select=id&color_id=eq.' . intval($color_id));
-            return count($response['body'] ?? []);
+            return $this->db->count('product_variants', ['color_id' => intval($color_id)]);
         } catch (Exception $e) {
             error_log("Renk kullanım sayısı getirme hatası: " . $e->getMessage());
             return 0;
@@ -278,8 +259,7 @@ class AttributeService {
      */
     public function getSizeUsageCount($size_id) {
         try {
-            $response = $this->supabase->request('product_variants?select=id&size_id=eq.' . intval($size_id));
-            return count($response['body'] ?? []);
+            return $this->db->count('product_variants', ['size_id' => intval($size_id)]);
         } catch (Exception $e) {
             error_log("Beden kullanım sayısı getirme hatası: " . $e->getMessage());
             return 0;
@@ -294,16 +274,14 @@ class AttributeService {
     public function getColorsWithUsageCounts() {
         try {
             // Tüm renkleri al
-            $colors_response = $this->supabase->request('colors?select=*&order=name.asc');
-            $colors = $colors_response['body'] ?? [];
+            $colors = $this->getAllColors();
             
             if (empty($colors)) {
                 return [];
             }
             
             // Tüm kullanım sayılarını tek sorguda al
-            $variants_response = $this->supabase->request('product_variants?select=color_id');
-            $variants = $variants_response['body'] ?? [];
+            $variants = $this->db->select('product_variants', [], 'color_id');
             
             // Kullanım sayılarını hesapla
             $usage_counts = [];
@@ -335,16 +313,14 @@ class AttributeService {
     public function getSizesWithUsageCounts() {
         try {
             // Tüm bedenleri al
-            $sizes_response = $this->supabase->request('sizes?select=*&order=display_order.asc,id.asc');
-            $sizes = $sizes_response['body'] ?? [];
+            $sizes = $this->getAllSizes();
             
             if (empty($sizes)) {
                 return [];
             }
             
             // Tüm kullanım sayılarını tek sorguda al
-            $variants_response = $this->supabase->request('product_variants?select=size_id');
-            $variants = $variants_response['body'] ?? [];
+            $variants = $this->db->select('product_variants', [], 'size_id');
             
             // Kullanım sayılarını hesapla
             $usage_counts = [];

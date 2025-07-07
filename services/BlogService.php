@@ -5,11 +5,13 @@
  * Blog yazılarıyla ilgili veritabanı işlemlerini yönetir.
  */
 
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
+
 class BlogService {
-    private $supabase;
+    private $db;
 
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
 
     /**
@@ -23,64 +25,34 @@ class BlogService {
      */
     public function get_posts($page = 1, $perPage = 6, $category = null, $tag = null) {
         try {
-            // Önbelleği temizle
-            $this->supabase->clearCache('blogs?select=*');
-            
-            // Veritabanından blog yazılarını çek
-            $query = 'blogs?select=*&order=created_at.desc';
-            $response = $this->supabase->request($query);
-            
-            if (!empty($response['body'])) {
-                $allPosts = $response['body'];
-                
-                // Kategori filtreleme
-                if ($category) {
-                    $allPosts = array_filter($allPosts, function($post) use ($category) {
-                        return $post['category'] === $category;
-                    });
-                }
-
-                // Etiket filtreleme
-                if ($tag) {
-                    $allPosts = array_filter($allPosts, function($post) use ($tag) {
-                        // Etiketler array formatında olabilir
-                        $postTags = $post['tags'] ?? [];
-                        if (is_string($postTags)) {
-                            // PostgreSQL array formatından PHP array'e çevir
-                            $postTags = str_replace(['{', '}'], ['', ''], $postTags);
-                            $postTags = array_map('trim', explode(',', $postTags));
-                        }
-                        return in_array($tag, $postTags);
-                    });
-                }
-
-                // Dizin anahtarlarını sıfırla
-                $allPosts = array_values($allPosts);
-
-                // Sayfalama
-                $total = count($allPosts);
-                $offset = ($page - 1) * $perPage;
-                $pagedPosts = array_slice($allPosts, $offset, $perPage);
-
-                return [
-                    'posts' => $pagedPosts,
-                    'total' => $total,
-                    'pages' => ceil($total / $perPage)
-                ];
-            } else {
-                error_log("Veritabanından blog yazıları alınamadı - boş response body");
+            $conditions = [];
+            if ($category) {
+                $conditions['category'] = $category;
             }
+            if ($tag) {
+                // Bu kısım database'e göre uyarlanmalı (örn: JSONB, text array)
+                // Şimdilik basit bir LIKE ile arama yapalım
+                $conditions['tags'] = ['LIKE', "%{$tag}%"];
+            }
+
+            $total = $this->db->count('blogs', $conditions);
+            $offset = ($page - 1) * $perPage;
+            
+            $posts = $this->db->select('blogs', $conditions, '*', [
+                'order' => 'created_at DESC',
+                'limit' => $perPage,
+                'offset' => $offset
+            ]);
+
+            return [
+                'posts' => $posts,
+                'total' => $total,
+                'pages' => ceil($total / $perPage)
+            ];
         } catch (Exception $e) {
             error_log("Blog yazıları getirme hatası: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
+            return ['posts' => [], 'total' => 0, 'pages' => 0];
         }
-        
-        // Veritabanından veri gelmezse boş sonuç döndür
-        return [
-            'posts' => [],
-            'total' => 0,
-            'pages' => 0
-        ];
     }
 
     /**
@@ -91,15 +63,12 @@ class BlogService {
      */
     public function get_post_by_id($id) {
         try {
-            $response = $this->supabase->request('blogs?id=eq.' . $id . '&select=*', 'GET');
-            if (!empty($response['body'])) {
-                return $response['body'][0];
-            }
+            $result = $this->db->select('blogs', ['id' => intval($id)], '*', ['limit' => 1]);
+            return !empty($result) ? $result[0] : null;
         } catch (Exception $e) {
             error_log("Blog yazısı getirme hatası: " . $e->getMessage());
+            return null;
         }
-        
-        return null;
     }
 
     /**
@@ -107,21 +76,19 @@ class BlogService {
      *
      * @param int $current_id Mevcut yazı ID'si (hariç tutmak için)
      * @param string $category Kategori
-     * @param int $limit Getirilecek yazı sayısı
+     * @param int $limit Getirilecek yaz sayısı
      * @return array Benzer yazılar
      */
     public function get_related_posts($current_id, $category, $limit = 2) {
         try {
-            $query = 'blogs?select=*&category=eq.' . urlencode($category) . '&id=neq.' . $current_id . '&limit=' . $limit . '&order=created_at.desc';
-            $response = $this->supabase->request($query);
-            if (!empty($response['body'])) {
-                return $response['body'];
-            }
+            return $this->db->select('blogs', [
+                'category' => $category,
+                'id' => ['!=', intval($current_id)]
+            ], '*', ['order' => 'created_at DESC', 'limit' => $limit]);
         } catch (Exception $e) {
             error_log("Benzer yazıları getirme hatası: " . $e->getMessage());
+            return [];
         }
-        
-        return [];
     }
 
     /**
@@ -132,15 +99,11 @@ class BlogService {
      */
     public function getAllBlogs($limit = 100) {
         try {
-            $response = $this->supabase->request('blogs?select=*&order=created_at.desc&limit=' . $limit);
-            if (!empty($response['body'])) {
-                return $response['body'];
-            }
+            return $this->db->select('blogs', [], '*', ['order' => 'created_at DESC', 'limit' => $limit]);
         } catch (Exception $e) {
             error_log("Tüm blog yazılarını getirme hatası: " . $e->getMessage());
+            return [];
         }
-        
-        return [];
     }
 }
 

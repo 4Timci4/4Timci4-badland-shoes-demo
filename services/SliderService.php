@@ -1,12 +1,12 @@
 <?php
 
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 class SliderService {
-    private $client;
+    private $db;
 
     public function __construct() {
-        $this->client = supabase();
+        $this->db = database();
     }
 
     /**
@@ -14,9 +14,7 @@ class SliderService {
      */
     public function getActiveSliders() {
         try {
-            $query = 'slider_items?select=*&is_active=eq.true&order=sort_order.asc';
-            $response = $this->client->request($query);
-            return $response['body'] ?? [];
+            return $this->db->select('slider_items', ['is_active' => 1], '*', ['order' => 'sort_order ASC']);
         } catch (Exception $e) {
             error_log("Slider getirme hatası: " . $e->getMessage());
             return [];
@@ -28,9 +26,7 @@ class SliderService {
      */
     public function getAllSliders() {
         try {
-            $query = 'slider_items?select=*&order=sort_order.asc';
-            $response = $this->client->request($query);
-            return $response['body'] ?? [];
+            return $this->db->select('slider_items', [], '*', ['order' => 'sort_order ASC']);
         } catch (Exception $e) {
             error_log("Tüm sliderleri getirme hatası: " . $e->getMessage());
             return [];
@@ -42,9 +38,7 @@ class SliderService {
      */
     public function getSliderById($id) {
         try {
-            $query = 'slider_items?id=eq.' . intval($id) . '&select=*';
-            $response = $this->client->request($query);
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('slider_items', ['id' => intval($id)], '*', ['limit' => 1]);
             return !empty($result) ? $result[0] : null;
         } catch (Exception $e) {
             error_log("Slider getirme hatası: " . $e->getMessage());
@@ -60,9 +54,10 @@ class SliderService {
             // Son sıra numarasını al
             $lastOrder = $this->getLastSortOrder();
             $data['sort_order'] = $lastOrder + 1;
+            $data['created_at'] = date('Y-m-d H:i:s');
             
-            $response = $this->client->request('slider_items', 'POST', $data);
-            return !empty($response);
+            $result = $this->db->insert('slider_items', $data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Slider oluşturma hatası: " . $e->getMessage());
             return false;
@@ -74,9 +69,8 @@ class SliderService {
      */
     public function updateSlider($id, $data) {
         try {
-            $query = 'slider_items?id=eq.' . intval($id);
-            $response = $this->client->request($query, 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('slider_items', $data, ['id' => intval($id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Slider güncelleme hatası: " . $e->getMessage());
             return false;
@@ -88,9 +82,8 @@ class SliderService {
      */
     public function deleteSlider($id) {
         try {
-            $query = 'slider_items?id=eq.' . intval($id);
-            $response = $this->client->request($query, 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('slider_items', ['id' => intval($id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Slider silme hatası: " . $e->getMessage());
             return false;
@@ -136,9 +129,7 @@ class SliderService {
      */
     private function getLastSortOrder() {
         try {
-            $query = 'slider_items?select=sort_order&order=sort_order.desc&limit=1';
-            $response = $this->client->request($query);
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('slider_items', [], 'sort_order', ['order' => 'sort_order DESC', 'limit' => 1]);
             return !empty($result) ? $result[0]['sort_order'] : 0;
         } catch (Exception $e) {
             error_log("Son sıra numarası getirme hatası: " . $e->getMessage());

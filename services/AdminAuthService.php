@@ -5,12 +5,13 @@
  * Veritabanı tabanlı admin kimlik doğrulama servisi
  */
 
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
+
 class AdminAuthService {
-    private $supabase;
+    private $db;
     
     public function __construct() {
-        require_once __DIR__ . '/../config/database.php';
-        $this->supabase = supabase();
+        $this->db = database();
     }
     
     /**
@@ -23,15 +24,16 @@ class AdminAuthService {
     public function login($username, $password) {
         try {
             // Kullanıcıyı veritabanından getir
-            $response = $this->supabase->request(
-                "admins?select=*&username=eq.$username&is_active=eq.true"
-            );
+            $admins = $this->db->select('admins', [
+                'username' => $username,
+                'is_active' => 1
+            ], '*', ['limit' => 1]);
             
-            if (empty($response['body'])) {
+            if (empty($admins)) {
                 return false; // Kullanıcı bulunamadı veya aktif değil
             }
             
-            $admin = $response['body'][0];
+            $admin = $admins[0];
             
             // PHP password_verify ile şifre kontrolü
             if (!password_verify($password, $admin['password_hash'])) {
@@ -60,15 +62,16 @@ class AdminAuthService {
      */
     public function getAdminById($admin_id) {
         try {
-            $response = $this->supabase->request(
-                "admins?select=id,username,full_name,email,is_active,last_login_at,created_at&id=eq.$admin_id&is_active=eq.true"
-            );
+            $admins = $this->db->select('admins', [
+                'id' => intval($admin_id),
+                'is_active' => 1
+            ], 'id,username,full_name,email,is_active,last_login_at,created_at', ['limit' => 1]);
             
-            if (empty($response['body'])) {
+            if (empty($admins)) {
                 return false;
             }
             
-            return $response['body'][0];
+            return $admins[0];
             
         } catch (Exception $e) {
             error_log("Get admin by ID error: " . $e->getMessage());
@@ -84,22 +87,23 @@ class AdminAuthService {
      */
     public function getAdminByUsername($username) {
         try {
-            $response = $this->supabase->request(
-                "admins?select=id,username,full_name,email,is_active,last_login_at,created_at&username=eq.$username&is_active=eq.true"
-            );
+            $admins = $this->db->select('admins', [
+                'username' => $username,
+                'is_active' => 1
+            ], 'id,username,full_name,email,is_active,last_login_at,created_at', ['limit' => 1]);
             
-            if (empty($response['body'])) {
+            if (empty($admins)) {
                 return false;
             }
             
-            return $response['body'][0];
+            return $admins[0];
             
         } catch (Exception $e) {
             error_log("Get admin by username error: " . $e->getMessage());
             return false;
         }
     }
-    
+
     /**
      * Son giriş zamanını güncelle
      * 
@@ -108,22 +112,18 @@ class AdminAuthService {
      */
     public function updateLastLogin($admin_id) {
         try {
-            $response = $this->supabase->request(
-                "admins?id=eq.$admin_id",
-                'PATCH',
-                [
-                    'last_login_at' => date('c') // ISO 8601 format
-                ]
-            );
+            $result = $this->db->update('admins', [
+                'last_login_at' => date('Y-m-d H:i:s')
+            ], ['id' => intval($admin_id)]);
             
-            return isset($response['body']);
+            return $result !== false;
             
         } catch (Exception $e) {
             error_log("Update last login error: " . $e->getMessage());
             return false;
         }
     }
-    
+
     /**
      * Admin şifresini güncelle
      * 
@@ -136,15 +136,11 @@ class AdminAuthService {
             // PHP ile şifreyi hash'le
             $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
             
-            $response = $this->supabase->request(
-                "admins?id=eq.$admin_id",
-                'PATCH',
-                [
-                    'password_hash' => $password_hash
-                ]
-            );
+            $result = $this->db->update('admins', [
+                'password_hash' => $password_hash
+            ], ['id' => intval($admin_id)]);
             
-            return isset($response['body']);
+            return $result !== false;
             
         } catch (Exception $e) {
             error_log("Update password error: " . $e->getMessage());
@@ -245,11 +241,10 @@ class AdminAuthService {
      */
     public function getAllAdmins() {
         try {
-            $response = $this->supabase->request(
-                "admins?select=id,username,full_name,email,is_active,last_login_at,created_at&order=created_at.desc"
+            return $this->db->select('admins', [], 
+                'id,username,full_name,email,is_active,last_login_at,created_at', 
+                ['order' => 'created_at DESC']
             );
-            
-            return $response['body'] ?? [];
             
         } catch (Exception $e) {
             error_log("Get all admins error: " . $e->getMessage());
@@ -310,17 +305,15 @@ class AdminAuthService {
                 'password_hash' => $password_hash,
                 'full_name' => $data['full_name'],
                 'email' => $data['email'] ?? null,
-                'is_active' => $data['is_active'] ?? true
+                'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1,
+                'created_at' => date('Y-m-d H:i:s')
             ];
             
-            $response = $this->supabase->request(
-                'admins',
-                'POST',
-                $admin_data
-            );
+            $result = $this->db->insert('admins', $admin_data);
             
-            if (isset($response['body'][0]['id'])) {
-                return ['success' => true, 'id' => $response['body'][0]['id']];
+            if ($result !== false) {
+                $admin_id = is_array($result) ? (isset($result['id']) ? $result['id'] : $result[0]['id'] ?? false) : $result;
+                return ['success' => true, 'id' => $admin_id];
             }
             
             return ['error' => 'Admin oluşturulamadı!'];
@@ -348,11 +341,12 @@ class AdminAuthService {
             
             // Kullanıcı adı benzersizlik kontrolü (kendisi hariç)
             if (isset($data['username'])) {
-                $username_check = $this->supabase->request(
-                    "admins?select=id&username=eq.{$data['username']}&id=neq.$admin_id"
-                );
+                $duplicates = $this->db->select('admins', [
+                    'username' => $data['username'],
+                    'id' => ['!=', intval($admin_id)]
+                ], 'id', ['limit' => 1]);
                 
-                if (!empty($username_check['body'])) {
+                if (!empty($duplicates)) {
                     return ['error' => 'Bu kullanıcı adı zaten kullanılıyor!'];
                 }
             }
@@ -363,7 +357,7 @@ class AdminAuthService {
             if (isset($data['username'])) $update_data['username'] = $data['username'];
             if (isset($data['full_name'])) $update_data['full_name'] = $data['full_name'];
             if (isset($data['email'])) $update_data['email'] = $data['email'];
-            if (isset($data['is_active'])) $update_data['is_active'] = $data['is_active'];
+            if (isset($data['is_active'])) $update_data['is_active'] = intval($data['is_active']);
             
             // Şifre güncellenmişse hash'le
             if (isset($data['password']) && !empty($data['password'])) {
@@ -374,13 +368,9 @@ class AdminAuthService {
                 return ['error' => 'Güncellenecek veri bulunamadı!'];
             }
             
-            $response = $this->supabase->request(
-                "admins?id=eq.$admin_id",
-                'PATCH',
-                $update_data
-            );
+            $result = $this->db->update('admins', $update_data, ['id' => intval($admin_id)]);
             
-            if (isset($response['body'])) {
+            if ($result !== false) {
                 // Eğer güncellenen admin şu anki login olan admin ise session'ı da güncelle
                 $current_admin = $this->getCurrentAdmin();
                 if ($current_admin && $current_admin['id'] == $admin_id) {
@@ -397,7 +387,7 @@ class AdminAuthService {
             return ['error' => 'Sistem hatası: ' . $e->getMessage()];
         }
     }
-    
+
     /**
      * Admin kullanıcısını sil
      * 
@@ -418,19 +408,20 @@ class AdminAuthService {
                 return ['error' => 'Admin bulunamadı!'];
             }
             
-            $response = $this->supabase->request(
-                "admins?id=eq.$admin_id",
-                'DELETE'
-            );
+            $result = $this->db->delete('admins', ['id' => intval($admin_id)]);
             
-            return ['success' => true];
+            if ($result !== false) {
+                return ['success' => true];
+            }
+            
+            return ['error' => 'Admin silinemedi!'];
             
         } catch (Exception $e) {
             error_log("Delete admin error: " . $e->getMessage());
             return ['error' => 'Sistem hatası: ' . $e->getMessage()];
         }
     }
-    
+
     /**
      * Admin sayısını getir
      * 
@@ -438,8 +429,8 @@ class AdminAuthService {
      */
     public function getAdminCount() {
         try {
-            $response = $this->supabase->request('admins?select=id');
-            return count($response['body'] ?? []);
+            $admins = $this->db->select('admins', [], 'id');
+            return count($admins);
         } catch (Exception $e) {
             error_log("Get admin count error: " . $e->getMessage());
             return 0;

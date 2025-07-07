@@ -6,7 +6,7 @@
  */
 
 // Gerekli dosyaları dahil et
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 /**
  * Cinsiyet servisi
@@ -14,13 +14,13 @@ require_once __DIR__ . '/../lib/SupabaseClient.php';
  * Cinsiyetlerle ilgili tüm veritabanı işlemlerini içerir
  */
 class GenderService {
-    private $supabase;
+    private $db;
     
     /**
      * GenderService sınıfını başlatır
      */
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
     
     /**
@@ -30,10 +30,7 @@ class GenderService {
      */
     public function getAllGenders() {
         try {
-            $query = 'genders?select=*&order=name.asc';
-            
-            $response = $this->supabase->request($query);
-            return $response['body'] ?? [];
+            return $this->db->select('genders', [], '*', ['order' => 'name ASC']);
         } catch (Exception $e) {
             error_log("Tüm cinsiyetleri getirme hatası: " . $e->getMessage());
             return [];
@@ -48,13 +45,7 @@ class GenderService {
      */
     public function getGenderBySlug($slug) {
         try {
-            $query = [
-                'select' => '*',
-                'slug' => 'eq.' . $slug,
-                'limit' => 1
-            ];
-            
-            $result = $this->supabase->request('/rest/v1/genders?' . http_build_query($query));
+            $result = $this->db->select('genders', ['slug' => $slug], '*', ['limit' => 1]);
             
             if (!empty($result)) {
                 return $result[0];
@@ -75,8 +66,7 @@ class GenderService {
      */
     public function getGenderById($gender_id) {
         try {
-            $response = $this->supabase->request('genders?id=eq.' . intval($gender_id) . '&limit=1');
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('genders', ['id' => intval($gender_id)], '*', ['limit' => 1]);
             
             if (!empty($result)) {
                 return $result[0];
@@ -97,16 +87,13 @@ class GenderService {
      */
     public function getProductGenders($product_id) {
         try {
-            $query = 'product_genders?select=gender_id,genders(id,name,slug)&product_id=eq.' . intval($product_id);
-            $response = $this->supabase->request($query);
-            $gender_relations = $response['body'] ?? [];
-            
-            $genders = [];
-            foreach ($gender_relations as $relation) {
-                if (isset($relation['genders'])) {
-                    $genders[] = $relation['genders'];
-                }
-            }
+            $genders = $this->db->selectWithJoins('product_genders', [
+                [
+                    'type' => 'INNER',
+                    'table' => 'genders',
+                    'condition' => 'product_genders.gender_id = genders.id'
+                ]
+            ], ['product_genders.product_id' => intval($product_id)], 'genders.id, genders.name, genders.slug');
             
             return $genders;
         } catch (Exception $e) {
@@ -123,10 +110,7 @@ class GenderService {
      */
     public function getProductGenderIds($product_id) {
         try {
-            $query = 'product_genders?select=gender_id&product_id=eq.' . intval($product_id);
-            $response = $this->supabase->request($query);
-            $gender_relations = $response['body'] ?? [];
-            
+            $gender_relations = $this->db->select('product_genders', ['product_id' => intval($product_id)], 'gender_id');
             return array_column($gender_relations, 'gender_id');
         } catch (Exception $e) {
             error_log("Ürün cinsiyet ID'leri getirme hatası: " . $e->getMessage());
@@ -144,7 +128,7 @@ class GenderService {
     public function updateProductGenders($product_id, $gender_ids) {
         try {
             // Önce eski ilişkileri sil
-            $delete_response = $this->supabase->request('product_genders?product_id=eq.' . intval($product_id), 'DELETE');
+            $this->db->delete('product_genders', ['product_id' => intval($product_id)]);
             
             // Yeni ilişkileri ekle
             foreach ($gender_ids as $gender_id) {
@@ -153,7 +137,7 @@ class GenderService {
                     'gender_id' => intval($gender_id)
                 ];
                 
-                $this->supabase->request('product_genders', 'POST', $data);
+                $this->db->insert('product_genders', $data);
             }
             
             return true;
@@ -171,14 +155,8 @@ class GenderService {
      */
     public function createGender($data) {
         try {
-            $response = $this->supabase->request('genders', 'POST', $data);
-            
-            // Response'da body varsa ve boş değilse başarılı
-            if (isset($response['body']) && !empty($response['body'])) {
-                return true;
-            }
-            
-            return false;
+            $result = $this->db->insert('genders', $data, ['returning' => true]);
+            return !empty($result);
         } catch (Exception $e) {
             error_log("GenderService::createGender - Exception: " . $e->getMessage());
             return false;
@@ -194,8 +172,8 @@ class GenderService {
      */
     public function updateGender($gender_id, $data) {
         try {
-            $response = $this->supabase->request('genders?id=eq.' . intval($gender_id), 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('genders', $data, ['id' => intval($gender_id)]);
+            return !empty($result);
         } catch (Exception $e) {
             error_log("Cinsiyet güncelleme hatası: " . $e->getMessage());
             return false;
@@ -211,15 +189,14 @@ class GenderService {
     public function deleteGender($gender_id) {
         try {
             // Önce bu cinsiyete ait ürün var mı kontrol et
-            $products_response = $this->supabase->request('product_genders?select=product_id&gender_id=eq.' . intval($gender_id) . '&limit=1');
-            $products = $products_response['body'] ?? [];
+            $product_count = $this->db->count('product_genders', ['gender_id' => intval($gender_id)]);
             
-            if (!empty($products)) {
+            if ($product_count > 0) {
                 return false; // Cinsiyete ait ürün varsa silinemez
             }
             
-            $response = $this->supabase->request('genders?id=eq.' . intval($gender_id), 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('genders', ['id' => intval($gender_id)]);
+            return !empty($result);
         } catch (Exception $e) {
             error_log("Cinsiyet silme hatası: " . $e->getMessage());
             return false;

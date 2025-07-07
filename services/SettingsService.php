@@ -5,11 +5,13 @@
  * Site genel ayarları ve SEO ayarlarını veritabanından yönetir.
  */
 
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
+
 class SettingsService {
-    private $supabase;
+    private $db;
 
     public function __construct() {
-        $this->supabase = supabase();
+        $this->db = database();
     }
 
     /**
@@ -21,10 +23,10 @@ class SettingsService {
      */
     public function getSiteSetting($key, $default = '') {
         try {
-            $response = $this->supabase->request("site_settings?setting_key=eq.{$key}&select=setting_value");
+            $result = $this->db->select('site_settings', ['setting_key' => $key], 'setting_value', ['limit' => 1]);
             
-            if (!empty($response['body']) && isset($response['body'][0]['setting_value'])) {
-                return $response['body'][0]['setting_value'];
+            if (!empty($result)) {
+                return $result[0]['setting_value'];
             }
         } catch (Exception $e) {
             error_log("Site ayarı getirme hatası: " . $e->getMessage());
@@ -44,9 +46,7 @@ class SettingsService {
      */
     public function updateSiteSetting($key, $value, $group = 'general', $description = '') {
         try {
-            // Önce ayar var mı kontrol et
-            $check_response = $this->supabase->request("site_settings?setting_key=eq.{$key}");
-            $existing = $check_response['body'] ?? [];
+            $existing = $this->db->select('site_settings', ['setting_key' => $key], 'setting_key', ['limit' => 1]);
             
             $data = [
                 'setting_key' => $key,
@@ -57,15 +57,13 @@ class SettingsService {
             ];
             
             if (!empty($existing)) {
-                // Güncelle
-                $response = $this->supabase->request("site_settings?setting_key=eq.{$key}", 'PATCH', $data);
+                $result = $this->db->update('site_settings', $data, ['setting_key' => $key]);
             } else {
-                // Yeni oluştur
                 $data['created_at'] = date('Y-m-d H:i:s');
-                $response = $this->supabase->request('site_settings', 'POST', $data);
+                $result = $this->db->insert('site_settings', $data);
             }
             
-            return !empty($response);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Site ayarı güncelleme hatası: " . $e->getMessage());
             return false;
@@ -80,11 +78,11 @@ class SettingsService {
      */
     public function getSettingsByGroup($group) {
         try {
-            $response = $this->supabase->request("site_settings?setting_group=eq.{$group}&select=*&order=setting_key.asc");
+            $result = $this->db->select('site_settings', ['setting_group' => $group], '*', ['order' => 'setting_key ASC']);
             
-            if (!empty($response['body'])) {
+            if (!empty($result)) {
                 $settings = [];
-                foreach ($response['body'] as $setting) {
+                foreach ($result as $setting) {
                     $settings[$setting['setting_key']] = $setting['setting_value'];
                 }
                 return $settings;
@@ -124,10 +122,10 @@ class SettingsService {
      */
     public function getSeoSetting($key, $default = '') {
         try {
-            $response = $this->supabase->request("seo_settings?setting_key=eq.{$key}&select=setting_value");
+            $result = $this->db->select('seo_settings', ['setting_key' => $key], 'setting_value', ['limit' => 1]);
             
-            if (!empty($response['body']) && isset($response['body'][0]['setting_value'])) {
-                return $response['body'][0]['setting_value'];
+            if (!empty($result)) {
+                return $result[0]['setting_value'];
             }
         } catch (Exception $e) {
             error_log("SEO ayarı getirme hatası: " . $e->getMessage());
@@ -147,9 +145,7 @@ class SettingsService {
      */
     public function updateSeoSetting($key, $value, $type = 'meta', $is_active = true) {
         try {
-            // Önce ayar var mı kontrol et
-            $check_response = $this->supabase->request("seo_settings?setting_key=eq.{$key}");
-            $existing = $check_response['body'] ?? [];
+            $existing = $this->db->select('seo_settings', ['setting_key' => $key], 'setting_key', ['limit' => 1]);
             
             $data = [
                 'setting_key' => $key,
@@ -160,15 +156,13 @@ class SettingsService {
             ];
             
             if (!empty($existing)) {
-                // Güncelle
-                $response = $this->supabase->request("seo_settings?setting_key=eq.{$key}", 'PATCH', $data);
+                $result = $this->db->update('seo_settings', $data, ['setting_key' => $key]);
             } else {
-                // Yeni oluştur
                 $data['created_at'] = date('Y-m-d H:i:s');
-                $response = $this->supabase->request('seo_settings', 'POST', $data);
+                $result = $this->db->insert('seo_settings', $data);
             }
             
-            return !empty($response);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("SEO ayarı güncelleme hatası: " . $e->getMessage());
             return false;
@@ -183,11 +177,11 @@ class SettingsService {
      */
     public function getSeoSettingsByType($type) {
         try {
-            $response = $this->supabase->request("seo_settings?setting_type=eq.{$type}&select=*&order=setting_key.asc");
+            $result = $this->db->select('seo_settings', ['setting_type' => $type], '*', ['order' => 'setting_key ASC']);
             
-            if (!empty($response['body'])) {
+            if (!empty($result)) {
                 $settings = [];
-                foreach ($response['body'] as $setting) {
+                foreach ($result as $setting) {
                     $settings[$setting['setting_key']] = [
                         'value' => $setting['setting_value'],
                         'is_active' => $setting['is_active']
@@ -209,11 +203,11 @@ class SettingsService {
      */
     public function getAllSeoSettings() {
         try {
-            $response = $this->supabase->request('seo_settings?select=*&order=setting_type.asc,setting_key.asc');
+            $result = $this->db->select('seo_settings', [], '*', ['order' => 'setting_type ASC, setting_key ASC']);
             
-            if (!empty($response['body'])) {
+            if (!empty($result)) {
                 $settings = [];
-                foreach ($response['body'] as $setting) {
+                foreach ($result as $setting) {
                     $settings[$setting['setting_type']][$setting['setting_key']] = [
                         'value' => $setting['setting_value'],
                         'is_active' => $setting['is_active']

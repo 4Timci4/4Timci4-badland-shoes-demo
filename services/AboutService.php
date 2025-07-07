@@ -1,12 +1,12 @@
 <?php
 
-require_once __DIR__ . '/../lib/SupabaseClient.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 class AboutService {
-    private $client;
+    private $db;
 
     public function __construct() {
-        $this->client = supabase();
+        $this->db = database();
     }
 
     public function getAboutPageContent() {
@@ -23,8 +23,7 @@ class AboutService {
 
     public function getHomePageAboutSection() {
         try {
-            $response = $this->client->request('about_settings?select=meta_key,meta_value');
-            $data = $response['body'] ?? [];
+            $data = $this->db->select('about_settings', [], 'meta_key,meta_value');
 
             $result = [];
             $allowed_keys = [
@@ -55,7 +54,6 @@ class AboutService {
     // Setting güncelle
     public function updateSetting($meta_key, $meta_value, $section = null) {
         try {
-            $query = 'about_settings?meta_key=eq.' . urlencode($meta_key);
             $data = [
                 'meta_value' => $meta_value,
                 'updated_at' => date('Y-m-d H:i:s')
@@ -65,8 +63,8 @@ class AboutService {
                 $data['section'] = $section;
             }
             
-            $response = $this->client->request($query, 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('about_settings', $data, ['meta_key' => $meta_key]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Setting güncelleme hatası: " . $e->getMessage());
             return false;
@@ -94,9 +92,10 @@ class AboutService {
             // Son sıra numarasını al
             $lastOrder = $this->getLastSortOrder($data['section']);
             $data['sort_order'] = $lastOrder + 1;
+            $data['created_at'] = date('Y-m-d H:i:s');
             
-            $response = $this->client->request('about_content_blocks', 'POST', $data);
-            return !empty($response);
+            $result = $this->db->insert('about_content_blocks', $data);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Content block oluşturma hatası: " . $e->getMessage());
             return false;
@@ -107,9 +106,8 @@ class AboutService {
     public function updateContentBlock($id, $data) {
         try {
             $data['updated_at'] = date('Y-m-d H:i:s');
-            $query = 'about_content_blocks?id=eq.' . intval($id);
-            $response = $this->client->request($query, 'PATCH', $data);
-            return !empty($response);
+            $result = $this->db->update('about_content_blocks', $data, ['id' => intval($id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Content block güncelleme hatası: " . $e->getMessage());
             return false;
@@ -119,9 +117,8 @@ class AboutService {
     // Content block sil
     public function deleteContentBlock($id) {
         try {
-            $query = 'about_content_blocks?id=eq.' . intval($id);
-            $response = $this->client->request($query, 'DELETE');
-            return !empty($response);
+            $result = $this->db->delete('about_content_blocks', ['id' => intval($id)]);
+            return $result !== false;
         } catch (Exception $e) {
             error_log("Content block silme hatası: " . $e->getMessage());
             return false;
@@ -131,9 +128,7 @@ class AboutService {
     // ID'ye göre content block getir
     public function getContentBlockById($id) {
         try {
-            $query = 'about_content_blocks?id=eq.' . intval($id) . '&select=*';
-            $response = $this->client->request($query);
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('about_content_blocks', ['id' => intval($id)], '*', ['limit' => 1]);
             return !empty($result) ? $result[0] : null;
         } catch (Exception $e) {
             error_log("Content block getirme hatası: " . $e->getMessage());
@@ -161,9 +156,7 @@ class AboutService {
     // Son sıra numarasını getir
     private function getLastSortOrder($section) {
         try {
-            $query = 'about_content_blocks?select=sort_order&section=eq.' . urlencode($section) . '&order=sort_order.desc&limit=1';
-            $response = $this->client->request($query);
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('about_content_blocks', ['section' => $section], 'sort_order', ['order' => 'sort_order DESC', 'limit' => 1]);
             return !empty($result) ? $result[0]['sort_order'] : 0;
         } catch (Exception $e) {
             error_log("Son sıra numarası getirme hatası: " . $e->getMessage());
@@ -198,9 +191,7 @@ class AboutService {
     // Son güncelleme tarihini getir
     private function getLastUpdatedDate() {
         try {
-            $query = 'about_settings?select=updated_at&order=updated_at.desc&limit=1';
-            $response = $this->client->request($query);
-            $result = $response['body'] ?? [];
+            $result = $this->db->select('about_settings', [], 'updated_at', ['order' => 'updated_at DESC', 'limit' => 1]);
             return !empty($result) ? $result[0]['updated_at'] : null;
         } catch (Exception $e) {
             return null;
@@ -209,8 +200,7 @@ class AboutService {
 
     private function getSettings() {
         try {
-            $response = $this->client->request('about_settings?select=*');
-            $data = $response['body'] ?? [];
+            $data = $this->db->select('about_settings', [], '*');
             $settings = [];
             foreach ($data as $item) {
                 if (isset($item['meta_key'], $item['meta_value'])) {
@@ -226,9 +216,7 @@ class AboutService {
 
     private function getContentBlocks($section) {
         try {
-            $query = 'about_content_blocks?select=*&section=eq.' . urlencode($section) . '&order=sort_order.asc';
-            $response = $this->client->request($query);
-            return $response['body'] ?? [];
+            return $this->db->select('about_content_blocks', ['section' => $section], '*', ['order' => 'sort_order ASC']);
         } catch (Exception $e) {
             error_log("Hakkımızda içerik blokları getirme hatası: " . $e->getMessage());
             return [];
