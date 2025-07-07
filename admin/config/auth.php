@@ -250,41 +250,38 @@ function get_admin_menu() {
 }
 
 /**
- * İstatistik verileri (dashboard için) - Supabase'den gerçek veriler
+ * İstatistik verileri (dashboard için) - Database Abstraction Layer ile
  */
 function get_dashboard_stats() {
     require_once __DIR__ . '/../../config/database.php';
     
     try {
+        $db = database();
+        
         // Bu ayın başlangıç tarihi
         $current_month_start = date('Y-m-01 00:00:00');
         
         // Toplam ürün sayısı
-        $products_response = supabase()->request('product_models?select=id');
-        $total_products = count($products_response['body'] ?? []);
+        $total_products = $db->count('product_models');
         
         // Bu ay eklenen ürünler
-        $monthly_products_response = supabase()->request("product_models?select=id&created_at=gte.$current_month_start");
-        $monthly_products = count($monthly_products_response['body'] ?? []);
+        $monthly_products = $db->count('product_models', ['created_at' => ['>=', $current_month_start]]);
         
         // Toplam kategori sayısı
-        $categories_response = supabase()->request('categories?select=id');
-        $total_categories = count($categories_response['body'] ?? []);
+        $total_categories = $db->count('categories');
         
         // Toplam blog sayısı
-        $blogs_response = supabase()->request('blogs?select=id');
-        $total_blogs = count($blogs_response['body'] ?? []);
+        $total_blogs = $db->count('blogs');
         
         // Bu ay eklenen bloglar
-        $monthly_blogs_response = supabase()->request("blogs?select=id&created_at=gte.$current_month_start");
-        $monthly_blogs = count($monthly_blogs_response['body'] ?? []);
+        $monthly_blogs = $db->count('blogs', ['created_at' => ['>=', $current_month_start]]);
         
-        $total_messages = 0;
+        // Mesajlar (şimdilik sabit değerler)
+        $total_messages = $db->count('contact_messages');
         $pending_messages = 0;
         
         // Öne çıkan ürünler
-        $featured_products_response = supabase()->request('product_models?select=id&is_featured=eq.true');
-        $featured_products = count($featured_products_response['body'] ?? []);
+        $featured_products = $db->count('product_models', ['is_featured' => true]);
         
         return [
             'total_products' => $total_products,
@@ -321,8 +318,9 @@ function get_recent_products($limit = 5) {
     require_once __DIR__ . '/../../config/database.php';
     
     try {
-        $response = supabase()->request("product_models?select=*,categories(name)&order=created_at.desc&limit=$limit");
-        return $response['body'] ?? [];
+        $db = database();
+        $products = $db->select('product_models', [], [], ['created_at' => 'DESC'], $limit);
+        return $products;
     } catch (Exception $e) {
         error_log("Recent products error: " . $e->getMessage());
         return [];
@@ -336,8 +334,9 @@ function get_recent_blogs($limit = 5) {
     require_once __DIR__ . '/../../config/database.php';
     
     try {
-        $response = supabase()->request("blogs?select=id,title,excerpt,category,created_at&order=created_at.desc&limit=$limit");
-        return $response['body'] ?? [];
+        $db = database();
+        $blogs = $db->select('blogs', ['id', 'title', 'excerpt', 'category', 'created_at'], [], ['created_at' => 'DESC'], $limit);
+        return $blogs;
     } catch (Exception $e) {
         error_log("Recent blogs error: " . $e->getMessage());
         return [];
