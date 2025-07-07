@@ -319,7 +319,7 @@ function get_recent_products($limit = 5) {
     
     try {
         $db = database();
-        $products = $db->select('product_models', [], [], ['created_at' => 'DESC'], $limit);
+        $products = $db->select('product_models', [], '*', ['order' => 'created_at DESC', 'limit' => $limit]);
         return $products;
     } catch (Exception $e) {
         error_log("Recent products error: " . $e->getMessage());
@@ -335,7 +335,7 @@ function get_recent_blogs($limit = 5) {
     
     try {
         $db = database();
-        $blogs = $db->select('blogs', ['id', 'title', 'excerpt', 'category', 'created_at'], [], ['created_at' => 'DESC'], $limit);
+        $blogs = $db->select('blogs', [], ['id', 'title', 'excerpt', 'category', 'created_at'], ['order' => 'created_at DESC', 'limit' => $limit]);
         return $blogs;
     } catch (Exception $e) {
         error_log("Recent blogs error: " . $e->getMessage());
