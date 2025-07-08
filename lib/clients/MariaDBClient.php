@@ -544,4 +544,92 @@ class MariaDBClient implements DatabaseInterface {
             $this->cache = array_slice($this->cache, 10, null, true);
         }
     }
+    
+    /**
+     * Supabase uyumlu request metodu
+     * REST API formatını MariaDB sorgularına dönüştürür
+     */
+    public function request($endpoint, $method = 'GET', $data = null, $headers = [], $useCache = true) {
+        try {
+            // Endpoint'i parse et
+            $parsed = $this->parseSupabaseEndpoint($endpoint);
+            $table = $parsed['table'];
+            $conditions = $parsed['conditions'];
+            $columns = $parsed['columns'];
+            
+            switch (strtoupper($method)) {
+                case 'GET':
+                    $result = $this->select($table, $conditions, $columns);
+                    return ['body' => $result];
+                    
+                case 'POST':
+                    $result = $this->insert($table, $data, ['returning' => true]);
+                    return ['body' => $result];
+                    
+                case 'PATCH':
+                    $result = $this->update($table, $data, $conditions, ['returning' => true]);
+                    return ['body' => $result];
+                    
+                case 'DELETE':
+                    $result = $this->delete($table, $conditions, ['returning' => true]);
+                    return ['body' => $result];
+                    
+                default:
+                    throw new Exception("Desteklenmeyen HTTP metodu: $method");
+            }
+            
+        } catch (Exception $e) {
+            error_log("MariaDBClient::request - " . $e->getMessage());
+            return ['body' => []];
+        }
+    }
+    
+    /**
+     * Supabase endpoint'ini parse eder
+     */
+    private function parseSupabaseEndpoint($endpoint) {
+        // Örnek: product_categories?select=category_id&product_id=eq.123
+        $parts = explode('?', $endpoint);
+        $table = $parts[0];
+        $conditions = [];
+        $columns = ['*'];
+        
+        if (isset($parts[1])) {
+            parse_str($parts[1], $params);
+            
+            // Select parametresi
+            if (isset($params['select'])) {
+                $columns = explode(',', $params['select']);
+            }
+            
+            // Diğer parametreler koşul olarak işlenir
+            foreach ($params as $key => $value) {
+                if ($key === 'select') continue;
+                
+                // eq.123 formatını parse et
+                if (strpos($value, 'eq.') === 0) {
+                    $conditions[$key] = substr($value, 3);
+                } elseif (strpos($value, 'gt.') === 0) {
+                    $conditions[$key] = ['>', substr($value, 3)];
+                } elseif (strpos($value, 'lt.') === 0) {
+                    $conditions[$key] = ['<', substr($value, 3)];
+                } elseif (strpos($value, 'gte.') === 0) {
+                    $conditions[$key] = ['>=', substr($value, 4)];
+                } elseif (strpos($value, 'lte.') === 0) {
+                    $conditions[$key] = ['<=', substr($value, 4)];
+                } elseif (strpos($value, 'in.') === 0) {
+                    $values = explode(',', substr($value, 3));
+                    $conditions[$key] = ['IN', $values];
+                } else {
+                    $conditions[$key] = $value;
+                }
+            }
+        }
+        
+        return [
+            'table' => $table,
+            'conditions' => $conditions,
+            'columns' => $columns
+        ];
+    }
 }

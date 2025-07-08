@@ -59,8 +59,8 @@ function get_product_edit_data($product_id) {
 function get_selected_categories($product_id) {
     $selected_categories = [];
     try {
-        $response = supabase()->request('product_categories?select=category_id&product_id=eq.' . $product_id);
-        $category_relations = $response['body'] ?? [];
+        $db = database();
+        $category_relations = $db->select('product_categories', ['product_id' => $product_id], ['category_id']);
         $selected_categories = array_column($category_relations, 'category_id');
     } catch (Exception $e) {
         error_log("Error fetching product categories: " . $e->getMessage());
@@ -71,8 +71,8 @@ function get_selected_categories($product_id) {
 function get_selected_genders($product_id) {
     $selected_genders = [];
     try {
-        $response = supabase()->request('product_genders?select=gender_id&product_id=eq.' . $product_id);
-        $gender_relations = $response['body'] ?? [];
+        $db = database();
+        $gender_relations = $db->select('product_genders', ['product_id' => $product_id], ['gender_id']);
         $selected_genders = array_column($gender_relations, 'gender_id');
     } catch (Exception $e) {
         error_log("Error fetching product genders: " . $e->getMessage());
