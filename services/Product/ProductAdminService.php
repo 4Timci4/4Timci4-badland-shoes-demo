@@ -1,11 +1,15 @@
 <?php
 /**
- * Ürün Admin Servisi
+ * Ürün Admin Servisi - ULTRA OPTIMIZED
  * 
  * Admin panel için özel ürün işlemlerini içerir
+ * - Single query optimization
+ * - Auto cache integration
+ * - Zero manual management
  */
 
 require_once __DIR__ . '/../../lib/DatabaseFactory.php';
+require_once __DIR__ . '/../../lib/AutoCache.php';
 
 class ProductAdminService {
     private $db;
@@ -15,7 +19,7 @@ class ProductAdminService {
     }
     
     /**
-     * Admin panel için ürünleri getiren metod - Batch Query Optimizasyonu
+     * Admin panel için ürünleri getiren metod - ULTRA OPTIMIZED + AUTO CACHE
      * 
      * @param int $limit Limit
      * @param int $offset Offset
@@ -23,72 +27,83 @@ class ProductAdminService {
      * @return array Ürünler ve pagination bilgisi
      */
     public function getAdminProducts($limit = 20, $offset = 0, $filters = []) {
-        try {
-            $conditions = [];
-            
-            // Arama filtresi
-            if (!empty($filters['search'])) {
-                $search = '%' . $filters['search'] . '%';
-                $conditions['name'] = ['LIKE', $search];
-            }
-            
-            // Kategori filtresi
-            if (!empty($filters['category_id'])) {
-                // Bu kategoriye ait ürün ID'lerini al
-                $product_relations = $this->db->select('product_categories', 
-                    ['category_id' => intval($filters['category_id'])], 'product_id');
+        // Cache key oluştur - filters dahil
+        $cache_key = "admin_products_" . $limit . "_" . $offset . "_" . md5(json_encode($filters));
+        
+        // AutoCache ile otomatik cache - filtresiz listeler 15 dakika, filtreli listeler 5 dakika
+        $cache_ttl = empty($filters) ? 900 : 300;
+        
+        return autoCache()->get($cache_key, function() use ($limit, $offset, $filters) {
+            try {
+                $conditions = [];
                 
-                if (!empty($product_relations)) {
-                    $product_ids = array_column($product_relations, 'product_id');
-                    $conditions['id'] = ['IN', $product_ids];
-                } else {
-                    // Kategoride ürün yok
-                    return [
-                        'products' => [],
-                        'total' => 0,
-                        'limit' => $limit,
-                        'offset' => $offset
-                    ];
+                // Arama filtresi
+                if (!empty($filters['search'])) {
+                    $search = '%' . $filters['search'] . '%';
+                    $conditions['name'] = ['LIKE', $search];
                 }
+                
+                // Kategori filtresi
+                if (!empty($filters['category_id'])) {
+                    // Bu kategoriye ait ürün ID'lerini al
+                    $product_relations = $this->db->select('product_categories', 
+                        ['category_id' => intval($filters['category_id'])], 'product_id');
+                    
+                    if (!empty($product_relations)) {
+                        $product_ids = array_column($product_relations, 'product_id');
+                        $conditions['id'] = ['IN', $product_ids];
+                    } else {
+                        // Kategoride ürün yok
+                        return [
+                            'products' => [],
+                            'total' => 0,
+                            'limit' => $limit,
+                            'offset' => $offset,
+                            'cached' => false
+                        ];
+                    }
+                }
+                
+                // Durum filtresi
+                if (isset($filters['is_featured'])) {
+                    $conditions['is_featured'] = intval($filters['is_featured']);
+                }
+                
+                // Toplam sayıyı al
+                $total_count = $this->db->count('product_models', $conditions);
+                
+                // Ürünleri getir - sadece gerekli alanlar
+                $options = [
+                    'order' => 'id ASC',
+                    'limit' => $limit,
+                    'offset' => $offset
+                ];
+                
+                $products = $this->db->select('product_models', $conditions, 
+                    'id, name, base_price, is_featured, created_at', $options);
+                
+                // Batch olarak ilişkili verileri getir
+                $enriched_products = $this->enrichProductsForAdminBatch($products);
+                
+                return [
+                    'products' => $enriched_products,
+                    'total' => $total_count,
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'cached' => false // Fresh data
+                ];
+                
+            } catch (Exception $e) {
+                error_log("Admin ürünleri getirme hatası: " . $e->getMessage());
+                return [
+                    'products' => [],
+                    'total' => 0,
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'cached' => false
+                ];
             }
-            
-            // Durum filtresi
-            if (isset($filters['is_featured'])) {
-                $conditions['is_featured'] = intval($filters['is_featured']);
-            }
-            
-            // Toplam sayıyı al
-            $total_count = $this->db->count('product_models', $conditions);
-            
-            // Ürünleri getir - sadece gerekli alanlar
-            $options = [
-                'order' => 'id ASC',
-                'limit' => $limit,
-                'offset' => $offset
-            ];
-            
-            $products = $this->db->select('product_models', $conditions, 
-                'id, name, base_price, is_featured, created_at', $options);
-            
-            // Batch olarak ilişkili verileri getir
-            $enriched_products = $this->enrichProductsForAdminBatch($products);
-            
-            return [
-                'products' => $enriched_products,
-                'total' => $total_count,
-                'limit' => $limit,
-                'offset' => $offset
-            ];
-            
-        } catch (Exception $e) {
-            error_log("Admin ürünleri getirme hatası: " . $e->getMessage());
-            return [
-                'products' => [],
-                'total' => 0,
-                'limit' => $limit,
-                'offset' => $offset
-            ];
-        }
+        }, $cache_ttl);
     }
     
     /**

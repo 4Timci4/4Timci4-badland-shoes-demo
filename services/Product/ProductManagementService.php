@@ -6,6 +6,7 @@
  */
 
 require_once __DIR__ . '/../../lib/DatabaseFactory.php';
+require_once __DIR__ . '/../../lib/AutoCache.php';
 
 class ProductManagementService {
     private $db;
@@ -62,6 +63,9 @@ class ProductManagementService {
                 if (method_exists($this->db, 'commit')) {
                     $this->db->commit();
                 }
+                
+                // OTOMATIK CACHE INVALIDATION - Ürün silindikten sonra
+                $this->invalidateProductCaches($product_id);
                 
                 return $result !== false;
                 
@@ -549,6 +553,47 @@ class ProductManagementService {
             error_log("Ürün varyantı silme hatası: " . $e->getMessage());
             return false;
         }
+    }
+    
+    /**
+     * OTOMATIK CACHE INVALIDATION SISTEMI
+     * Ürün değişikliklerinde ilgili cache'leri otomatik temizler
+     * 
+     * @param int $product_id Değişen ürün ID'si
+     */
+    private function invalidateProductCaches($product_id = null) {
+        try {
+            // Admin product listelerini temizle
+            autoCache()->autoInvalidate('admin_products_*');
+            
+            // Eğer belirli bir ürün ID'si varsa, o ürüne özel cache'leri de temizle
+            if ($product_id) {
+                autoCache()->autoInvalidate("product_detail_{$product_id}_*");
+                autoCache()->autoInvalidate("product_variants_{$product_id}");
+                autoCache()->autoInvalidate("product_images_{$product_id}");
+            }
+            
+            // Genel ürün cache'lerini temizle
+            autoCache()->autoInvalidate('product_stats_*');
+            autoCache()->autoInvalidate('category_product_counts_*');
+            autoCache()->autoInvalidate('recent_products_*');
+            
+            // API cache'lerini temizle
+            autoCache()->autoInvalidate('api_products_*');
+            autoCache()->autoInvalidate('products_for_api_*');
+            
+            error_log("Cache invalidation tamamlandı - Product ID: " . ($product_id ?: 'ALL'));
+            
+        } catch (Exception $e) {
+            error_log("Cache invalidation hatası: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Tüm ürün cache'lerini temizle (manuel kullanım için)
+     */
+    public function clearAllProductCaches() {
+        $this->invalidateProductCaches();
     }
 }
 
