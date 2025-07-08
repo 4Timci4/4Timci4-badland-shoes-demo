@@ -1,20 +1,249 @@
 <!-- Sol Taraf - Ürün Görselleri -->
 <div class="lg:col-span-1 space-y-4">
-    <div class="main-image bg-gray-100 rounded-lg overflow-hidden aspect-square">
-        <img id="main-product-image"
-             src="<?php echo isset($product_images[0]['image_url']) ? $product_images[0]['image_url'] : ''; ?>"
-             alt="<?php echo isset($product_images[0]['alt_text']) ? $product_images[0]['alt_text'] : $product['name']; ?>"
-             class="w-full h-full object-cover">
+    <!-- Ana Resim Konteyner -->
+    <div class="main-image-container relative bg-gray-100 rounded-lg overflow-hidden aspect-square group">
+        <?php
+        // İlk resmi bul (primary veya ilk mevcut)
+        $main_image = null;
+        $default_images = [];
+        
+        if (!empty($product_images_by_color)) {
+            // Önce default kategorisini kontrol et
+            if (isset($product_images_by_color['default']) && !empty($product_images_by_color['default'])) {
+                $default_images = $product_images_by_color['default'];
+            } else {
+                // Default yoksa ilk rengin resimlerini al
+                $default_images = reset($product_images_by_color);
+            }
+            
+            // Primary resmi bul
+            foreach ($default_images as $img) {
+                if ($img['is_primary']) {
+                    $main_image = $img;
+                    break;
+                }
+            }
+            
+            // Primary yoksa ilk resmi al
+            if (!$main_image && !empty($default_images)) {
+                $main_image = $default_images[0];
+            }
+        } elseif (!empty($product_images)) {
+            $main_image = $product_images[0];
+        }
+        ?>
+        
+        <?php if ($main_image): ?>
+            <!-- Ana resim -->
+            <picture id="main-product-picture" class="w-full h-full">
+                <?php if (!empty($main_image['webp_url'])): ?>
+                    <source srcset="<?php echo htmlspecialchars($main_image['webp_url']); ?>" type="image/webp">
+                <?php endif; ?>
+                <img id="main-product-image"
+                     src="<?php echo htmlspecialchars($main_image['image_url']); ?>"
+                     data-original="<?php echo htmlspecialchars($main_image['original_url'] ?? $main_image['image_url']); ?>"
+                     alt="<?php echo htmlspecialchars($main_image['alt_text'] ?? $product['name']); ?>"
+                     class="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-105"
+                     loading="eager">
+            </picture>
+            
+            <!-- Zoom buttonu -->
+            <button type="button"
+                    class="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-opacity-70"
+                    onclick="openImageZoom()"
+                    title="Büyütmek için tıklayın">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
+                </svg>
+            </button>
+        <?php else: ?>
+            <!-- Placeholder resim -->
+            <div class="w-full h-full flex items-center justify-center bg-gray-200">
+                <svg class="w-20 h-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+        <?php endif; ?>
     </div>
     
-    <div class="thumbnail-images grid grid-cols-4 gap-4">
-        <?php foreach($product_images as $index => $image): ?>
-            <div class="thumbnail bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer border-2 <?php echo $index === 0 ? 'border-primary' : 'border-transparent hover:border-gray-300'; ?>"
-                 onclick="changeMainImage('<?php echo $image['image_url']; ?>', this)">
-                <img src="<?php echo $image['image_url']; ?>"
-                     alt="<?php echo isset($image['alt_text']) ? $image['alt_text'] : $product['name']; ?>"
-                     class="w-full h-full object-cover">
+    <!-- Thumbnail Resimleri -->
+    <?php if (!empty($default_images) && count($default_images) > 1): ?>
+        <div class="thumbnail-images">
+            <div class="grid grid-cols-4 gap-2" id="thumbnail-container">
+                <?php foreach($default_images as $index => $image): ?>
+                    <div class="thumbnail-item relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer border-2 transition-all duration-200 <?php echo $index === 0 ? 'border-blue-500 border-opacity-100' : 'border-transparent hover:border-gray-300'; ?>"
+                         data-image-id="<?php echo $image['id']; ?>"
+                         onclick="changeMainImage(<?php echo htmlspecialchars(json_encode($image)); ?>, this)">
+                        
+                        <picture class="w-full h-full">
+                            <?php if (!empty($image['webp_url'])): ?>
+                                <source srcset="<?php echo htmlspecialchars($image['webp_url']); ?>" type="image/webp">
+                            <?php endif; ?>
+                            <img src="<?php echo htmlspecialchars($image['thumbnail_url'] ?? $image['image_url']); ?>"
+                                 alt="<?php echo htmlspecialchars($image['alt_text'] ?? $product['name']); ?>"
+                                 class="w-full h-full object-cover"
+                                 loading="lazy">
+                        </picture>
+                        
+                        <!-- Primary işareti -->
+                        <?php if ($image['is_primary']): ?>
+                            <div class="absolute top-1 left-1">
+                                <span class="bg-yellow-500 text-white text-xs px-1 py-0.5 rounded">★</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
             </div>
-        <?php endforeach; ?>
+            
+            <!-- Resim sayısı göstergesi -->
+            <?php if (count($default_images) > 4): ?>
+                <div class="text-center mt-2">
+                    <span class="text-sm text-gray-500">
+                        <?php echo count($default_images); ?> resim
+                    </span>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Renk Bazlı Resim Değiştirme (JavaScript ile yönetilecek) -->
+    <div id="color-image-data" style="display: none;">
+        <?php echo htmlspecialchars(json_encode($product_images_by_color)); ?>
     </div>
 </div>
+
+<!-- Zoom Modal -->
+<div id="image-zoom-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-content-center">
+    <div class="relative max-w-screen-lg max-h-screen-lg mx-auto p-4">
+        <!-- Kapatma butonu -->
+        <button type="button"
+                class="absolute top-4 right-4 text-white text-2xl z-10 hover:text-gray-300"
+                onclick="closeImageZoom()">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        
+        <!-- Zoom edilmiş resim -->
+        <img id="zoom-image"
+             src=""
+             alt=""
+             class="max-w-full max-h-full object-contain">
+    </div>
+</div>
+
+<script>
+// Resim değiştirme fonksiyonu
+function changeMainImage(imageData, thumbnailElement) {
+    const mainPicture = document.getElementById('main-product-picture');
+    const mainImage = document.getElementById('main-product-image');
+    
+    // WebP desteği kontrolü ve source element güncelleme
+    const existingSource = mainPicture.querySelector('source[type="image/webp"]');
+    if (imageData.webp_url && existingSource) {
+        existingSource.srcset = imageData.webp_url;
+    } else if (imageData.webp_url && !existingSource) {
+        const source = document.createElement('source');
+        source.srcset = imageData.webp_url;
+        source.type = 'image/webp';
+        mainPicture.insertBefore(source, mainImage);
+    }
+    
+    // Ana resmi güncelle
+    mainImage.src = imageData.image_url;
+    mainImage.setAttribute('data-original', imageData.original_url || imageData.image_url);
+    mainImage.alt = imageData.alt_text || '<?php echo htmlspecialchars($product['name']); ?>';
+    
+    // Thumbnail seçimini güncelle
+    document.querySelectorAll('.thumbnail-item').forEach(thumb => {
+        thumb.classList.remove('border-blue-500', 'border-opacity-100');
+        thumb.classList.add('border-transparent');
+    });
+    
+    if (thumbnailElement) {
+        thumbnailElement.classList.add('border-blue-500', 'border-opacity-100');
+        thumbnailElement.classList.remove('border-transparent');
+    }
+}
+
+// Zoom modal fonksiyonları
+function openImageZoom() {
+    const mainImage = document.getElementById('main-product-image');
+    const zoomModal = document.getElementById('image-zoom-modal');
+    const zoomImage = document.getElementById('zoom-image');
+    
+    const originalSrc = mainImage.getAttribute('data-original') || mainImage.src;
+    zoomImage.src = originalSrc;
+    zoomImage.alt = mainImage.alt;
+    
+    zoomModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Scroll'u devre dışı bırak
+}
+
+function closeImageZoom() {
+    const zoomModal = document.getElementById('image-zoom-modal');
+    zoomModal.classList.add('hidden');
+    document.body.style.overflow = ''; // Scroll'u tekrar etkinleştir
+}
+
+// ESC tuşu ile modal kapatma
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageZoom();
+    }
+});
+
+// Modal dışına tıklama ile kapatma
+document.getElementById('image-zoom-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageZoom();
+    }
+});
+
+// Renk değişiminde resim güncelleme (renk seçici ile entegrasyon için)
+function updateImagesForColor(colorId) {
+    const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
+    const colorKey = colorId ? colorId.toString() : 'default';
+    
+    if (colorImageData[colorKey] && colorImageData[colorKey].length > 0) {
+        const colorImages = colorImageData[colorKey];
+        
+        // Ana resmi güncelle (primary veya ilk resim)
+        let mainImageData = colorImages.find(img => img.is_primary) || colorImages[0];
+        changeMainImage(mainImageData);
+        
+        // Thumbnail'leri güncelle
+        updateThumbnails(colorImages);
+    }
+}
+
+// Thumbnail listesini güncelleme
+function updateThumbnails(images) {
+    const container = document.getElementById('thumbnail-container');
+    container.innerHTML = '';
+    
+    images.forEach((image, index) => {
+        const thumbnailDiv = document.createElement('div');
+        thumbnailDiv.className = `thumbnail-item relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer border-2 transition-all duration-200 ${index === 0 ? 'border-blue-500 border-opacity-100' : 'border-transparent hover:border-gray-300'}`;
+        thumbnailDiv.setAttribute('data-image-id', image.id);
+        thumbnailDiv.onclick = () => changeMainImage(image, thumbnailDiv);
+        
+        let pictureHTML = '<picture class="w-full h-full">';
+        if (image.webp_url) {
+            pictureHTML += `<source srcset="${image.webp_url}" type="image/webp">`;
+        }
+        pictureHTML += `<img src="${image.thumbnail_url || image.image_url}" alt="${image.alt_text || '<?php echo htmlspecialchars($product['name']); ?>'}" class="w-full h-full object-cover" loading="lazy">`;
+        pictureHTML += '</picture>';
+        
+        if (image.is_primary) {
+            pictureHTML += '<div class="absolute top-1 left-1"><span class="bg-yellow-500 text-white text-xs px-1 py-0.5 rounded">★</span></div>';
+        }
+        
+        thumbnailDiv.innerHTML = pictureHTML;
+        container.appendChild(thumbnailDiv);
+    });
+}
+
+// Global olarak erişilebilir fonksiyonları window nesnesine ekle
+window.updateImagesForColor = updateImagesForColor;
+</script>

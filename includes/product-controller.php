@@ -4,6 +4,7 @@ $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 // Veritabanı bağlantısı
 require_once 'config/database.php';
+require_once 'services/Product/ProductImageService.php';
 
 // Veritabanından ürün bilgilerini çek
 $product_data_result = get_product_model($product_id);
@@ -17,9 +18,13 @@ if (!$product_data) {
 
 // Ürün verileri bulunduktan sonra diğer verileri çek
 $product_variants = get_product_variants($product_id);
-$product_images = get_product_images($product_id);
 $all_colors = get_colors(); // Performans için renkleri bir kez çek
 $all_sizes = get_sizes();   // Performans için bedenleri bir kez çek
+
+// Yeni Image Service'i kullan
+$productImageService = productImageService();
+$product_images_by_color = $productImageService->getProductImagesByColors($product_id);
+$product_images = $productImageService->getProductImages($product_id); // Tüm resimler (geriye uyumluluk için)
 
 // Ürün bilgilerini al
 $product = $product_data;
