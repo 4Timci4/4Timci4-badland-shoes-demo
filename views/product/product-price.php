@@ -7,9 +7,9 @@
         $original_price = 0;
         
         foreach ($product_variants as $variant) {
-            if (isset($variant['original_price']) && $variant['original_price'] > 0) {
+            if (isset($variant['price']) && $variant['price'] > 0) {
                 $has_discount = true;
-                $original_price = $variant['original_price'];
+                $original_price = $variant['price'];
                 break;
             }
         }

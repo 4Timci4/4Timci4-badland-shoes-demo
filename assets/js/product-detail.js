@@ -15,6 +15,14 @@ document.addEventListener('DOMContentLoaded', function() {
             firstColorButton.classList.remove('border-gray-300');
             firstColorButton.classList.add('border-secondary');
             document.getElementById('selected-color').textContent = firstColorButton.dataset.colorName;
+            
+            // İlk rengin görsellerini göster
+            if (typeof window.updateImagesForColor === 'function') {
+                window.updateImagesForColor(selectedColor);
+            }
+            
+            // İlk rengin taban fiyatını güncelle
+            updateBasePrice();
         }
     }
     
@@ -51,6 +59,60 @@ document.addEventListener('DOMContentLoaded', function() {
         thumbnail.classList.add('border-primary');
     };
     
+    // Seçilen renge göre taban fiyatını güncelle
+    function updateBasePrice() {
+        if (!selectedColor) return;
+        
+        const currentPriceElement = document.getElementById('current-price');
+        
+        // Seçilen renkteki varyantları bul
+        const colorVariants = productVariants.filter(v => v.color_id === selectedColor);
+        
+        if (colorVariants.length > 0) {
+            // En düşük fiyatlı varyantı bul
+            let lowestPrice = null;
+            colorVariants.forEach(variant => {
+                if (variant.price && (lowestPrice === null || variant.price < lowestPrice)) {
+                    lowestPrice = variant.price;
+                }
+            });
+            
+            // Fiyatı güncelle
+            if (lowestPrice !== null) {
+                currentPriceElement.textContent = '₺ ' + parseFloat(lowestPrice).toLocaleString('tr-TR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+            
+            // İndirim varsa indirim göstergesini güncelle
+            updateDiscountDisplay(colorVariants);
+        }
+    }
+    
+    // İndirim göstergesini güncelle
+    function updateDiscountDisplay(variants) {
+        const discountElement = document.querySelector('.price-section .line-through');
+        const discountBadge = document.querySelector('.price-section .bg-green-500');
+        
+        if (!discountElement || !discountBadge) return;
+        
+        // İndirimli varyant bul
+        const discountedVariant = variants.find(v => v.original_price && v.original_price > 0);
+        
+        if (discountedVariant) {
+            discountElement.textContent = '₺ ' + parseFloat(discountedVariant.original_price).toLocaleString('tr-TR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            discountElement.style.display = '';
+            discountBadge.style.display = '';
+        } else {
+            discountElement.style.display = 'none';
+            discountBadge.style.display = 'none';
+        }
+    }
+    
     // Renk seçimi
     document.querySelectorAll('.color-option').forEach(button => {
         button.addEventListener('click', function() {
@@ -67,8 +129,16 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedColor = parseInt(this.dataset.colorId);
             document.getElementById('selected-color').textContent = this.dataset.colorName;
             
+            // Seçilen renk değiştiğinde görselleri güncelle
+            if (typeof window.updateImagesForColor === 'function') {
+                window.updateImagesForColor(selectedColor);
+            }
+            
             // Önce bedenlerin görünümünü güncelle
             updateSizeButtonsBasedOnStock();
+            
+            // Seçilen renge göre fiyatı güncelle
+            updateBasePrice();
             
             // Beden seçimini sıfırla
             selectedSize = null;
@@ -135,12 +205,30 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             
             if (variant && variant.stock_quantity > 0) {
-                // Fiyatı güncelle
+                // Seçili varyantın fiyatını güncelle
                 if (variant.price) {
                     currentPriceElement.textContent = '₺ ' + parseFloat(variant.price).toLocaleString('tr-TR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
+                    
+                    // İndirim göstergesini güncelle
+                    const discountElement = document.querySelector('.price-section .line-through');
+                    const discountBadge = document.querySelector('.price-section .bg-green-500');
+                    
+                    if (discountElement && discountBadge) {
+                        if (variant.original_price && variant.original_price > 0) {
+                            discountElement.textContent = '₺ ' + parseFloat(variant.original_price).toLocaleString('tr-TR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                            discountElement.style.display = '';
+                            discountBadge.style.display = '';
+                        } else {
+                            discountElement.style.display = 'none';
+                            discountBadge.style.display = 'none';
+                        }
+                    }
                 }
                 
                 stockStatus.textContent = variant.stock_quantity <= 3 ? 'Son ' + variant.stock_quantity + ' ürün!' : ''; 

@@ -42,12 +42,8 @@ function handle_product_edit_form($product_id) {
             if ($success) {
                 set_flash_message('success', 'Ürün başarıyla güncellendi.');
                 
-                // Devam et mi yoksa listeye dön mü?
-                if (isset($_POST['save_and_continue'])) {
-                    header('Location: product-edit.php?id=' . $product_id);
-                } else {
-                    header('Location: products.php');
-                }
+                // Her zaman düzenlemeye devam et
+                header('Location: product-edit.php?id=' . $product_id);
                 exit;
             } else {
                 throw new Exception('Supabase güncelleme işlemi başarısız');
