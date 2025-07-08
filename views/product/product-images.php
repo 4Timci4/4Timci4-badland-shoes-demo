@@ -5,27 +5,10 @@
         <?php
         // İlk resmi bul (primary veya ilk mevcut)
         $main_image = null;
-        $default_images = [];
         
-        if (!empty($product_images_by_color)) {
-            // Önce default kategorisini kontrol et
-            if (isset($product_images_by_color['default']) && !empty($product_images_by_color['default'])) {
-                $default_images = $product_images_by_color['default'];
-                // Sort by sort_order
-                usort($default_images, function($a, $b) {
-                    return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
-                });
-            } else {
-                // Default yoksa ilk rengin resimlerini al
-                $default_images = reset($product_images_by_color);
-                // Sort by sort_order
-                usort($default_images, function($a, $b) {
-                    return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
-                });
-            }
-            
+        if (!empty($current_images)) {
             // Primary resmi bul
-            foreach ($default_images as $img) {
+            foreach ($current_images as $img) {
                 if ($img['is_primary']) {
                     $main_image = $img;
                     break;
@@ -33,8 +16,8 @@
             }
             
             // Primary yoksa ilk resmi al
-            if (!$main_image && !empty($default_images)) {
-                $main_image = $default_images[0];
+            if (!$main_image) {
+                $main_image = $current_images[0];
             }
         } elseif (!empty($product_images)) {
             $main_image = $product_images[0];
@@ -75,10 +58,10 @@
     </div>
     
     <!-- Thumbnail Resimleri -->
-    <?php if (!empty($default_images) && count($default_images) > 1): ?>
+    <?php if (!empty($current_images) && count($current_images) > 1): ?>
         <div class="thumbnail-images">
             <div class="grid grid-cols-4 gap-2" id="thumbnail-container">
-                <?php foreach($default_images as $index => $image): ?>
+                <?php foreach($current_images as $index => $image): ?>
                     <div class="thumbnail-item relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer border-2 transition-all duration-200 <?php echo $index === 0 ? 'border-blue-500 border-opacity-100' : 'border-transparent hover:border-gray-300'; ?>"
                          data-image-id="<?php echo $image['id']; ?>"
                          onclick="changeMainImage(<?php echo htmlspecialchars(json_encode($image)); ?>, this)">
@@ -104,10 +87,10 @@
             </div>
             
             <!-- Resim sayısı göstergesi -->
-            <?php if (count($default_images) > 4): ?>
+            <?php if (count($current_images) > 4): ?>
                 <div class="text-center mt-2">
                     <span class="text-sm text-gray-500">
-                        <?php echo count($default_images); ?> resim
+                        <?php echo count($current_images); ?> resim
                     </span>
                 </div>
             <?php endif; ?>
@@ -231,6 +214,8 @@ function updateImagesForColor(colorId) {
 // Thumbnail listesini güncelleme
 function updateThumbnails(images) {
     const container = document.getElementById('thumbnail-container');
+    if (!container) return; // Container yoksa fonksiyonu sonlandır
+    
     container.innerHTML = '';
     
     images.forEach((image, index) => {

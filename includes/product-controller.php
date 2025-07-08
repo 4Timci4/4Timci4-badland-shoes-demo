@@ -6,6 +6,27 @@ $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 require_once 'config/database.php';
 require_once 'services/Product/ProductImageService.php';
 
+// Renk slug'ını URL'den al
+$selected_color_slug = isset($_GET['color']) ? trim($_GET['color']) : '';
+
+// Renk slug'ları için helper fonksiyonlar
+function createColorSlug($colorName) {
+    $slug = mb_strtolower($colorName, 'UTF-8');
+    $slug = str_replace(['ı', 'İ', 'ş', 'Ş', 'ğ', 'Ğ', 'ü', 'Ü', 'ö', 'Ö', 'ç', 'Ç'], 
+                       ['i', 'i', 's', 's', 'g', 'g', 'u', 'u', 'o', 'o', 'c', 'c'], $slug);
+    $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
+    return preg_replace('/-+/', '-', trim($slug, '-'));
+}
+
+function findColorIdBySlug($slug, $colors) {
+    foreach ($colors as $color) {
+        if (createColorSlug($color['name']) === $slug) {
+            return $color['id'];
+        }
+    }
+    return null;
+}
+
 // Veritabanından ürün bilgilerini çek
 $product_data_result = get_product_model($product_id);
 $product_data = $product_data_result ? $product_data_result[0] : null;
@@ -41,6 +62,45 @@ foreach ($product_color_ids as $color_id) {
     if (isset($all_colors_map[$color_id])) {
         $colors[] = $all_colors_map[$color_id];
     }
+}
+
+// Seçilen renk ID'sini bul
+$selected_color_id = null;
+if (!empty($selected_color_slug)) {
+    $selected_color_id = findColorIdBySlug($selected_color_slug, $colors);
+}
+
+// Eğer seçilen renk bulunamazsa veya hiç renk seçilmemişse, ilk rengi varsayılan yap
+if (!$selected_color_id && !empty($colors)) {
+    $selected_color_id = $colors[0]['id'];
+}
+
+// Seçilen renk bilgilerini al
+$selected_color = null;
+if ($selected_color_id) {
+    $selected_color = $all_colors_map[$selected_color_id] ?? null;
+}
+
+// Seçilen renge göre görselleri filtrele
+$current_images = [];
+if ($selected_color_id && isset($product_images_by_color[$selected_color_id])) {
+    $current_images = $product_images_by_color[$selected_color_id];
+    // Sort by sort_order
+    usort($current_images, function($a, $b) {
+        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+    });
+} elseif (isset($product_images_by_color['default'])) {
+    // Varsayılan görseller varsa onları kullan
+    $current_images = $product_images_by_color['default'];
+    usort($current_images, function($a, $b) {
+        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+    });
+} elseif (!empty($product_images_by_color)) {
+    // Hiç varsayılan yoksa ilk rengin görsellerini kullan
+    $current_images = reset($product_images_by_color);
+    usort($current_images, function($a, $b) {
+        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+    });
 }
 
 // Bedenleri hazırla (Optimize Edilmiş)

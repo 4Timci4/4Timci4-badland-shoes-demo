@@ -39,54 +39,123 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Ana resim değiştirme
-    window.changeMainImage = function(imageUrl, thumbnail) {
-        document.getElementById('main-product-image').src = imageUrl;
+    window.changeMainImage = function(imageData, thumbnail) {
+        const mainImage = document.getElementById('main-product-image');
+        if (!mainImage) return;
         
-        // Thumbnail border'larını güncelle
-        document.querySelectorAll('.thumbnail').forEach(thumb => {
-            thumb.classList.remove('border-primary');
-            thumb.classList.add('border-transparent');
-        });
-        thumbnail.classList.remove('border-transparent');
-        thumbnail.classList.add('border-primary');
+        // imageData bir obje mi yoksa string mi kontrol et
+        if (typeof imageData === 'string') {
+            mainImage.src = imageData;
+        } else if (imageData && imageData.image_url) {
+            // Obje formatındaysa
+            mainImage.src = imageData.image_url;
+            mainImage.setAttribute('data-original', imageData.original_url || imageData.image_url);
+            mainImage.alt = imageData.alt_text || mainImage.alt;
+        }
+        
+        // Thumbnail border'larını güncelle (sadece thumbnail varsa)
+        if (thumbnail) {
+            document.querySelectorAll('.thumbnail, .thumbnail-item').forEach(thumb => {
+                thumb.classList.remove('border-primary', 'border-blue-500', 'border-opacity-100');
+                thumb.classList.add('border-transparent');
+            });
+            thumbnail.classList.remove('border-transparent');
+            thumbnail.classList.add('border-primary', 'border-blue-500', 'border-opacity-100');
+        }
     };
     
-    // Renk seçimi
+    // Renk seçimi - Soft geçiş ile
     document.querySelectorAll('.color-option').forEach(button => {
-        button.addEventListener('click', function() {
-            // Önceki seçimi temizle
-            document.querySelectorAll('.color-option').forEach(btn => {
-                btn.classList.remove('border-secondary');
-                btn.classList.add('border-gray-300');
-            });
+        button.addEventListener('click', function(e) {
+            e.preventDefault(); // Link davranışını engelle
             
-            // Yeni seçimi işaretle
-            this.classList.remove('border-gray-300');
-            this.classList.add('border-secondary');
+            const colorId = parseInt(this.dataset.colorId);
+            const colorName = this.dataset.colorName;
+            const colorSlug = this.dataset.colorSlug;
             
-            selectedColor = parseInt(this.dataset.colorId);
-            document.getElementById('selected-color').textContent = this.dataset.colorName;
+            // URL'yi güncelle (soft geçiş)
+            const url = new URL(window.location);
+            url.searchParams.set('color', colorSlug);
+            history.pushState({colorId: colorId, colorSlug: colorSlug}, '', url);
             
-            // Önce bedenlerin görünümünü güncelle
-            updateSizeButtonsBasedOnStock();
-            
-            // Beden seçimini sıfırla
-            selectedSize = null;
-            document.getElementById('selected-size').textContent = '-';
-            document.querySelectorAll('.size-option').forEach(btn => {
-                btn.classList.remove('bg-primary', 'text-white', 'border-primary');
-                btn.classList.add('border-gray-300');
-            });
-            
-            // Stok olmayan ilk uygun bedeni otomatik seç
-            const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
-            if (firstAvailableSizeButton) {
-                firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
-            } else {
-                updateStockStatus(); // Uygun beden yoksa stok durumunu güncelle
-            }
+            // Renk seçimini güncelle
+            selectColor(colorId, colorName);
         });
     });
+    
+    // Renk seçme fonksiyonu
+    function selectColor(colorId, colorName) {
+        // Önceki seçimi temizle
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.classList.remove('border-secondary');
+            btn.classList.add('border-gray-300');
+        });
+        
+        // Yeni seçimi işaretle
+        const selectedButton = document.querySelector('.color-option[data-color-id="' + colorId + '"]');
+        if (selectedButton) {
+            selectedButton.classList.remove('border-gray-300');
+            selectedButton.classList.add('border-secondary');
+        }
+        
+        selectedColor = colorId;
+        document.getElementById('selected-color').textContent = colorName;
+        
+        // Görselleri güncelle
+        if (typeof updateImagesForColor === 'function') {
+            updateImagesForColor(colorId);
+        }
+        
+        // Önce bedenlerin görünümünü güncelle
+        updateSizeButtonsBasedOnStock();
+        
+        // Beden seçimini sıfırla
+        selectedSize = null;
+        document.getElementById('selected-size').textContent = '-';
+        document.querySelectorAll('.size-option').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+            btn.classList.add('border-gray-300');
+        });
+        
+        // Stok olmayan ilk uygun bedeni otomatik seç
+        const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
+        if (firstAvailableSizeButton) {
+            firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
+        } else {
+            updateStockStatus(); // Uygun beden yoksa stok durumunu güncelle
+        }
+    }
+    
+    // Tarayıcı geri/ileri butonları için
+    window.addEventListener('popstate', function(event) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const colorSlug = urlParams.get('color');
+        
+        if (colorSlug && event.state && event.state.colorId) {
+            // State'den renk bilgisini al
+            const colorId = event.state.colorId;
+            const colorButton = document.querySelector('.color-option[data-color-id="' + colorId + '"]');
+            if (colorButton) {
+                selectColor(colorId, colorButton.dataset.colorName);
+            }
+        } else if (!colorSlug) {
+            // Renk parametresi yoksa ilk rengi seç
+            const firstColorButton = document.querySelector('.color-option');
+            if (firstColorButton) {
+                selectColor(parseInt(firstColorButton.dataset.colorId), firstColorButton.dataset.colorName);
+            }
+        }
+    });
+    
+    // Sayfa yüklendiğinde URL'den renk parametresini kontrol et
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlColorSlug = urlParams.get('color');
+    if (urlColorSlug) {
+        const colorButton = document.querySelector('.color-option[data-color-slug="' + urlColorSlug + '"]');
+        if (colorButton) {
+            selectColor(parseInt(colorButton.dataset.colorId), colorButton.dataset.colorName);
+        }
+    }
     
     // Sayfa yüklendiğinde bedenleri güncelle ve ilk uygun bedeni seç
     if (selectedColor) {
