@@ -28,7 +28,6 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renk</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Görseller</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beden</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiyat</th>
@@ -45,47 +44,6 @@
                                     <div class="w-6 h-6 rounded-full border border-gray-300"
                                          style="background-color: <?= htmlspecialchars($variant['color_hex'] ?? '#cccccc') ?>"></div>
                                     <span class="ml-3 text-sm text-gray-900"><?= htmlspecialchars($variant['color_name'] ?? 'Renk Yok') ?></span>
-                                </div>
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                <?php
-                                $colorId = $variant['color_id'] ?? 'default';
-                                $colorImages = $productImagesByColor[$colorId] ?? [];
-                                $imageCount = count($colorImages);
-                                ?>
-                                <div class="flex items-center space-x-2">
-                                    <!-- Thumbnail Preview -->
-                                    <div class="flex -space-x-2 mr-2">
-                                        <?php
-                                        $displayLimit = 3;
-                                        $displayImages = array_slice($colorImages, 0, $displayLimit);
-                                        foreach ($displayImages as $img):
-                                        ?>
-                                            <div class="w-8 h-8 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100">
-                                                <img src="<?= htmlspecialchars($img['thumbnail_url'] ?? $img['image_url']) ?>"
-                                                     alt="<?= htmlspecialchars($img['alt_text'] ?? '') ?>"
-                                                     class="w-full h-full object-cover"
-                                                     loading="lazy">
-                                            </div>
-                                        <?php endforeach; ?>
-                                        
-                                        <?php if ($imageCount > $displayLimit): ?>
-                                            <div class="w-8 h-8 rounded-lg border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
-                                                +<?= $imageCount - $displayLimit ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <!-- Image Count and Manage Button -->
-                                    <div class="flex flex-col items-start">
-                                        <span class="text-xs font-medium text-gray-900"><?= $imageCount ?> görsel</span>
-                                        <button type="button"
-                                                class="manage-images-btn text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                                data-color-id="<?= $colorId ?>"
-                                                data-color-name="<?= htmlspecialchars($variant['color_name'] ?? 'Varsayılan') ?>">
-                                            Yönet
-                                        </button>
-                                    </div>
                                 </div>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap">
@@ -171,41 +129,6 @@
                                     data-variant-id="<?= $variant['id'] ?>">
                                 <i class="fas fa-trash"></i>
                             </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Images -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex -space-x-2">
-                                <?php
-                                $displayLimit = 3;
-                                $displayImages = array_slice($colorImages, 0, $displayLimit);
-                                foreach ($displayImages as $img):
-                                ?>
-                                    <div class="w-10 h-10 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100">
-                                        <img src="<?= htmlspecialchars($img['thumbnail_url'] ?? $img['image_url']) ?>"
-                                             alt="<?= htmlspecialchars($img['alt_text'] ?? '') ?>"
-                                             class="w-full h-full object-cover"
-                                             loading="lazy">
-                                    </div>
-                                <?php endforeach; ?>
-                                
-                                <?php if ($imageCount > $displayLimit): ?>
-                                    <div class="w-10 h-10 rounded-lg border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
-                                        +<?= $imageCount - $displayLimit ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-900"><?= $imageCount ?> görsel</p>
-                                <button type="button"
-                                        class="manage-images-btn text-sm text-blue-600 hover:text-blue-800 font-medium"
-                                        data-color-id="<?= $colorId ?>"
-                                        data-color-name="<?= htmlspecialchars($variant['color_name'] ?? 'Varsayılan') ?>">
-                                    Yönet
-                                </button>
-                            </div>
                         </div>
                     </div>
                     

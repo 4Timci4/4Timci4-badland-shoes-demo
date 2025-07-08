@@ -201,10 +201,13 @@ class ProductImageManager {
         const progressBar = document.getElementById('progress-bar');
         
         // Show progress
-        progressContainer.classList.remove('hidden');
+        if (progressContainer) {
+            progressContainer.classList.remove('hidden');
+        }
         
         try {
             const formData = new FormData();
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
             formData.append('action', 'upload_images');
             formData.append('product_id', this.productId);
             formData.append('color_id', targetColor);
@@ -216,7 +219,7 @@ class ProductImageManager {
             // Simulated progress for better UX
             let progress = 0;
             const progressInterval = setInterval(() => {
-                if (progress < 80) {
+                if (progress < 80 && progressBar) {
                     progress += 10;
                     progressBar.style.width = progress + '%';
                 }
@@ -259,15 +262,15 @@ class ProductImageManager {
     
     async setPrimaryImage(imageId) {
         try {
+            const formData = new FormData();
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            formData.append('action', 'set_primary');
+            formData.append('image_id', imageId);
+            formData.append('product_id', this.productId);
+            
             const response = await fetch('ajax/image-upload.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'set_primary',
-                    image_id: imageId
-                })
+                body: formData
             });
             
             const result = await response.json();
@@ -292,15 +295,15 @@ class ProductImageManager {
         }
         
         try {
+            const formData = new FormData();
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            formData.append('action', 'delete_image');
+            formData.append('image_id', imageId);
+            formData.append('product_id', this.productId);
+            
             const response = await fetch('ajax/image-upload.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'delete_image',
-                    image_id: imageId
-                })
+                body: formData
             });
             
             const result = await response.json();

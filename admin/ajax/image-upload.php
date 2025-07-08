@@ -1,227 +1,160 @@
 <?php
 /**
- * AJAX Image Upload Handler
- * Supabase entegrasyonlu görsel yönetimi endpoint'i
+ * Image Upload AJAX Handler
+ * Resim yükleme ve yönetim işlemleri için AJAX endpoint
  */
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-// CORS preflight için
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
-
 require_once '../config/auth.php';
+check_admin_auth();
+
 require_once '../../config/database.php';
 require_once '../../services/Product/ProductImageService.php';
+require_once '../includes/product-edit-controller.php';
 
-// Admin kontrolü
-try {
-    check_admin_auth();
-} catch (Exception $e) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Yetkilendirme hatası']);
+// JSON response header
+header('Content-Type: application/json');
+
+// GET istekleri için
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $action = $_GET['action'] ?? '';
+    
+    if ($action === 'get_images' && isset($_GET['product_id'])) {
+        $product_id = intval($_GET['product_id']);
+        $productImageService = productImageService();
+        $imagesByColor = $productImageService->getProductImagesByColors($product_id);
+        
+        echo json_encode([
+            'success' => true,
+            'imagesByColor' => $imagesByColor
+        ]);
+        exit;
+    }
+    
+    echo json_encode(['success' => false, 'error' => 'Invalid GET request']);
     exit;
 }
 
-// Service instance
-$imageService = new ProductImageService();
-
-// Action'a göre işlem yap
-$action = $_POST['action'] ?? $_GET['action'] ?? '';
-
-try {
-    switch ($action) {
+// POST istekleri için
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Form verisi mi JSON verisi mi kontrol et
+    $isJson = isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false;
+    
+    if ($isJson) {
+        // JSON verisi
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!$data) {
+            echo json_encode(['success' => false, 'error' => 'Invalid JSON data']);
+            exit;
+        }
         
+        $_POST = $data;
+    }
+    
+    $action = $_POST['action'] ?? '';
+    
+    switch ($action) {
         case 'upload_images':
-            handleImageUpload();
+            handle_upload_images();
             break;
             
         case 'set_primary':
-            handleSetPrimary();
+            handle_set_primary();
             break;
             
         case 'delete_image':
-            handleDeleteImage();
-            break;
-            
-        case 'get_images':
-            handleGetImages();
+            handle_delete_image();
             break;
             
         case 'reorder_images':
-            handleReorderImages();
+            handle_reorder_images();
             break;
             
         default:
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Geçersiz işlem']);
-            break;
+            echo json_encode(['success' => false, 'error' => 'Invalid action']);
+            exit;
     }
-    
-} catch (Exception $e) {
-    error_log("Image Upload AJAX Error: " . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Sunucu hatası: ' . $e->getMessage()]);
 }
 
 /**
- * Görsel yükleme işlemi
+ * Resim yükleme işlemi
  */
-function handleImageUpload() {
-    global $imageService;
-    
-    $product_id = intval($_POST['product_id'] ?? 0);
-    $color_id = !empty($_POST['color_id']) && $_POST['color_id'] !== 'default' ? intval($_POST['color_id']) : null;
-    
-    if (!$product_id) {
-        echo json_encode(['success' => false, 'message' => 'Ürün ID gerekli']);
-        return;
+function handle_upload_images() {
+    if (!isset($_POST['product_id']) || !isset($_FILES['images'])) {
+        echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+        exit;
     }
     
-    if (empty($_FILES['images'])) {
-        echo json_encode(['success' => false, 'message' => 'Yüklenecek görsel seçilmedi']);
-        return;
-    }
+    $product_id = intval($_POST['product_id']);
+    $color_id = !empty($_POST['color_id']) ? intval($_POST['color_id']) : null;
     
-    // Dosya upload'ı
-    $upload_result = $imageService->uploadProductImages($product_id, $color_id, $_FILES['images'], [
-        'max_images' => 10,
-        'generate_thumbnail' => true,
-        'generate_webp' => true,
-        'max_width' => 1200,
-        'max_height' => 1200,
-        'quality' => 90
-    ]);
+    $productImageService = productImageService();
+    $result = $productImageService->uploadProductImages($product_id, $color_id, $_FILES['images']);
     
-    if ($upload_result['success']) {
-        // Güncellenmiş görsel listesini getir
-        $updated_images = $imageService->getProductImagesByColor($product_id);
+    if ($result['success']) {
+        // Yükleme başarılı - yeni resimleri getir
+        $imagesByColor = $productImageService->getProductImagesByColors($product_id);
         
         echo json_encode([
             'success' => true,
-            'message' => $upload_result['uploaded_count'] . ' görsel başarıyla yüklendi',
-            'images' => $updated_images[$color_id ?? 'default'] ?? [],
-            'imagesByColor' => $updated_images,
-            'upload_details' => $upload_result
+            'message' => "Başarıyla {$result['uploaded_count']} resim yüklendi.",
+            'imagesByColor' => $imagesByColor,
+            'images' => $imagesByColor[$color_id ?? 'default'] ?? []
         ]);
     } else {
         echo json_encode([
             'success' => false,
-            'message' => 'Görsel yükleme hatası',
-            'errors' => $upload_result['errors'] ?? []
+            'message' => implode('<br>', $result['errors'])
         ]);
     }
+    exit;
 }
 
 /**
- * Ana görsel belirleme
+ * Ana resim belirleme
  */
-function handleSetPrimary() {
-    global $imageService;
-    
-    $input = json_decode(file_get_contents('php://input'), true);
-    $image_id = intval($input['image_id'] ?? 0);
-    
-    if (!$image_id) {
-        echo json_encode(['success' => false, 'message' => 'Görsel ID gerekli']);
-        return;
+function handle_set_primary() {
+    if (!isset($_POST['image_id'])) {
+        echo json_encode(['success' => false, 'error' => 'Missing image_id']);
+        exit;
     }
     
-    $result = $imageService->setPrimaryImage($image_id);
+    $image_id = intval($_POST['image_id']);
+    $productImageService = productImageService();
+    $result = $productImageService->setPrimaryImage($image_id);
     
-    if ($result) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Ana görsel güncellendi'
-        ]);
-    } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ana görsel güncellenirken hata oluştu'
-        ]);
-    }
+    echo json_encode(['success' => $result]);
+    exit;
 }
 
 /**
- * Görsel silme
+ * Resim silme
  */
-function handleDeleteImage() {
-    global $imageService;
-    
-    $input = json_decode(file_get_contents('php://input'), true);
-    $image_id = intval($input['image_id'] ?? 0);
-    
-    if (!$image_id) {
-        echo json_encode(['success' => false, 'message' => 'Görsel ID gerekli']);
-        return;
+function handle_delete_image() {
+    if (!isset($_POST['image_id'])) {
+        echo json_encode(['success' => false, 'error' => 'Missing image_id']);
+        exit;
     }
     
-    $result = $imageService->deleteImage($image_id);
+    $image_id = intval($_POST['image_id']);
+    $productImageService = productImageService();
+    $result = $productImageService->deleteImage($image_id);
     
-    if ($result) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Görsel silindi'
-        ]);
-    } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Görsel silinirken hata oluştu'
-        ]);
-    }
+    echo json_encode(['success' => $result]);
+    exit;
 }
 
 /**
- * Görselleri getirme
+ * Resimleri yeniden sıralama
  */
-function handleGetImages() {
-    global $imageService;
-    
-    $product_id = intval($_GET['product_id'] ?? 0);
-    
-    if (!$product_id) {
-        echo json_encode(['success' => false, 'message' => 'Ürün ID gerekli']);
-        return;
+function handle_reorder_images() {
+    if (!isset($_POST['order_data']) || !is_array($_POST['order_data'])) {
+        echo json_encode(['success' => false, 'error' => 'Missing or invalid order_data']);
+        exit;
     }
     
-    $images_by_color = $imageService->getProductImagesByColor($product_id);
+    $productImageService = productImageService();
+    $result = $productImageService->reorderImages($_POST['order_data']);
     
-    echo json_encode([
-        'success' => true,
-        'imagesByColor' => $images_by_color
-    ]);
+    echo json_encode(['success' => $result]);
+    exit;
 }
-
-/**
- * Görsel sıralama
- */
-function handleReorderImages() {
-    global $imageService;
-    
-    $input = json_decode(file_get_contents('php://input'), true);
-    $order_data = $input['order_data'] ?? [];
-    
-    if (empty($order_data)) {
-        echo json_encode(['success' => false, 'message' => 'Sıralama verisi gerekli']);
-        return;
-    }
-    
-    $result = $imageService->reorderImages($order_data);
-    
-    if ($result) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Görsel sıralaması güncellendi'
-        ]);
-    } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Sıralama güncellenirken hata oluştu'
-        ]);
-    }
-}
-?>

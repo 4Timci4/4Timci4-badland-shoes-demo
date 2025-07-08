@@ -15,6 +15,13 @@ function handle_product_edit_form($product_id) {
         set_flash_message('error', 'Güvenlik hatası. Lütfen tekrar deneyin.');
         return false;
     }
+    
+    $action = $_POST['action'] ?? 'update_product';
+    
+    // Resim yükleme işlemini kontrol et
+    if ($action === 'upload_images') {
+        return handle_image_upload($product_id);
+    }
 
     // Form verilerini al
     $name = trim($_POST['name'] ?? '');
@@ -80,6 +87,89 @@ function validate_product_form_data($name, $description, $base_price, $category_
     }
     
     return $errors;
+}
+
+/**
+ * Resim yükleme işlemlerini yönet
+ */
+function handle_image_upload($product_id) {
+    // Gerekli servisi yükle
+    require_once __DIR__ . '/../../services/Product/ProductImageService.php';
+    $productImageService = productImageService();
+    
+    $color_id = !empty($_POST['color_id']) ? intval($_POST['color_id']) : null;
+    
+    if (!empty($_FILES['product_images']['name'][0])) {
+        $result = $productImageService->uploadProductImages($product_id, $color_id, $_FILES['product_images']);
+        
+        if ($result['success']) {
+            set_flash_message('success', "Başarıyla {$result['uploaded_count']} resim yüklendi.");
+            if (!empty($result['errors'])) {
+                set_flash_message('error', implode('<br>', $result['errors']));
+            }
+        } else {
+            set_flash_message('error', implode('<br>', $result['errors']));
+        }
+    } else {
+        set_flash_message('error', 'Lütfen yüklenecek resim seçin.');
+    }
+    
+    // Aynı sayfada kal
+    header('Location: product-edit.php?id=' . $product_id);
+    exit;
+}
+
+/**
+ * AJAX resim işlemleri için handler
+ */
+function handle_ajax_image_actions() {
+    if (!isset($_POST['action']) || !isset($_POST['product_id']) || !isset($_POST['csrf_token'])) {
+        echo json_encode(['success' => false, 'error' => 'Invalid request']);
+        exit;
+    }
+    
+    if (!verify_csrf_token($_POST['csrf_token'])) {
+        echo json_encode(['success' => false, 'error' => 'Security validation failed']);
+        exit;
+    }
+    
+    $product_id = intval($_POST['product_id']);
+    $action = $_POST['action'];
+    
+    // Gerekli servisi yükle
+    require_once __DIR__ . '/../../services/Product/ProductImageService.php';
+    $productImageService = productImageService();
+    
+    $response = ['success' => false];
+    
+    switch ($action) {
+        case 'set_primary_image':
+            $image_id = intval($_POST['image_id'] ?? 0);
+            if ($image_id > 0) {
+                $success = $productImageService->setPrimaryImage($image_id);
+                $response = ['success' => $success];
+            }
+            break;
+            
+        case 'delete_image':
+            $image_id = intval($_POST['image_id'] ?? 0);
+            if ($image_id > 0) {
+                $success = $productImageService->deleteImage($image_id);
+                $response = ['success' => $success];
+            }
+            break;
+            
+        case 'reorder_images':
+            $order_data = json_decode($_POST['order_data'] ?? '[]', true);
+            if (!empty($order_data)) {
+                $success = $productImageService->reorderImages($order_data);
+                $response = ['success' => $success];
+            }
+            break;
+    }
+    
+    echo json_encode($response);
+    exit;
 }
 
 function update_product_data($product_id, $name, $description, $base_price, $is_featured, $features, $category_ids, $gender_ids) {

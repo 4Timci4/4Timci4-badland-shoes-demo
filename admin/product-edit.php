@@ -64,7 +64,7 @@ include 'includes/header.php';
         <?php include 'views/product-edit/product-status-form.php'; ?>
 
         <?php include 'views/product-edit/variant-management.php'; ?>
-
+        
         <?php include 'views/product-edit/image-management.php'; ?>
 
         <?php include 'views/product-edit/form-actions.php'; ?>

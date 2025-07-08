@@ -67,7 +67,7 @@ function include_product_edit_scripts($product_id, $product_images_by_color, $al
     <!-- Modular JavaScript Files -->
     <script src="assets/js/product-edit/form-validation.js"></script>
     <script src="assets/js/product-edit/variant-management.js"></script>
-    <script src="assets/js/product-edit/image-manager.js"></script>
+    <!-- image-manager.js dosyası artık kullanılmıyor, yeni görsel yönetimi doğrudan view içinde -->
     <script src="assets/js/product-edit/main.js"></script>
 
     <!-- Product Image Management Initialization -->
@@ -77,15 +77,13 @@ function include_product_edit_scripts($product_id, $product_images_by_color, $al
     window.allColors = <?= json_encode($all_colors) ?>; // Tüm renkler (eski uyumluluk için)
     window.variantColors = <?= json_encode($variant_colors) ?>; // Sadece varyant renkleri
 
-    // Initialize Product Edit and Image Manager
+    // Initialize Product Edit
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof ProductEditMain !== 'undefined') {
             window.productEditApp = new ProductEditMain(<?= $product_id ?>, <?= $product_base_price ?>);
         }
         
-        if (typeof ProductImageManager !== 'undefined') {
-            window.imageManager = new ProductImageManager(<?= $product_id ?>);
-        }
+        // Görsel yönetimi artık doğrudan view içindeki JS ile yapılıyor
     });
     </script>
     <?php
