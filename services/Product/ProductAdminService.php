@@ -15,7 +15,7 @@ class ProductAdminService {
     }
     
     /**
-     * Admin panel için ürünleri getiren metod - Optimize Edilmiş
+     * Admin panel için ürünleri getiren metod - Batch Query Optimizasyonu
      * 
      * @param int $limit Limit
      * @param int $offset Offset
@@ -60,17 +60,18 @@ class ProductAdminService {
             // Toplam sayıyı al
             $total_count = $this->db->count('product_models', $conditions);
             
-            // Ürünleri getir
+            // Ürünleri getir - sadece gerekli alanlar
             $options = [
                 'order' => 'created_at DESC',
                 'limit' => $limit,
                 'offset' => $offset
             ];
             
-            $products = $this->db->select('product_models', $conditions, '*', $options);
+            $products = $this->db->select('product_models', $conditions, 
+                'id, name, base_price, is_featured, created_at', $options);
             
-            // Ürün verilerini zenginleştir
-            $enriched_products = $this->enrichProductsForAdmin($products);
+            // Batch olarak ilişkili verileri getir
+            $enriched_products = $this->enrichProductsForAdminBatch($products);
             
             return [
                 'products' => $enriched_products,
@@ -91,7 +92,113 @@ class ProductAdminService {
     }
     
     /**
-     * Admin panel için ürün verilerini zenginleştir
+     * Admin panel için ürün verilerini batch olarak zenginleştir - OPTIMIZED
+     * 
+     * @param array $products Ham ürün verileri
+     * @return array Zenginleştirilmiş ürün verileri
+     */
+    private function enrichProductsForAdminBatch($products) {
+        if (empty($products)) {
+            return [];
+        }
+        
+        $product_ids = array_column($products, 'id');
+        
+        // BATCH 1: Tüm kategori ilişkilerini tek sorguda al
+        $category_relations = $this->db->select('product_categories', 
+            ['product_id' => ['IN', $product_ids]], 'product_id, category_id');
+        
+        // BATCH 2: İlgili kategorileri tek sorguda al
+        $category_ids = array_unique(array_column($category_relations, 'category_id'));
+        $categories_lookup = [];
+        if (!empty($category_ids)) {
+            $categories = $this->db->select('categories', 
+                ['id' => ['IN', $category_ids]], 'id, name, slug');
+            $categories_lookup = array_column($categories, null, 'id');
+        }
+        
+        // BATCH 3: Tüm cinsiyet ilişkilerini tek sorguda al
+        $gender_relations = $this->db->select('product_genders', 
+            ['product_id' => ['IN', $product_ids]], 'product_id, gender_id');
+        
+        // BATCH 4: İlgili cinsiyetleri tek sorguda al
+        $gender_ids = array_unique(array_column($gender_relations, 'gender_id'));
+        $genders_lookup = [];
+        if (!empty($gender_ids)) {
+            $genders = $this->db->select('genders', 
+                ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            $genders_lookup = array_column($genders, null, 'id');
+        }
+        
+        // BATCH 5: Tüm ana görselleri tek sorguda al
+        $primary_images = $this->db->select('product_images', [
+            'model_id' => ['IN', $product_ids],
+            'is_primary' => 1
+        ], 'model_id, image_url');
+        $images_lookup = array_column($primary_images, 'image_url', 'model_id');
+        
+        // Memory'de hızlı lookup haritaları oluştur
+        $product_categories_map = [];
+        foreach ($category_relations as $rel) {
+            $product_categories_map[$rel['product_id']][] = $rel['category_id'];
+        }
+        
+        $product_genders_map = [];
+        foreach ($gender_relations as $rel) {
+            $product_genders_map[$rel['product_id']][] = $rel['gender_id'];
+        }
+        
+        // Ürünleri zenginleştir - Memory'de işlem
+        $enriched_products = [];
+        foreach ($products as $product) {
+            $product_id = $product['id'];
+            
+            $enriched_product = [
+                'id' => $product_id,
+                'name' => $product['name'],
+                'base_price' => $product['base_price'],
+                'is_featured' => $product['is_featured'],
+                'created_at' => $product['created_at']
+            ];
+            
+            // Kategorileri ekle
+            $product_category_ids = $product_categories_map[$product_id] ?? [];
+            if (!empty($product_category_ids)) {
+                $first_category_id = $product_category_ids[0];
+                $category = $categories_lookup[$first_category_id] ?? null;
+                if ($category) {
+                    $enriched_product['category_name'] = $category['name'];
+                    $enriched_product['categories'] = $category;
+                } else {
+                    $enriched_product['category_name'] = 'Kategorisiz';
+                    $enriched_product['categories'] = [];
+                }
+            } else {
+                $enriched_product['category_name'] = 'Kategorisiz';
+                $enriched_product['categories'] = [];
+            }
+            
+            // Cinsiyetleri ekle
+            $product_gender_ids = $product_genders_map[$product_id] ?? [];
+            $product_genders = [];
+            foreach ($product_gender_ids as $gender_id) {
+                if (isset($genders_lookup[$gender_id])) {
+                    $product_genders[] = $genders_lookup[$gender_id];
+                }
+            }
+            $enriched_product['genders'] = $product_genders;
+            
+            // Ana görseli ekle
+            $enriched_product['image_url'] = $images_lookup[$product_id] ?? null;
+            
+            $enriched_products[] = $enriched_product;
+        }
+        
+        return $enriched_products;
+    }
+    
+    /**
+     * Admin panel için ürün verilerini zenginleştir - LEGACY (Geriye uyumluluk için)
      * 
      * @param array $products Ham ürün verileri
      * @return array Zenginleştirilmiş ürün verileri
