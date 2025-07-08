@@ -195,6 +195,12 @@ document.getElementById('image-zoom-modal').addEventListener('click', function(e
 function updateImagesForColor(colorId) {
     const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
     const colorKey = colorId ? colorId.toString() : 'default';
+    const mainImageContainer = document.querySelector('.main-image-container');
+    
+    // Loading state'ini göster
+    if (mainImageContainer) {
+        mainImageContainer.classList.add('loading');
+    }
     
     if (colorImageData[colorKey] && colorImageData[colorKey].length > 0) {
         let colorImages = colorImageData[colorKey];
@@ -204,10 +210,26 @@ function updateImagesForColor(colorId) {
         
         // Ana resmi güncelle (primary veya ilk resim)
         let mainImageData = colorImages.find(img => img.is_primary) || colorImages[0];
+        
+        // Thumbnail'leri önce güncelle (daha hızlı)
+        updateThumbnails(colorImages);
+        
+        // Ana resmi güncelle (fade effect ile)
         changeMainImage(mainImageData);
         
-        // Thumbnail'leri güncelle
-        updateThumbnails(colorImages);
+        // Loading state'ini kaldır
+        setTimeout(() => {
+            if (mainImageContainer) {
+                mainImageContainer.classList.remove('loading');
+            }
+        }, 300);
+    } else {
+        // Görsel bulunamadıysa loading'i kaldır
+        setTimeout(() => {
+            if (mainImageContainer) {
+                mainImageContainer.classList.remove('loading');
+            }
+        }, 100);
     }
 }
 

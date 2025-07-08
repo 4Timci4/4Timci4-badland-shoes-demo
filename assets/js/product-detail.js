@@ -6,6 +6,68 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedColor = null;
     let selectedSize = null;
     
+    // Görsel preloading için cache
+    const imageCache = new Map();
+    let preloadComplete = false;
+    
+    // Tüm renk görsellerini arka planda yükle
+    function preloadColorImages() {
+        const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
+        const preloadPromises = [];
+        
+        Object.keys(colorImageData).forEach(colorId => {
+            colorImageData[colorId].forEach(image => {
+                // Ana görsel
+                const imgPromise = new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        imageCache.set(image.image_url, img);
+                        resolve();
+                    };
+                    img.onerror = () => resolve(); // Hata durumunda da devam et
+                    img.src = image.image_url;
+                });
+                preloadPromises.push(imgPromise);
+                
+                // WebP varsa onu da yükle
+                if (image.webp_url) {
+                    const webpPromise = new Promise((resolve) => {
+                        const webpImg = new Image();
+                        webpImg.onload = () => {
+                            imageCache.set(image.webp_url, webpImg);
+                            resolve();
+                        };
+                        webpImg.onerror = () => resolve();
+                        webpImg.src = image.webp_url;
+                    });
+                    preloadPromises.push(webpPromise);
+                }
+                
+                // Thumbnail varsa
+                if (image.thumbnail_url) {
+                    const thumbPromise = new Promise((resolve) => {
+                        const thumbImg = new Image();
+                        thumbImg.onload = () => {
+                            imageCache.set(image.thumbnail_url, thumbImg);
+                            resolve();
+                        };
+                        thumbImg.onerror = () => resolve();
+                        thumbImg.src = image.thumbnail_url;
+                    });
+                    preloadPromises.push(thumbPromise);
+                }
+            });
+        });
+        
+        Promise.all(preloadPromises).then(() => {
+            preloadComplete = true;
+            console.log('Tüm görseller preload edildi');
+        });
+    }
+    
+    // Preloading'i başlat
+    setTimeout(preloadColorImages, 100);
+    
     // Sayfa yüklendiğinde ilk rengi seç
     if (productColors.length > 0) {
         selectedColor = productColors[0].id;
@@ -38,19 +100,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Ana resim değiştirme
+    // Ana resim değiştirme - Fade transition ile
     window.changeMainImage = function(imageData, thumbnail) {
         const mainImage = document.getElementById('main-product-image');
+        const mainPicture = document.getElementById('main-product-picture');
         if (!mainImage) return;
+        
+        let imageUrl, originalUrl, altText, webpUrl;
         
         // imageData bir obje mi yoksa string mi kontrol et
         if (typeof imageData === 'string') {
-            mainImage.src = imageData;
+            imageUrl = imageData;
+            originalUrl = imageData;
+            altText = mainImage.alt;
         } else if (imageData && imageData.image_url) {
-            // Obje formatındaysa
-            mainImage.src = imageData.image_url;
-            mainImage.setAttribute('data-original', imageData.original_url || imageData.image_url);
-            mainImage.alt = imageData.alt_text || mainImage.alt;
+            imageUrl = imageData.image_url;
+            originalUrl = imageData.original_url || imageData.image_url;
+            altText = imageData.alt_text || mainImage.alt;
+            webpUrl = imageData.webp_url;
+        }
+        
+        // Fade out efekti
+        mainImage.style.opacity = '0';
+        
+        // Yeni resim cache'de var mı kontrol et
+        const cachedImage = imageCache.get(imageUrl);
+        
+        if (cachedImage) {
+            // Cache'den hızlıca yükle
+            setTimeout(() => {
+                updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl);
+                mainImage.style.opacity = '1';
+            }, 100);
+        } else {
+            // Yeni resmi yükle
+            const newImage = new Image();
+            newImage.onload = function() {
+                imageCache.set(imageUrl, newImage);
+                updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl);
+                mainImage.style.opacity = '1';
+            };
+            newImage.onerror = function() {
+                // Hata durumunda opacity'yi geri getir
+                mainImage.style.opacity = '1';
+            };
+            newImage.src = imageUrl;
         }
         
         // Thumbnail border'larını güncelle (sadece thumbnail varsa)
@@ -63,6 +157,27 @@ document.addEventListener('DOMContentLoaded', function() {
             thumbnail.classList.add('border-primary', 'border-blue-500', 'border-opacity-100');
         }
     };
+    
+    // Görsel kaynaklarını güncelleme helper fonksiyonu
+    function updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl) {
+        // WebP source'u güncelle
+        if (webpUrl) {
+            const existingSource = mainPicture.querySelector('source[type="image/webp"]');
+            if (existingSource) {
+                existingSource.srcset = webpUrl;
+            } else {
+                const source = document.createElement('source');
+                source.srcset = webpUrl;
+                source.type = 'image/webp';
+                mainPicture.insertBefore(source, mainImage);
+            }
+        }
+        
+        // Ana resim özelliklerini güncelle
+        mainImage.src = imageUrl;
+        mainImage.setAttribute('data-original', originalUrl);
+        mainImage.alt = altText;
+    }
     
     // Renk seçimi - Soft geçiş ile
     document.querySelectorAll('.color-option').forEach(button => {

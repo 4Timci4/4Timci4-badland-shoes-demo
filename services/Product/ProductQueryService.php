@@ -28,7 +28,7 @@ class ProductQueryService {
             }
             
             // Temel ürün bilgisini al
-            $products = $this->db->select('product_models', ['id' => $model_id], '*', ['limit' => 1]);
+            $products = $this->db->select('product_models', ['id' => $model_id], ['*'], ['limit' => 1]);
             
             if (empty($products)) {
                 return [];
@@ -37,28 +37,39 @@ class ProductQueryService {
             $product = $products[0];
             $product['price'] = $product['base_price']; // Tutarlılık için
             
-            // Kategori bilgilerini ekle - Supabase uyumlu şekilde
+            // Kategori bilgilerini ekle - MariaDB uyumlu şekilde
             $category_relations = $this->db->select('product_categories', ['product_id' => $model_id], 'category_id');
             $categories = [];
             
             if (!empty($category_relations)) {
                 $category_ids = array_column($category_relations, 'category_id');
-                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+                if (!empty($category_ids)) {
+                    // MariaDB için IN operatörünü düzelt
+                    $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], ['id', 'name', 'slug']);
+                }
             }
             
             if (!empty($categories)) {
                 $product['category_name'] = $categories[0]['name'];
                 $product['category_slug'] = $categories[0]['slug'];
                 $product['categories'] = $categories; // Tüm kategoriler
+            } else {
+                // Kategori bulunamazsa varsayılan değerler
+                $product['category_name'] = 'Ayakkabı';
+                $product['category_slug'] = 'ayakkabi';
+                $product['categories'] = [];
             }
             
-            // Cinsiyet bilgilerini ekle - Supabase uyumlu şekilde
+            // Cinsiyet bilgilerini ekle - MariaDB uyumlu şekilde
             $gender_relations = $this->db->select('product_genders', ['product_id' => $model_id], 'gender_id');
             $genders = [];
             
             if (!empty($gender_relations)) {
                 $gender_ids = array_column($gender_relations, 'gender_id');
-                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+                if (!empty($gender_ids)) {
+                    // MariaDB için IN operatörünü düzelt
+                    $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], ['id', 'name', 'slug']);
+                }
             }
             
             $product['genders'] = $genders;
@@ -100,7 +111,7 @@ class ProductQueryService {
                 return [];
             }
             
-            return $this->db->select('product_variants', ['model_id' => $model_id], '*');
+            return $this->db->select('product_variants', ['model_id' => $model_id], ['*']);
             
         } catch (Exception $e) {
             error_log("Ürün varyantları getirme hatası: " . $e->getMessage());
@@ -121,7 +132,7 @@ class ProductQueryService {
                 return [];
             }
             
-            return $this->db->select('product_images', ['model_id' => $model_id], '*', ['order' => 'is_primary DESC, id ASC']);
+            return $this->db->select('product_images', ['model_id' => $model_id], ['*'], ['order' => 'is_primary DESC, id ASC']);
             
         } catch (Exception $e) {
             error_log("Ürün görselleri getirme hatası: " . $e->getMessage());
@@ -173,7 +184,7 @@ class ProductQueryService {
                 return [];
             }
             
-            $products = $this->db->select('product_models', ['id' => ['IN', $clean_ids]], '*');
+            $products = $this->db->select('product_models', ['id' => ['IN', $clean_ids]], ['*']);
             
             // Her ürün için ek bilgileri ekle
             foreach ($products as &$product) {

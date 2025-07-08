@@ -30,7 +30,7 @@
             $is_selected = ($selected_color_id == $color['id']);
         ?>
             <a href="<?php echo htmlspecialchars($color_url); ?>" 
-               class="color-option w-10 h-10 rounded-full border-2 <?php echo $is_selected ? 'border-secondary' : 'border-gray-300'; ?> hover:border-secondary transition-colors block"
+               class="color-option w-10 h-10 rounded-full border-2 <?php echo $is_selected ? 'border-secondary' : 'border-gray-300'; ?> hover:border-secondary transition-all duration-200 block"
                style="background-color: <?php echo htmlspecialchars($color['hex_code']); ?>"
                data-color-id="<?php echo $color['id']; ?>"
                data-color-name="<?php echo htmlspecialchars($color['name']); ?>"
