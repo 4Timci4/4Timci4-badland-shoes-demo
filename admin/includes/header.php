@@ -35,9 +35,6 @@ $flash_message = get_flash_message();
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- SortableJS for drag-and-drop -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    
     <!-- Tailwind Config -->
     <script>
         tailwind.config = {

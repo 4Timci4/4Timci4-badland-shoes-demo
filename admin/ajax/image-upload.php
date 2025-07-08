@@ -91,19 +91,27 @@ function handle_upload_images() {
     $result = $productImageService->uploadProductImages($product_id, $color_id, $_FILES['images']);
     
     if ($result['success']) {
-        // Yükleme başarılı - yeni resimleri getir
-        $imagesByColor = $productImageService->getProductImagesByColors($product_id);
-        
+        // Sadece yeni yüklenen resimleri döndür
         echo json_encode([
             'success' => true,
             'message' => "Başarıyla {$result['uploaded_count']} resim yüklendi.",
-            'imagesByColor' => $imagesByColor,
-            'images' => $imagesByColor[$color_id ?? 'default'] ?? []
+            'images' => $result['results'] ? array_map(function($item) {
+                return $item['db_id'] ? [
+                    'id' => $item['db_id'],
+                    'image_url' => $item['image_data']['image_url'] ?? '',
+                    'thumbnail_url' => $item['thumbnail']['url'] ?? '',
+                    'original_url' => $item['original']['url'] ?? '',
+                    'webp_url' => $item['webp']['url'] ?? '',
+                    'is_primary' => $item['image_data']['is_primary'] ?? false,
+                    'alt_text' => $item['image_data']['alt_text'] ?? '',
+                    'sort_order' => $item['image_data']['sort_order'] ?? 0
+                ] : null;
+            }, $result['results']) : []
         ]);
     } else {
         echo json_encode([
             'success' => false,
-            'message' => implode('<br>', $result['errors'])
+            'error' => implode('<br>', $result['errors'])
         ]);
     }
     exit;

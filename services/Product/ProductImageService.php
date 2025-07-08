@@ -393,17 +393,23 @@ class ProductImageService {
             
             if ($color_id !== null && $color_id !== '') {
                 $conditions['color_id'] = intval($color_id);
-                $sql = "SELECT COALESCE(MAX(sort_order), 0) + 1 as next_order FROM product_images WHERE model_id = ? AND color_id = ?";
-                $params = [intval($model_id), intval($color_id)];
             } else {
-                $sql = "SELECT COALESCE(MAX(sort_order), 0) + 1 as next_order FROM product_images WHERE model_id = ? AND color_id IS NULL";
-                $params = [intval($model_id)];
+                // IS NULL koşulu için özel bir koşul ekliyoruz
+                // NOT.is.null operator'ü ile tersini alarak
+                $conditions['color_id'] = ['IS', null];
             }
             
-            $result = $this->db->executeRawSql($sql, $params);
+            // Mevcut resimleri sıralı olarak al
+            $options = [
+                'order' => 'sort_order DESC',
+                'limit' => 1
+            ];
             
-            if (!empty($result) && isset($result[0]['next_order'])) {
-                return intval($result[0]['next_order']);
+            $result = $this->db->select('product_images', $conditions, 'sort_order', $options);
+            
+            // Eğer sonuç varsa, en yüksek sort_order + 1 döndür
+            if (!empty($result) && isset($result[0]['sort_order'])) {
+                return intval($result[0]['sort_order']) + 1;
             }
             
             return 1;

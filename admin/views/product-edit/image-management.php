@@ -1,13 +1,10 @@
-<!-- Gizli dosya yükleme alanı -->
-<input type="file" id="hidden-file-input" name="product_images[]" multiple accept="image/*" class="hidden">
-
 <!-- Product Images Management Card -->
 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-xl font-bold text-gray-900 mb-1">Ürün Görselleri</h3>
-                <p class="text-gray-600 text-sm">Görsel yükleme ve yönetim</p>
+                <p class="text-gray-600 text-sm">Görsel yönetimi</p>
             </div>
             <div class="text-right">
                 <div class="text-2xl font-bold text-blue-600"><?= count($productImages ?? []) ?></div>
@@ -16,53 +13,9 @@
         </div>
     </div>
     
-    <!-- Yükleme formu (varsayılan olarak gizli) -->
-    <div id="upload-container" class="hidden border-b border-gray-100 p-5 bg-gray-50">
-        <form id="image-upload-form" method="POST" enctype="multipart/form-data" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-            <input type="hidden" name="action" value="upload_images">
-            
-            <div class="flex items-center gap-5">
-                <div class="w-1/3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Renk Seçimi <span class="text-gray-400 font-normal">(Opsiyonel)</span>
-                    </label>
-                    <select name="color_id" id="color-select" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                        <option value="">Tüm Renkler</option>
-                        <?php foreach ($all_colors as $color): ?>
-                            <option value="<?= $color['id'] ?>">
-                                <?= htmlspecialchars($color['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="w-1/3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Seçilen Görsel Sayısı
-                    </label>
-                    <div class="flex items-center gap-2">
-                        <span id="selected-file-count" class="inline-flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-800 font-medium rounded-lg min-w-[40px] text-center">0</span>
-                        <button type="button" id="select-more-files" class="flex-1 px-3 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors text-sm">
-                            <i class="fas fa-folder-open mr-1"></i> Dosya Seç
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="w-1/3 flex items-end space-x-2">
-                    <button type="button" id="cancel-upload" class="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-times mr-1"></i> İptal
-                    </button>
-                    
-                    <button type="submit" class="flex-1 px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm hover:shadow-md transition-all duration-200">
-                        <i class="fas fa-upload mr-2"></i> Yükle
-                    </button>
-                </div>
-            </div>
-            
-            <div id="image-preview" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4"></div>
-        </form>
-    </div>
+    <!-- Gizli dosya seçici, her renk için ayrı dosya yükleme -->
+    <input type="file" id="color-file-input" name="images[]" multiple accept="image/*" class="hidden">
+    <input type="hidden" id="selected-color-id" name="color_id" value="">
     
     <div class="p-6 space-y-6">
         <?php if (!empty($productImagesByColor)): ?>
@@ -119,8 +72,15 @@
                          id="color-<?= $color_id ?>" 
                          data-color="<?= $color_id ?>">
                         
-                        <?php if (count($images) > 1): ?>
-                            <div class="mb-4 flex justify-end space-x-2">
+                        <div class="mb-4 flex justify-between items-center">
+                            <button type="button"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors"
+                                    onclick="uploadImagesForColor('<?= $color_id ?>', '<?= htmlspecialchars($color_name) ?>')">
+                                <i class="fas fa-upload mr-2"></i>
+                                Fotoğraf Ekle
+                            </button>
+                            
+                            <?php if (count($images) > 1): ?>
                                 <button type="button" 
                                         id="save-order-btn-<?= $color_id ?>" 
                                         class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition-colors"
@@ -128,8 +88,8 @@
                                     <i class="fas fa-save mr-2"></i>
                                     Sıralamayı Kaydet
                                 </button>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                         
                         <!-- Image Grid -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="images-<?= $color_id ?>">
@@ -183,23 +143,21 @@
                                             
                                             <?php if (count($images) > 1): ?>
                                                 <div class="flex space-x-1">
-                                                    <?php if ($image_index > 1): ?>
-                                                        <button type="button" 
-                                                                class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md"
-                                                                onclick="moveImage(this, 'up')"
-                                                                title="Yukarı Taşı">
-                                                            <i class="fas fa-chevron-up text-xs"></i>
-                                                        </button>
-                                                    <?php endif; ?>
+                                                    <button type="button" 
+                                                            class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md up-button <?= $image_index > 1 ? '' : 'opacity-50 cursor-not-allowed' ?>"
+                                                            onclick="moveImage(this, 'up')"
+                                                            title="Yukarı Taşı"
+                                                            <?= $image_index > 1 ? '' : 'disabled' ?>>
+                                                        <i class="fas fa-chevron-up text-xs"></i>
+                                                    </button>
                                                     
-                                                    <?php if ($image_index < count($images)): ?>
-                                                        <button type="button" 
-                                                                class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md"
-                                                                onclick="moveImage(this, 'down')"
-                                                                title="Aşağı Taşı">
-                                                            <i class="fas fa-chevron-down text-xs"></i>
-                                                        </button>
-                                                    <?php endif; ?>
+                                                    <button type="button" 
+                                                            class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md down-button <?= $image_index < count($images) ? '' : 'opacity-50 cursor-not-allowed' ?>"
+                                                            onclick="moveImage(this, 'down')"
+                                                            title="Aşağı Taşı"
+                                                            <?= $image_index < count($images) ? '' : 'disabled' ?>>
+                                                        <i class="fas fa-chevron-down text-xs"></i>
+                                                    </button>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
@@ -258,16 +216,6 @@
                 <p class="text-gray-600 mb-4">Bu ürün için henüz hiç görsel yüklenmemiş.</p>
             </div>
         <?php endif; ?>
-    </div>
-    
-    <!-- Upload Progress -->
-    <div id="upload-progress" class="hidden px-6 py-4 border-t border-gray-200">
-        <div class="flex items-center">
-            <div class="w-full bg-gray-200 rounded-full mr-2 h-2.5">
-                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-            </div>
-            <span id="progress-text" class="text-sm font-medium text-gray-500 min-w-[40px] text-right">0%</span>
-        </div>
     </div>
 </div>
 
@@ -368,14 +316,27 @@ function updateImageOrder(container) {
         }
         
         // Yukarı/aşağı butonlarını güncelle
-        const upButton = card.querySelector('button[onclick*="moveImage"][onclick*="up"]');
-        const downButton = card.querySelector('button[onclick*="moveImage"][onclick*="down"]');
+        const upButton = card.querySelector('.up-button');
+        const downButton = card.querySelector('.down-button');
         
         if (upButton) {
-            upButton.style.display = index > 0 ? 'flex' : 'none';
+            if (index > 0) {
+                upButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                upButton.removeAttribute('disabled');
+            } else {
+                upButton.classList.add('opacity-50', 'cursor-not-allowed');
+                upButton.setAttribute('disabled', 'disabled');
+            }
         }
+        
         if (downButton) {
-            downButton.style.display = index < cards.length - 1 ? 'flex' : 'none';
+            if (index < cards.length - 1) {
+                downButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                downButton.removeAttribute('disabled');
+            } else {
+                downButton.classList.add('opacity-50', 'cursor-not-allowed');
+                downButton.setAttribute('disabled', 'disabled');
+            }
         }
     });
 }
@@ -450,7 +411,38 @@ function setPrimaryImage(imageId) {
     .then(data => {
         if (data.success) {
             showNotification('Ana görsel başarıyla güncellendi.', 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            
+            // Sayfayı yenilemek yerine UI'ı güncelle
+            // Önce tüm primary işaretlerini kaldır
+            document.querySelectorAll('.color-tab-content').forEach(tabContent => {
+                tabContent.querySelectorAll('[data-image-id]').forEach(card => {
+                    const primaryBadge = card.querySelector('.absolute.top-3.left-3');
+                    if (primaryBadge) primaryBadge.remove();
+                    
+                    // Primary yap butonunu görünür yap
+                    const primaryButton = card.querySelector('button[onclick^="setPrimaryImage"]');
+                    if (primaryButton) {
+                        primaryButton.parentElement.classList.add('flex-1');
+                    }
+                });
+            });
+            
+            // Seçilen resmi primary işaretle
+            const selectedCard = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (selectedCard) {
+                // Primary badge ekle
+                const imageContainer = selectedCard.querySelector('.relative');
+                const primaryBadge = document.createElement('div');
+                primaryBadge.className = 'absolute top-3 left-3';
+                primaryBadge.innerHTML = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200"><i class="fas fa-star mr-1"></i> Ana Görsel</span>';
+                imageContainer.appendChild(primaryBadge);
+                
+                // Primary yap butonunu gizle
+                const primaryButton = selectedCard.querySelector('button[onclick^="setPrimaryImage"]');
+                if (primaryButton) {
+                    primaryButton.remove();
+                }
+            }
         } else {
             showNotification(data.error || 'Bilinmeyen bir hata oluştu.', 'error');
         }
@@ -505,20 +497,6 @@ function deleteImage(imageId, buttonElement) {
     });
 }
 
-function triggerFileInput(colorId = null) {
-    const uploadContainer = document.getElementById('upload-container');
-    const colorSelect = document.getElementById('color-select');
-    const hiddenFileInput = document.getElementById('hidden-file-input');
-
-    if (uploadContainer && colorSelect && hiddenFileInput) {
-        if (colorId) {
-            colorSelect.value = colorId;
-        }
-        uploadContainer.classList.remove('hidden');
-        hiddenFileInput.click();
-    }
-}
-
 function showNotification(message, type = 'info') {
     document.querySelectorAll('.alert-notification').forEach(alert => alert.remove());
     const typeClasses = {
@@ -566,104 +544,238 @@ function updateTabCounts() {
     });
 }
 
-// DOM hazır olduğunda
+// Yeni resim kartı oluştur
+function createImageCard(image, colorId) {
+    const container = document.getElementById('images-' + colorId);
+    if (!container) return;
+    
+    // Boş durumu temizle
+    const emptyMessage = container.querySelector('.text-center.py-8');
+    if (emptyMessage) {
+        emptyMessage.remove();
+    }
+    
+    // Yeni kart için index hesapla
+    const currentCards = container.querySelectorAll('[data-image-id]');
+    const newIndex = currentCards.length + 1;
+    
+    // Original URL hazırla
+    let originalUrl = image.image_url;
+    originalUrl = originalUrl.replace('/optimized/', '/original/');
+    originalUrl = originalUrl.replace(/_optimized(\..+?)$/, '$1');
+    
+    // Yeni kart oluştur
+    const card = document.createElement('div');
+    card.className = 'group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200';
+    card.setAttribute('data-image-id', image.id);
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.8)';
+    
+    let cardHTML = `
+        <div class="relative">
+            <img src="${image.image_url}" class="w-full h-48 object-cover rounded-t-xl" alt="${image.alt_text || ''}">
+            
+            ${image.is_primary ? `
+            <div class="absolute top-3 left-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    <i class="fas fa-star mr-1"></i> Ana Görsel
+                </span>
+            </div>
+            ` : ''}
+            
+            <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div class="flex flex-col space-y-1">
+                    <button type="button" 
+                            class="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            onclick="viewImage('${originalUrl}')"
+                            title="Büyük Görüntüle">
+                        <i class="fas fa-search-plus text-sm"></i>
+                    </button>
+                    <button type="button" 
+                            class="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                            onclick="downloadImage('${originalUrl}')"
+                            title="İndir">
+                        <i class="fas fa-download text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4">
+            <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+                <span>Sıra: <span class="image-order">${newIndex}</span></span>
+                
+                <div class="flex space-x-1">
+                    <button type="button" 
+                            class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md up-button ${newIndex > 1 ? '' : 'opacity-50 cursor-not-allowed'}"
+                            onclick="moveImage(this, 'up')"
+                            title="Yukarı Taşı"
+                            ${newIndex > 1 ? '' : 'disabled'}>
+                        <i class="fas fa-chevron-up text-xs"></i>
+                    </button>
+                    
+                    <button type="button" 
+                            class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md down-button opacity-50 cursor-not-allowed"
+                            onclick="moveImage(this, 'down')"
+                            title="Aşağı Taşı"
+                            disabled>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                ${!image.is_primary ? `
+                <button type="button" 
+                        onclick="setPrimaryImage(${image.id})" 
+                        class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors text-sm font-medium"
+                        title="Ana Görsel Yap">
+                    <i class="fas fa-star mr-1"></i>
+                    Ana Yap
+                </button>
+                ` : ''}
+                
+                <button type="button" 
+                        onclick="deleteImage(${image.id}, this)" 
+                        class="inline-flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                        title="Sil">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    card.innerHTML = cardHTML;
+    container.appendChild(card);
+    
+    // Önceki resimlerin down butonlarını güncelle
+    if (newIndex > 1) {
+        const allCards = container.querySelectorAll('[data-image-id]');
+        const prevCard = allCards[allCards.length - 2];
+        if (prevCard) {
+            const downButton = prevCard.querySelector('.down-button');
+            if (downButton) {
+                downButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                downButton.removeAttribute('disabled');
+            }
+        }
+    }
+    
+    // Animasyon ile göster
+    setTimeout(() => {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'scale(1)';
+    }, 10);
+    
+    // Kaydetme butonunu göster (eğer birden fazla resim varsa)
+    if (newIndex > 1) {
+        const saveButton = document.getElementById('save-order-btn-' + colorId);
+        if (!saveButton) {
+            const actionBar = container.parentElement.querySelector('.mb-4.flex');
+            if (actionBar) {
+                const newSaveButton = document.createElement('button');
+                newSaveButton.id = 'save-order-btn-' + colorId;
+                newSaveButton.className = 'inline-flex items-center px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition-colors';
+                newSaveButton.setAttribute('onclick', `saveImageOrder('${colorId}')`);
+                newSaveButton.innerHTML = '<i class="fas fa-save mr-2"></i> Sıralamayı Kaydet';
+                actionBar.appendChild(newSaveButton);
+            }
+        }
+    }
+    
+    return card;
+}
+
+// Yeni yüklenen görselleri ekle
+function addNewImagesToUI(colorId, images) {
+    if (!images || !images.length) return;
+
+    // Boş olanları temizle
+    images = images.filter(img => img && img.id);
+    if (!images.length) return;
+    
+    // Sekmeyi güncelle
+    const tab = document.querySelector(`.color-tab-btn[data-color="${colorId}"]`);
+    if (tab) {
+        // Sayacı güncelle
+        const currentCount = parseInt(tab.querySelector('span').textContent || '0');
+        tab.querySelector('span').textContent = currentCount + images.length;
+    }
+    
+    // Görselleri ekle
+    images.forEach(image => {
+        createImageCard(image, colorId);
+    });
+    
+    // Sıralamayı güncelle
+    const container = document.getElementById('images-' + colorId);
+    if (container) {
+        updateImageOrder(container);
+    }
+}
+
+function uploadImagesForColor(colorId, colorName) {
+    // Renk ID'sini gizli alana ayarla
+    document.getElementById('selected-color-id').value = colorId;
+    
+    // Dosya seçiciyi aç
+    const fileInput = document.getElementById('color-file-input');
+    if (fileInput) {
+        // Dosya seçiciyi sıfırla
+        fileInput.value = '';
+        fileInput.click();
+    }
+}
+
+// Dosya seçildiğinde otomatik olarak yükle
 document.addEventListener('DOMContentLoaded', function() {
-    const hiddenFileInput = document.getElementById('hidden-file-input');
-    const uploadContainer = document.getElementById('upload-container');
-    const uploadForm = document.getElementById('image-upload-form');
-    const selectMoreFilesBtn = document.getElementById('select-more-files');
-    const cancelUploadBtn = document.getElementById('cancel-upload');
-    const fileCountEl = document.getElementById('selected-file-count');
-    const imagePreview = document.getElementById('image-preview');
-    const progressContainer = document.getElementById('upload-progress');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
+    const colorFileInput = document.getElementById('color-file-input');
     
-    function resetUploadPanel() {
-        uploadContainer.classList.add('hidden');
-        if(imagePreview) imagePreview.innerHTML = '';
-        if(fileCountEl) fileCountEl.textContent = '0';
-        hiddenFileInput.value = '';
-    }
-    
-    if (selectMoreFilesBtn) {
-        selectMoreFilesBtn.addEventListener('click', () => hiddenFileInput.click());
-    }
-    
-    if (cancelUploadBtn) {
-        cancelUploadBtn.addEventListener('click', resetUploadPanel);
-    }
-    
-    if (hiddenFileInput) {
-        hiddenFileInput.addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                fileCountEl.textContent = e.target.files.length;
-                imagePreview.innerHTML = '';
-                Array.from(e.target.files).forEach(file => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(ev) {
-                            const previewItem = document.createElement('div');
-                            previewItem.className = 'relative group';
-                            previewItem.innerHTML = `<div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 transition-colors"><img src="${ev.target.result}" class="w-full h-24 object-cover"><div class="p-2"><p class="text-xs text-gray-600 truncate">${file.name}</p></div></div>`;
-                            imagePreview.appendChild(previewItem);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-                uploadContainer.classList.remove('hidden');
-            }
-        });
-    }
-    
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (hiddenFileInput.files.length === 0) {
-                showNotification('Lütfen yüklenecek görsel seçin.', 'error');
-                return;
-            }
-            const formData = new FormData(uploadForm);
-            for (let i = 0; i < hiddenFileInput.files.length; i++) {
-                formData.append('product_images[]', hiddenFileInput.files[i]);
+    if (colorFileInput) {
+        colorFileInput.addEventListener('change', function(e) {
+            if (e.target.files.length === 0) return;
+            
+            const colorId = document.getElementById('selected-color-id').value;
+            const csrf_token = document.querySelector('input[name="csrf_token"]').value;
+            const product_id = <?= $product_id ?>;
+            
+            // Form verisini hazırla
+            const formData = new FormData();
+            formData.append('csrf_token', csrf_token);
+            formData.append('action', 'upload_images');
+            formData.append('product_id', product_id);
+            formData.append('color_id', colorId);
+            
+            // Dosyaları ekle
+            for (let i = 0; i < e.target.files.length; i++) {
+                formData.append('images[]', e.target.files[i]);
             }
             
-            progressContainer.classList.remove('hidden');
-            progressBar.style.width = '0%';
-            progressText.textContent = '0%';
+            // Bildirim göster
+            showNotification(`${e.target.files.length} fotoğraf yükleniyor...`, 'info');
             
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                if (progress < 80) {
-                    progress += 5;
-                    progressBar.style.width = progress + '%';
-                    progressText.textContent = progress + '%';
-                }
-            }, 150);
-            
-            fetch('ajax/image-upload.php', { method: 'POST', body: formData })
+            // Yükleme işlemini başlat
+            fetch('ajax/image-upload.php', {
+                method: 'POST',
+                body: formData
+            })
             .then(response => response.json())
             .then(data => {
-                clearInterval(progressInterval);
-                progressBar.style.width = '100%';
-                progressText.textContent = '100%';
                 if (data.success) {
                     showNotification(data.message || 'Görseller başarıyla yüklendi.', 'success');
-                    resetUploadPanel();
-                    setTimeout(() => {
-                        progressContainer.classList.add('hidden');
-                        window.location.reload();
-                    }, 1000);
+                    
+                    // Sayfayı yenilemek yerine, dinamik olarak yeni görselleri ekle
+                    if (data.images && data.images.length > 0) {
+                        addNewImagesToUI(colorId, data.images);
+                    }
                 } else {
-                    showNotification(data.message || 'Yükleme sırasında bir hata oluştu.', 'error');
-                    setTimeout(() => progressContainer.classList.add('hidden'), 2000);
+                    showNotification(data.error || 'Yükleme sırasında bir hata oluştu.', 'error');
                 }
             })
             .catch(error => {
-                clearInterval(progressInterval);
                 console.error('Upload error:', error);
                 showNotification('Bağlantı hatası: ' + error.message, 'error');
-                setTimeout(() => progressContainer.classList.add('hidden'), 2000);
             });
         });
     }

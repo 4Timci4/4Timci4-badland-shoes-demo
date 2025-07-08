@@ -11,9 +11,17 @@
             // Önce default kategorisini kontrol et
             if (isset($product_images_by_color['default']) && !empty($product_images_by_color['default'])) {
                 $default_images = $product_images_by_color['default'];
+                // Sort by sort_order
+                usort($default_images, function($a, $b) {
+                    return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+                });
             } else {
                 // Default yoksa ilk rengin resimlerini al
                 $default_images = reset($product_images_by_color);
+                // Sort by sort_order
+                usort($default_images, function($a, $b) {
+                    return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+                });
             }
             
             // Primary resmi bul
@@ -206,7 +214,10 @@ function updateImagesForColor(colorId) {
     const colorKey = colorId ? colorId.toString() : 'default';
     
     if (colorImageData[colorKey] && colorImageData[colorKey].length > 0) {
-        const colorImages = colorImageData[colorKey];
+        let colorImages = colorImageData[colorKey];
+        
+        // Sort by sort_order before using
+        colorImages.sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
         
         // Ana resmi güncelle (primary veya ilk resim)
         let mainImageData = colorImages.find(img => img.is_primary) || colorImages[0];
