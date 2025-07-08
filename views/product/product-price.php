@@ -1,7 +1,7 @@
 <!-- Fiyat Bilgisi -->
 <div class="price-section">
     <div class="flex items-center gap-3">
-        <span class="text-2xl font-bold text-secondary">₺ <?php echo number_format($product['base_price'], 2); ?></span>
+        <span id="current-price" class="text-2xl font-bold text-secondary">₺ <?php echo number_format($product['base_price'], 2); ?></span>
         <?php
         $has_discount = false;
         $original_price = 0;

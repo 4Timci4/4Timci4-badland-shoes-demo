@@ -21,7 +21,7 @@ $breadcrumb_items = [
 
 // Sayfalama parametreleri
 $page = max(1, intval($_GET['page'] ?? 1));
-$limit = 20;
+$limit = 7;
 $offset = ($page - 1) * $limit;
 
 // POST işlemleri
@@ -69,13 +69,11 @@ if ($_POST) {
     }
 }
 
-// Ürün ve kategori verilerini getir
+// Ürün verilerini getir - Optimize edilmiş
 $products_data = get_admin_products($limit, $offset);
 $products = $products_data['products'];
 $total_products = $products_data['total'];
 $total_pages = ceil($total_products / $limit);
-
-$categories = category_service()->getAllCategories();
 
 // Header dahil et
 include 'includes/header.php';
@@ -123,15 +121,6 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <!-- Loading Indicator -->
-    <div id="loading-indicator" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-2xl p-8 shadow-xl">
-            <div class="flex items-center space-x-4">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                <div class="text-gray-900 font-semibold">Yükleniyor...</div>
-            </div>
-        </div>
-    </div>
 
     <!-- Products Table -->
     <div id="products-container" class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -144,7 +133,7 @@ include 'includes/header.php';
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Cinsiyet</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Fiyat</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Durum</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-22">Durum</th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">İşlemler</th>
                         </tr>
                     </thead>
@@ -303,6 +292,52 @@ include 'includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Simple Pagination JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pagination link'leri için event listener
+    const paginationLinks = document.querySelectorAll('.pagination-link');
+    
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetPage = this.getAttribute('data-page');
+            if (targetPage) {
+                // Direct navigation
+                const url = new URL(window.location);
+                url.searchParams.set('page', targetPage);
+                window.location.href = url.toString();
+            }
+        });
+        
+        // Hover effects for pagination
+        link.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('bg-primary-600')) {
+                this.classList.add('transform', 'scale-105');
+            }
+        });
+        
+        link.addEventListener('mouseleave', function() {
+            this.classList.remove('transform', 'scale-105');
+        });
+    });
+});
+</script>
+
+<!-- Minimal Custom CSS (only for animations not available in Tailwind) -->
+<style>
+/* Pagination hover animation */
+@keyframes smoothPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.pagination-link:not(.bg-primary-600):hover {
+    animation: smoothPulse 2s infinite;
+}
+</style>
 
 <?php
 // Footer dahil et

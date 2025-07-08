@@ -334,9 +334,22 @@ class SecurityManager {
             $errors[] = 'Dosya boyutu ' . ($max_size / 1024 / 1024) . 'MB\'dan büyük olamaz.';
         }
         
-        // MIME type kontrolü
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime_type = $finfo->file($file['tmp_name']);
+        // MIME type kontrolü (finfo alternatifi)
+        if (class_exists('finfo')) {
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $mime_type = $finfo->file($file['tmp_name']);
+        } else {
+            // Fallback: extension'dan mime type belirle
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $mime_types = [
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'gif' => 'image/gif',
+                'pdf' => 'application/pdf'
+            ];
+            $mime_type = $mime_types[$extension] ?? 'application/octet-stream';
+        }
         
         $mime_types = [
             'jpg' => 'image/jpeg',

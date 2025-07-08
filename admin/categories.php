@@ -168,7 +168,7 @@ include 'includes/header.php';
                     <input type="hidden" name="category_id" value="<?= $edit_category['id'] ?>">
                 <?php endif; ?>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <!-- Category Name -->
                     <div>
                         <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
@@ -181,24 +181,6 @@ include 'includes/header.php';
                                value="<?= htmlspecialchars($edit_category['name'] ?? '') ?>"
                                placeholder="Örn: Spor Ayakkabıları"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                    </div>
-
-                    <!-- Category Type -->
-                    <div>
-                        <label for="category_type" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-layer-group mr-2"></i>Kategori Tipi *
-                        </label>
-                        <select id="category_type" 
-                                name="category_type" 
-                                required
-                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                                <?= $edit_mode ? 'disabled' : '' ?>>
-                            <option value="product_type" <?= ($edit_mode && $edit_category['category_type'] == 'product_type') ? 'selected' : '' ?>>Ürün Tipi (Ayakkabı, Bot, vs.)</option>
-                            <option value="gender" <?= ($edit_mode && $edit_category['category_type'] == 'gender') ? 'selected' : '' ?>>Cinsiyet (Erkek, Kadın, Çocuk)</option>
-                        </select>
-                        <?php if ($edit_mode): ?>
-                            <p class="text-xs text-gray-500 mt-1">Kategori tipi düzenlenemez.</p>
-                        <?php endif; ?>
                     </div>
 
                     <!-- Description -->
@@ -255,7 +237,6 @@ include 'includes/header.php';
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tip</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Slug</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Açıklama</th>
                             <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Ürün Sayısı</th>
@@ -275,22 +256,6 @@ include 'includes/header.php';
                                             <p class="text-sm text-gray-500">ID: #<?= $category['id'] ?></p>
                                         </div>
                                     </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <?php
-                                    $type_labels = [
-                                        'product_type' => 'Ürün Tipi',
-                                        'gender' => 'Cinsiyet'
-                                    ];
-                                    $type_colors = [
-                                        'product_type' => 'bg-blue-100 text-blue-800',
-                                        'gender' => 'bg-purple-100 text-purple-800'
-                                    ];
-                                    $category_type = $category['category_type'] ?? 'product_type';
-                                    ?>
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?= $type_colors[$category_type] ?? 'bg-gray-100 text-gray-800' ?>">
-                                        <?= $type_labels[$category_type] ?? 'Bilinmiyor' ?>
-                                    </span>
                                 </td>
                                 <td class="px-6 py-4">
                                     <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">

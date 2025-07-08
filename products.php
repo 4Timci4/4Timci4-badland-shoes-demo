@@ -311,24 +311,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         state.products.forEach(product => {
             const productCard = document.createElement('div');
-            productCard.className = 'product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group';
+            productCard.className = 'product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col';
             productCard.innerHTML = `
                 <div class="relative overflow-hidden bg-gray-100 aspect-square">
-                    <img src="${product.image_url || 'assets/images/placeholder.png'}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    <img src="${product.image_url || 'assets/images/placeholder.svg'}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                         <a href="/product-details.php?id=${product.id}" class="w-10 h-10 bg-white rounded-full hover:bg-primary hover:text-white transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100" title="Ürün Detayı">
                             <i class="fas fa-eye"></i>
                         </a>
                     </div>
                 </div>
-                <div class="p-4 text-center">
-                    <h3 class="text-lg font-medium text-secondary mb-2">
-                        <a href="/product-details.php?id=${product.id}" class="text-inherit hover:text-primary transition-colors">${product.name}</a>
+                <div class="p-4 text-center flex flex-col flex-grow">
+                    <h3 class="text-lg font-medium text-secondary mb-3 min-h-[3.5rem] flex items-center justify-center">
+                        <a href="/product-details.php?id=${product.id}" class="text-inherit hover:text-primary transition-colors line-clamp-2">${product.name}</a>
                     </h3>
-                    <div class="text-xl font-bold text-secondary">
+                    <div class="text-xl font-bold text-secondary mb-3">
                         ₺ ${Number(product.base_price).toFixed(2)}
                     </div>
-                    <div class="flex flex-wrap gap-1 justify-center mt-2">
+                    <div class="flex flex-wrap gap-1 justify-center mt-auto">
                         <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                             <i class="fas fa-box text-xs mr-1"></i>${product.category_name || ''}
                         </span>

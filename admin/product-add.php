@@ -13,6 +13,7 @@ require_once '../services/ProductService.php';
 require_once '../services/CategoryService.php';
 require_once '../services/GenderService.php';
 require_once '../services/VariantService.php';
+require_once '../services/Product/ProductImageService.php';
 
 // Düzenleme modu kontrolü
 $edit_mode = isset($_GET['id']) && !empty($_GET['id']);
@@ -171,6 +172,9 @@ if ($_POST) {
 // Kategorileri ve cinsiyetleri getir
 $categories = category_service()->getAllCategories();
 $genders = gender_service()->getAllGenders();
+
+// Image service'i initialize et
+$imageService = new ProductImageService();
 
 // Header dahil et
 include 'includes/header.php';
@@ -425,17 +429,75 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <!-- Images Card (Placeholder for Future) -->
+        <!-- Images Card -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-100">
                 <h3 class="text-xl font-bold text-gray-900 mb-1">Ürün Görselleri</h3>
-                <p class="text-gray-600 text-sm">Ürün görsellerini yükleyin (Yakında eklenecek)</p>
+                <p class="text-gray-600 text-sm">Ürün eklendikten sonra renk varyantlarına özel görseller ekleyebileceksiniz</p>
             </div>
             <div class="p-6">
-                <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
-                    <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-4"></i>
-                    <p class="text-gray-500 font-medium mb-2">Görsel Yükleme</p>
-                    <p class="text-gray-400 text-sm">Bu özellik yakında eklenecektir</p>
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-images text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-2">Varyant Bazlı Görsel Yönetimi</h4>
+                            <p class="text-gray-600 mb-4">
+                                Ürününüz başarıyla eklendikten sonra, her renk varyantı için ayrı görseller yükleyebileceksiniz.
+                                Bu sayede siyah ayakkabı ile kırmızı ayakkabının farklı görsellerini müşterilerinize sunabilirsiniz.
+                            </p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-palette text-purple-500 mr-2"></i>
+                                        <span class="font-medium text-gray-900">Renk Bazlı Görseller</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Her renk varyantı için farklı ürün görselleri</p>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-star text-yellow-500 mr-2"></i>
+                                        <span class="font-medium text-gray-900">Ana Görsel Seçimi</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Her varyant için ana görsel belirleme</p>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-expand-arrows-alt text-green-500 mr-2"></i>
+                                        <span class="font-medium text-gray-900">Çoklu Boyut</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Otomatik thumbnail ve WebP optimizasyonu</p>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-upload text-blue-500 mr-2"></i>
+                                        <span class="font-medium text-gray-900">Kolay Yükleme</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Sürükle-bırak ile hızlı görsel ekleme</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-lightbulb text-amber-500 mr-3 mt-0.5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-amber-800 mb-1">💡 İpucu:</p>
+                                        <p class="text-sm text-amber-700">
+                                            Ürününüzü kaydetip varyantlarını (renk/beden) ekledikten sonra,
+                                            her renk için özel görseller yükleyebilirsiniz. Bu özellik ürün düzenleme sayfasında mevcuttur.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

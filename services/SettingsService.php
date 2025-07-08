@@ -221,6 +221,147 @@ class SettingsService {
         
         return [];
     }
+    
+    /**
+     * Varsayılan site ayarlarını getir
+     *
+     * @return array Varsayılan ayarlar
+     */
+    public function getDefaultSiteSettings() {
+        return [
+            // Genel Ayarlar
+            'site_name' => 'Bandland Shoes',
+            'site_tagline' => 'Premium Ayakkabı Mağazası',
+            'site_description' => 'Kaliteli ve şık ayakkabılar için doğru adres. En yeni modeller ve uygun fiyatlar ile hizmetinizdeyiz.',
+            'site_logo' => 'assets/images/logo.png',
+            'site_favicon' => 'assets/images/favicon.ico',
+            'primary_color' => '#e91e63',
+            'secondary_color' => '#2c2c54',
+            'footer_copyright' => '© 2025 Bandland Shoes. Tüm hakları saklıdır.',
+            
+            // Teknik Ayarlar
+            'products_per_page' => '12',
+            'blogs_per_page' => '10',
+            'maintenance_mode' => 'false',
+            'site_language' => 'tr',
+            'timezone' => 'Europe/Istanbul',
+            'comments_enabled' => 'true',
+            
+            // SEO Ayarları
+            'meta_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+            'meta_description' => 'Kaliteli ve şık ayakkabılar için doğru adres. En yeni modeller ve uygun fiyatlar ile hizmetinizdeyiz.',
+            'meta_keywords' => 'ayakkabı, spor ayakkabı, klasik ayakkabı, kadın ayakkabı, erkek ayakkabı, çocuk ayakkabı',
+            'canonical_url' => '',
+            'robots_txt' => "User-agent: *\nDisallow: /admin/\nDisallow: /api/\nSitemap: /sitemap.xml",
+            
+            // Sosyal Medya
+            'og_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+            'og_description' => 'Kaliteli ve şık ayakkabılar için doğru adres.',
+            'og_image' => 'assets/images/og-image.jpg',
+            'twitter_card' => 'summary_large_image',
+            'twitter_site' => '@bandlandshoes',
+            
+            // Analytics
+            'google_analytics_id' => '',
+            'google_tag_manager_id' => '',
+            'facebook_pixel_id' => '',
+            'hotjar_id' => '',
+            
+            // İletişim
+            'contact_email' => 'info@bandlandshoes.com',
+            'contact_phone' => '+90 212 123 45 67',
+            'contact_address' => 'İstanbul, Türkiye',
+            'business_hours' => 'Pazartesi - Cumartesi: 09:00 - 18:00',
+            
+            // E-ticaret
+            'currency' => 'TRY',
+            'currency_symbol' => '₺',
+            'tax_rate' => '18',
+            'free_shipping_limit' => '500',
+            'stock_alert_limit' => '10'
+        ];
+    }
+    
+    /**
+     * Varsayılan SEO ayarlarını getir
+     *
+     * @return array Varsayılan SEO ayarları (gruplu yapıda)
+     */
+    public function getDefaultSeoSettings() {
+        return [
+            'meta' => [
+                'meta_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+                'meta_description' => 'Kaliteli ve şık ayakkabılar için doğru adres. En yeni modeller ve uygun fiyatlar ile hizmetinizdeyiz.',
+                'meta_keywords' => 'ayakkabı, spor ayakkabı, klasik ayakkabı, kadın ayakkabı, erkek ayakkabı, çocuk ayakkabı, online ayakkabı mağazası, türkiye',
+                'meta_author' => 'Bandland Shoes',
+                'meta_robots' => 'index, follow',
+                'canonical_url' => '',
+                'canonical_enabled' => 'true'
+            ],
+            'social' => [
+                // Open Graph (Facebook)
+                'og_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+                'og_description' => 'Kaliteli ve şık ayakkabılar için doğru adres. En yeni modeller ve uygun fiyatlar ile hizmetinizdeyiz.',
+                'og_image' => 'assets/images/og-image.jpg',
+                'og_url' => '',
+                'og_type' => 'website',
+                'og_site_name' => 'Bandland Shoes',
+                'og_locale' => 'tr_TR',
+                
+                // Twitter Cards
+                'twitter_card' => 'summary_large_image',
+                'twitter_site' => '@bandlandshoes',
+                'twitter_creator' => '@bandlandshoes',
+                'twitter_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+                'twitter_description' => 'Kaliteli ve şık ayakkabılar için doğru adres.',
+                'twitter_image' => 'assets/images/twitter-image.jpg'
+            ],
+            'analytics' => [
+                'google_analytics_id' => '',
+                'google_tag_manager_id' => '',
+                'google_site_verification' => '',
+                'bing_site_verification' => '',
+                'yandex_site_verification' => '',
+                'facebook_pixel_id' => '',
+                'hotjar_id' => '',
+                'google_ads_conversion_id' => ''
+            ],
+            'technical' => [
+                'robots_txt' => "User-agent: *\nDisallow: /admin/\nDisallow: /api/\nDisallow: /includes/\nDisallow: /config/\nSitemap: /sitemap.xml",
+                'sitemap_enabled' => 'true',
+                'breadcrumbs_enabled' => 'true',
+                'hreflang_enabled' => 'false',
+                'amp_enabled' => 'false',
+                'schema_enabled' => 'true',
+                
+                // Schema.org Structured Data
+                'schema_organization_name' => 'Bandland Shoes',
+                'schema_organization_type' => 'ShoeStore',
+                'schema_organization_url' => '',
+                'schema_organization_logo' => 'assets/images/logo.png',
+                'schema_organization_description' => 'Premium ayakkabı mağazası',
+                'schema_organization_email' => 'info@bandlandshoes.com',
+                'schema_organization_phone' => '+90 212 123 45 67',
+                'schema_organization_address' => 'İstanbul, Türkiye',
+                
+                // Local SEO
+                'local_business_enabled' => 'true',
+                'business_name' => 'Bandland Shoes',
+                'business_type' => 'ShoeStore',
+                'business_address' => 'İstanbul, Türkiye',
+                'business_phone' => '+90 212 123 45 67',
+                'business_email' => 'info@bandlandshoes.com',
+                'business_hours' => 'Mo-Sa 09:00-18:00',
+                'business_price_range' => '₺₺',
+                
+                // E-commerce SEO
+                'product_schema_enabled' => 'true',
+                'review_schema_enabled' => 'true',
+                'price_schema_enabled' => 'true',
+                'availability_schema_enabled' => 'true'
+            ]
+        ];
+    }
 }
 
 // Servisi global olarak kullanılabilir hale getirelim

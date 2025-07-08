@@ -49,7 +49,7 @@ class DatabaseFactory {
         $apiKey = $config['key'] ?? SUPABASE_KEY;
         $options = $config['options'] ?? [
             'useCache' => true,
-            'cacheExpiry' => 300
+            'cacheExpiry' => 1
         ];
         
         $supabaseClient = new SupabaseClient($baseUrl, $apiKey, $options);

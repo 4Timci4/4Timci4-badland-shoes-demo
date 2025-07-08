@@ -137,7 +137,7 @@
                     $post['id'] = $post['id'] ?? 0;
                     $post['title'] = $post['title'] ?? 'Başlık Yok';
                     $post['excerpt'] = $post['excerpt'] ?? 'Özet yok...';
-                    $post['image_url'] = $post['image_url'] ?? '/assets/images/default-blog.jpg';
+                    $post['image_url'] = $post['image_url'] ?? '/assets/images/placeholder.svg';
                     $post['category'] = $post['category'] ?? 'Genel';
                     $post['created_at'] = $post['created_at'] ?? date('Y-m-d H:i:s');
                 ?>
@@ -146,7 +146,7 @@
                             <div class="blog-image">
                                 <img src="<?php echo htmlspecialchars($post['image_url']); ?>" 
                                      alt="<?php echo htmlspecialchars($post['title']); ?>"
-                                     onerror="this.src='/assets/images/default-blog.jpg'">
+                                     onerror="this.src='/assets/images/placeholder.svg'">
                                 <div class="category"><?php echo htmlspecialchars($post['category']); ?></div>
                             </div>
                         </a>

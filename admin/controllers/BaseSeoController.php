@@ -51,8 +51,14 @@ abstract class BaseSeoController {
      * Yönlendirme yap
      */
     protected function redirect($url) {
-        header("Location: {$url}");
-        exit;
+        if (!headers_sent()) {
+            header("Location: {$url}");
+            exit;
+        } else {
+            // Headers zaten gönderilmişse JavaScript ile yönlendir
+            echo "<script>window.location.href = '{$url}';</script>";
+            exit;
+        }
     }
 
     /**

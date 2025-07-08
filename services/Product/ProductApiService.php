@@ -228,14 +228,14 @@ class ProductApiService {
                 'created_at' => $product['created_at']
             ];
             
-            // Kategori bilgilerini ekle
-            $categories = $this->db->selectWithJoins('product_categories', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'categories',
-                    'condition' => 'product_categories.category_id = categories.id'
-                ]
-            ], ['product_categories.product_id' => $product['id']], 'categories.id, categories.name, categories.slug');
+            // Kategori bilgilerini ekle - Supabase uyumlu şekilde
+            $category_relations = $this->db->select('product_categories', ['product_id' => $product['id']], 'category_id');
+            $categories = [];
+            
+            if (!empty($category_relations)) {
+                $category_ids = array_column($category_relations, 'category_id');
+                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+            }
             
             if (!empty($categories)) {
                 $formatted_product['category_name'] = $categories[0]['name'];
@@ -243,14 +243,14 @@ class ProductApiService {
                 $formatted_product['categories'] = $categories; // Tüm kategoriler
             }
             
-            // Cinsiyet bilgilerini ekle
-            $genders = $this->db->selectWithJoins('product_genders', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'genders',
-                    'condition' => 'product_genders.gender_id = genders.id'
-                ]
-            ], ['product_genders.product_id' => $product['id']], 'genders.id, genders.name, genders.slug');
+            // Cinsiyet bilgilerini ekle - Supabase uyumlu şekilde
+            $gender_relations = $this->db->select('product_genders', ['product_id' => $product['id']], 'gender_id');
+            $genders = [];
+            
+            if (!empty($gender_relations)) {
+                $gender_ids = array_column($gender_relations, 'gender_id');
+                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            }
             
             $formatted_product['genders'] = $genders;
             
@@ -267,6 +267,9 @@ class ProductApiService {
                 $images = $this->db->select('product_images', ['model_id' => $product['id']], 'image_url', ['limit' => 1]);
                 if (!empty($images)) {
                     $formatted_product['image_url'] = $images[0]['image_url'];
+                } else {
+                    // Placeholder resim
+                    $formatted_product['image_url'] = '/assets/images/placeholder.svg';
                 }
             }
             

@@ -6,6 +6,7 @@
  */
 
 require_once __DIR__ . '/../../lib/DatabaseFactory.php';
+require_once __DIR__ . '/../../lib/AutoCache.php';
 
 class ProductManagementService {
     private $db;
@@ -62,6 +63,9 @@ class ProductManagementService {
                 if (method_exists($this->db, 'commit')) {
                     $this->db->commit();
                 }
+                
+                // OTOMATIK CACHE INVALIDATION - Ürün silindikten sonra
+                $this->invalidateProductCaches($product_id);
                 
                 return $result !== false;
                 
@@ -120,12 +124,21 @@ class ProductManagementService {
                 }
             }
             
+            // Fiyat validasyonu
+            $price = floatval($product_data['base_price']);
+            if ($price < 0) {
+                throw new Exception("Fiyat negatif olamaz");
+            }
+            if ($price > 99999999.99) {
+                throw new Exception("Fiyat çok yüksek. Maksimum değer: ₺99,999,999.99");
+            }
+            
             // Ürün verisini hazırla
             $insert_data = [
                 'name' => trim($product_data['name']),
                 'description' => $product_data['description'] ?? '',
                 'features' => $product_data['features'] ?? '',
-                'base_price' => floatval($product_data['base_price']),
+                'base_price' => $price,
                 'is_featured' => isset($product_data['is_featured']) ? 1 : 0,
                 'created_at' => date('Y-m-d H:i:s')
             ];
@@ -217,7 +230,14 @@ class ProductManagementService {
             }
             
             if (isset($product_data['base_price'])) {
-                $update_data['base_price'] = floatval($product_data['base_price']);
+                $price = floatval($product_data['base_price']);
+                if ($price < 0) {
+                    throw new Exception("Fiyat negatif olamaz");
+                }
+                if ($price > 99999999.99) {
+                    throw new Exception("Fiyat çok yüksek. Maksimum değer: ₺99,999,999.99");
+                }
+                $update_data['base_price'] = $price;
             }
             
             if (isset($product_data['is_featured'])) {
@@ -440,11 +460,17 @@ class ProductManagementService {
      */
     public function addProductVariant($model_id, $variant_data) {
         try {
+            // Fiyat düzeltmesi validasyonu
+            $price_adjustment = floatval($variant_data['price_adjustment'] ?? 0);
+            if ($price_adjustment < -99999999.99 || $price_adjustment > 99999999.99) {
+                throw new Exception("Fiyat düzeltmesi çok yüksek veya düşük. Aralık: -₺99,999,999.99 ile ₺99,999,999.99");
+            }
+            
             $insert_data = [
                 'model_id' => intval($model_id),
                 'size' => $variant_data['size'] ?? '',
                 'color' => $variant_data['color'] ?? '',
-                'price_adjustment' => floatval($variant_data['price_adjustment'] ?? 0),
+                'price_adjustment' => $price_adjustment,
                 'stock_quantity' => intval($variant_data['stock_quantity'] ?? 0),
                 'sku' => $variant_data['sku'] ?? '',
                 'created_at' => date('Y-m-d H:i:s')
@@ -485,7 +511,11 @@ class ProductManagementService {
             }
             
             if (isset($variant_data['price_adjustment'])) {
-                $update_data['price_adjustment'] = floatval($variant_data['price_adjustment']);
+                $price_adjustment = floatval($variant_data['price_adjustment']);
+                if ($price_adjustment < -99999999.99 || $price_adjustment > 99999999.99) {
+                    throw new Exception("Fiyat düzeltmesi çok yüksek veya düşük. Aralık: -₺99,999,999.99 ile ₺99,999,999.99");
+                }
+                $update_data['price_adjustment'] = $price_adjustment;
             }
             
             if (isset($variant_data['stock_quantity'])) {
@@ -523,6 +553,47 @@ class ProductManagementService {
             error_log("Ürün varyantı silme hatası: " . $e->getMessage());
             return false;
         }
+    }
+    
+    /**
+     * OTOMATIK CACHE INVALIDATION SISTEMI
+     * Ürün değişikliklerinde ilgili cache'leri otomatik temizler
+     * 
+     * @param int $product_id Değişen ürün ID'si
+     */
+    private function invalidateProductCaches($product_id = null) {
+        try {
+            // Admin product listelerini temizle
+            autoCache()->autoInvalidate('admin_products_*');
+            
+            // Eğer belirli bir ürün ID'si varsa, o ürüne özel cache'leri de temizle
+            if ($product_id) {
+                autoCache()->autoInvalidate("product_detail_{$product_id}_*");
+                autoCache()->autoInvalidate("product_variants_{$product_id}");
+                autoCache()->autoInvalidate("product_images_{$product_id}");
+            }
+            
+            // Genel ürün cache'lerini temizle
+            autoCache()->autoInvalidate('product_stats_*');
+            autoCache()->autoInvalidate('category_product_counts_*');
+            autoCache()->autoInvalidate('recent_products_*');
+            
+            // API cache'lerini temizle
+            autoCache()->autoInvalidate('api_products_*');
+            autoCache()->autoInvalidate('products_for_api_*');
+            
+            error_log("Cache invalidation tamamlandı - Product ID: " . ($product_id ?: 'ALL'));
+            
+        } catch (Exception $e) {
+            error_log("Cache invalidation hatası: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Tüm ürün cache'lerini temizle (manuel kullanım için)
+     */
+    public function clearAllProductCaches() {
+        $this->invalidateProductCaches();
     }
 }
 

@@ -14,7 +14,7 @@ class MariaDBClient implements DatabaseInterface {
     private $inTransaction = false;
     private $cache = [];
     private $cacheEnabled = true;
-    private $cacheExpiry = 300; // 5 dakika
+    private $cacheExpiry = 1; // 5 dakika
     
     public function __construct($config) {
         $this->config = $config;

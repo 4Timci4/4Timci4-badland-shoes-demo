@@ -1,11 +1,15 @@
 <?php
 /**
- * Ürün Admin Servisi
+ * Ürün Admin Servisi - ULTRA OPTIMIZED
  * 
  * Admin panel için özel ürün işlemlerini içerir
+ * - Single query optimization
+ * - Auto cache integration
+ * - Zero manual management
  */
 
 require_once __DIR__ . '/../../lib/DatabaseFactory.php';
+require_once __DIR__ . '/../../lib/AutoCache.php';
 
 class ProductAdminService {
     private $db;
@@ -15,7 +19,7 @@ class ProductAdminService {
     }
     
     /**
-     * Admin panel için ürünleri getiren metod - Optimize Edilmiş
+     * Admin panel için ürünleri getiren metod - ULTRA OPTIMIZED + AUTO CACHE
      * 
      * @param int $limit Limit
      * @param int $offset Offset
@@ -23,75 +27,193 @@ class ProductAdminService {
      * @return array Ürünler ve pagination bilgisi
      */
     public function getAdminProducts($limit = 20, $offset = 0, $filters = []) {
-        try {
-            $conditions = [];
-            
-            // Arama filtresi
-            if (!empty($filters['search'])) {
-                $search = '%' . $filters['search'] . '%';
-                $conditions['name'] = ['LIKE', $search];
-            }
-            
-            // Kategori filtresi
-            if (!empty($filters['category_id'])) {
-                // Bu kategoriye ait ürün ID'lerini al
-                $product_relations = $this->db->select('product_categories', 
-                    ['category_id' => intval($filters['category_id'])], 'product_id');
+        // Cache key oluştur - filters dahil
+        $cache_key = "admin_products_" . $limit . "_" . $offset . "_" . md5(json_encode($filters));
+        
+        // AutoCache ile otomatik cache - filtresiz listeler 15 dakika, filtreli listeler 5 dakika
+        $cache_ttl = empty($filters) ? 900 : 300;
+        
+        return autoCache()->get($cache_key, function() use ($limit, $offset, $filters) {
+            try {
+                $conditions = [];
                 
-                if (!empty($product_relations)) {
-                    $product_ids = array_column($product_relations, 'product_id');
-                    $conditions['id'] = ['IN', $product_ids];
-                } else {
-                    // Kategoride ürün yok
-                    return [
-                        'products' => [],
-                        'total' => 0,
-                        'limit' => $limit,
-                        'offset' => $offset
-                    ];
+                // Arama filtresi
+                if (!empty($filters['search'])) {
+                    $search = '%' . $filters['search'] . '%';
+                    $conditions['name'] = ['LIKE', $search];
                 }
+                
+                // Kategori filtresi
+                if (!empty($filters['category_id'])) {
+                    // Bu kategoriye ait ürün ID'lerini al
+                    $product_relations = $this->db->select('product_categories', 
+                        ['category_id' => intval($filters['category_id'])], 'product_id');
+                    
+                    if (!empty($product_relations)) {
+                        $product_ids = array_column($product_relations, 'product_id');
+                        $conditions['id'] = ['IN', $product_ids];
+                    } else {
+                        // Kategoride ürün yok
+                        return [
+                            'products' => [],
+                            'total' => 0,
+                            'limit' => $limit,
+                            'offset' => $offset,
+                            'cached' => false
+                        ];
+                    }
+                }
+                
+                // Durum filtresi
+                if (isset($filters['is_featured'])) {
+                    $conditions['is_featured'] = intval($filters['is_featured']);
+                }
+                
+                // Toplam sayıyı al
+                $total_count = $this->db->count('product_models', $conditions);
+                
+                // Ürünleri getir - sadece gerekli alanlar
+                $options = [
+                    'order' => 'id ASC',
+                    'limit' => $limit,
+                    'offset' => $offset
+                ];
+                
+                $products = $this->db->select('product_models', $conditions, 
+                    'id, name, base_price, is_featured, created_at', $options);
+                
+                // Batch olarak ilişkili verileri getir
+                $enriched_products = $this->enrichProductsForAdminBatch($products);
+                
+                return [
+                    'products' => $enriched_products,
+                    'total' => $total_count,
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'cached' => false // Fresh data
+                ];
+                
+            } catch (Exception $e) {
+                error_log("Admin ürünleri getirme hatası: " . $e->getMessage());
+                return [
+                    'products' => [],
+                    'total' => 0,
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'cached' => false
+                ];
             }
-            
-            // Durum filtresi
-            if (isset($filters['is_featured'])) {
-                $conditions['is_featured'] = intval($filters['is_featured']);
-            }
-            
-            // Toplam sayıyı al
-            $total_count = $this->db->count('product_models', $conditions);
-            
-            // Ürünleri getir
-            $options = [
-                'order' => 'created_at DESC',
-                'limit' => $limit,
-                'offset' => $offset
-            ];
-            
-            $products = $this->db->select('product_models', $conditions, '*', $options);
-            
-            // Ürün verilerini zenginleştir
-            $enriched_products = $this->enrichProductsForAdmin($products);
-            
-            return [
-                'products' => $enriched_products,
-                'total' => $total_count,
-                'limit' => $limit,
-                'offset' => $offset
-            ];
-            
-        } catch (Exception $e) {
-            error_log("Admin ürünleri getirme hatası: " . $e->getMessage());
-            return [
-                'products' => [],
-                'total' => 0,
-                'limit' => $limit,
-                'offset' => $offset
-            ];
-        }
+        }, $cache_ttl);
     }
     
     /**
-     * Admin panel için ürün verilerini zenginleştir
+     * Admin panel için ürün verilerini batch olarak zenginleştir - OPTIMIZED
+     * 
+     * @param array $products Ham ürün verileri
+     * @return array Zenginleştirilmiş ürün verileri
+     */
+    private function enrichProductsForAdminBatch($products) {
+        if (empty($products)) {
+            return [];
+        }
+        
+        $product_ids = array_column($products, 'id');
+        
+        // BATCH 1: Tüm kategori ilişkilerini tek sorguda al
+        $category_relations = $this->db->select('product_categories', 
+            ['product_id' => ['IN', $product_ids]], 'product_id, category_id');
+        
+        // BATCH 2: İlgili kategorileri tek sorguda al
+        $category_ids = array_unique(array_column($category_relations, 'category_id'));
+        $categories_lookup = [];
+        if (!empty($category_ids)) {
+            $categories = $this->db->select('categories', 
+                ['id' => ['IN', $category_ids]], 'id, name, slug');
+            $categories_lookup = array_column($categories, null, 'id');
+        }
+        
+        // BATCH 3: Tüm cinsiyet ilişkilerini tek sorguda al
+        $gender_relations = $this->db->select('product_genders', 
+            ['product_id' => ['IN', $product_ids]], 'product_id, gender_id');
+        
+        // BATCH 4: İlgili cinsiyetleri tek sorguda al
+        $gender_ids = array_unique(array_column($gender_relations, 'gender_id'));
+        $genders_lookup = [];
+        if (!empty($gender_ids)) {
+            $genders = $this->db->select('genders', 
+                ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            $genders_lookup = array_column($genders, null, 'id');
+        }
+        
+        // BATCH 5: Tüm ana görselleri tek sorguda al
+        $primary_images = $this->db->select('product_images', [
+            'model_id' => ['IN', $product_ids],
+            'is_primary' => 1
+        ], 'model_id, image_url');
+        $images_lookup = array_column($primary_images, 'image_url', 'model_id');
+        
+        // Memory'de hızlı lookup haritaları oluştur
+        $product_categories_map = [];
+        foreach ($category_relations as $rel) {
+            $product_categories_map[$rel['product_id']][] = $rel['category_id'];
+        }
+        
+        $product_genders_map = [];
+        foreach ($gender_relations as $rel) {
+            $product_genders_map[$rel['product_id']][] = $rel['gender_id'];
+        }
+        
+        // Ürünleri zenginleştir - Memory'de işlem
+        $enriched_products = [];
+        foreach ($products as $product) {
+            $product_id = $product['id'];
+            
+            $enriched_product = [
+                'id' => $product_id,
+                'name' => $product['name'],
+                'base_price' => $product['base_price'],
+                'is_featured' => $product['is_featured'],
+                'created_at' => $product['created_at']
+            ];
+            
+            // Kategorileri ekle
+            $product_category_ids = $product_categories_map[$product_id] ?? [];
+            if (!empty($product_category_ids)) {
+                $first_category_id = $product_category_ids[0];
+                $category = $categories_lookup[$first_category_id] ?? null;
+                if ($category) {
+                    $enriched_product['category_name'] = $category['name'];
+                    $enriched_product['categories'] = $category;
+                } else {
+                    $enriched_product['category_name'] = 'Kategorisiz';
+                    $enriched_product['categories'] = [];
+                }
+            } else {
+                $enriched_product['category_name'] = 'Kategorisiz';
+                $enriched_product['categories'] = [];
+            }
+            
+            // Cinsiyetleri ekle
+            $product_gender_ids = $product_genders_map[$product_id] ?? [];
+            $product_genders = [];
+            foreach ($product_gender_ids as $gender_id) {
+                if (isset($genders_lookup[$gender_id])) {
+                    $product_genders[] = $genders_lookup[$gender_id];
+                }
+            }
+            $enriched_product['genders'] = $product_genders;
+            
+            // Ana görseli ekle
+            $enriched_product['image_url'] = $images_lookup[$product_id] ?? null;
+            
+            $enriched_products[] = $enriched_product;
+        }
+        
+        return $enriched_products;
+    }
+    
+    /**
+     * Admin panel için ürün verilerini zenginleştir - LEGACY (Geriye uyumluluk için)
      * 
      * @param array $products Ham ürün verileri
      * @return array Zenginleştirilmiş ürün verileri
@@ -110,31 +232,31 @@ class ProductAdminService {
                 'created_at' => $product['created_at']
             ];
             
-            // Kategori bilgilerini ekle
-            $categories = $this->db->selectWithJoins('product_categories', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'categories',
-                    'condition' => 'product_categories.category_id = categories.id'
-                ]
-            ], ['product_categories.product_id' => $product['id']], 'categories.id, categories.name, categories.slug');
+            // Kategori bilgilerini ekle - Supabase uyumlu şekilde
+            $category_relations = $this->db->select('product_categories', ['product_id' => $product['id']], 'category_id');
+            $categories = [];
+            
+            if (!empty($category_relations)) {
+                $category_ids = array_column($category_relations, 'category_id');
+                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+            }
             
             if (!empty($categories)) {
                 $enriched_product['category_name'] = $categories[0]['name'];
-                $enriched_product['categories'] = $categories;
+                $enriched_product['categories'] = $categories[0]; // Admin panelinde tek kategori göster
             } else {
                 $enriched_product['category_name'] = 'Kategorisiz';
                 $enriched_product['categories'] = [];
             }
             
-            // Cinsiyet bilgilerini ekle
-            $genders = $this->db->selectWithJoins('product_genders', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'genders',
-                    'condition' => 'product_genders.gender_id = genders.id'
-                ]
-            ], ['product_genders.product_id' => $product['id']], 'genders.id, genders.name, genders.slug');
+            // Cinsiyet bilgilerini ekle - Supabase uyumlu şekilde
+            $gender_relations = $this->db->select('product_genders', ['product_id' => $product['id']], 'gender_id');
+            $genders = [];
+            
+            if (!empty($gender_relations)) {
+                $gender_ids = array_column($gender_relations, 'gender_id');
+                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            }
             
             $enriched_product['genders'] = $genders;
             
@@ -265,17 +387,16 @@ class ProductAdminService {
             $products = $this->db->select('product_models', [], 
                 'id, name, base_price, is_featured, created_at', $options);
             
-            // Kategorileri ekle
+            // Kategorileri ekle - Supabase uyumlu şekilde
             foreach ($products as &$product) {
-                $categories = $this->db->selectWithJoins('product_categories', [
-                    [
-                        'type' => 'INNER',
-                        'table' => 'categories',
-                        'condition' => 'product_categories.category_id = categories.id'
-                    ]
-                ], ['product_categories.product_id' => $product['id']], 'categories.name', ['limit' => 1]);
+                $category_relations = $this->db->select('product_categories', ['product_id' => $product['id']], 'category_id', ['limit' => 1]);
                 
-                $product['category_name'] = !empty($categories) ? $categories[0]['name'] : 'Kategorisiz';
+                if (!empty($category_relations)) {
+                    $categories = $this->db->select('categories', ['id' => $category_relations[0]['category_id']], 'name', ['limit' => 1]);
+                    $product['category_name'] = !empty($categories) ? $categories[0]['name'] : 'Kategorisiz';
+                } else {
+                    $product['category_name'] = 'Kategorisiz';
+                }
             }
             
             return $products;
@@ -308,25 +429,25 @@ class ProductAdminService {
             
             $product = $products[0];
             
-            // Kategorileri ekle
-            $categories = $this->db->selectWithJoins('product_categories', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'categories',
-                    'condition' => 'product_categories.category_id = categories.id'
-                ]
-            ], ['product_categories.product_id' => $product_id], 'categories.id, categories.name, categories.slug');
+            // Kategorileri ekle - Supabase uyumlu şekilde
+            $category_relations = $this->db->select('product_categories', ['product_id' => $product_id], 'category_id');
+            $categories = [];
+            
+            if (!empty($category_relations)) {
+                $category_ids = array_column($category_relations, 'category_id');
+                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+            }
             
             $product['categories'] = $categories;
             
-            // Cinsiyetleri ekle
-            $genders = $this->db->selectWithJoins('product_genders', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'genders',
-                    'condition' => 'product_genders.gender_id = genders.id'
-                ]
-            ], ['product_genders.product_id' => $product_id], 'genders.id, genders.name, genders.slug');
+            // Cinsiyetleri ekle - Supabase uyumlu şekilde
+            $gender_relations = $this->db->select('product_genders', ['product_id' => $product_id], 'gender_id');
+            $genders = [];
+            
+            if (!empty($gender_relations)) {
+                $gender_ids = array_column($gender_relations, 'gender_id');
+                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            }
             
             $product['genders'] = $genders;
             
