@@ -110,31 +110,31 @@ class ProductAdminService {
                 'created_at' => $product['created_at']
             ];
             
-            // Kategori bilgilerini ekle
-            $categories = $this->db->selectWithJoins('product_categories', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'categories',
-                    'condition' => 'product_categories.category_id = categories.id'
-                ]
-            ], ['product_categories.product_id' => $product['id']], 'categories.id, categories.name, categories.slug');
+            // Kategori bilgilerini ekle - Supabase uyumlu şekilde
+            $category_relations = $this->db->select('product_categories', ['product_id' => $product['id']], 'category_id');
+            $categories = [];
+            
+            if (!empty($category_relations)) {
+                $category_ids = array_column($category_relations, 'category_id');
+                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+            }
             
             if (!empty($categories)) {
                 $enriched_product['category_name'] = $categories[0]['name'];
-                $enriched_product['categories'] = $categories;
+                $enriched_product['categories'] = $categories[0]; // Admin panelinde tek kategori göster
             } else {
                 $enriched_product['category_name'] = 'Kategorisiz';
                 $enriched_product['categories'] = [];
             }
             
-            // Cinsiyet bilgilerini ekle
-            $genders = $this->db->selectWithJoins('product_genders', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'genders',
-                    'condition' => 'product_genders.gender_id = genders.id'
-                ]
-            ], ['product_genders.product_id' => $product['id']], 'genders.id, genders.name, genders.slug');
+            // Cinsiyet bilgilerini ekle - Supabase uyumlu şekilde
+            $gender_relations = $this->db->select('product_genders', ['product_id' => $product['id']], 'gender_id');
+            $genders = [];
+            
+            if (!empty($gender_relations)) {
+                $gender_ids = array_column($gender_relations, 'gender_id');
+                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            }
             
             $enriched_product['genders'] = $genders;
             
@@ -265,17 +265,16 @@ class ProductAdminService {
             $products = $this->db->select('product_models', [], 
                 'id, name, base_price, is_featured, created_at', $options);
             
-            // Kategorileri ekle
+            // Kategorileri ekle - Supabase uyumlu şekilde
             foreach ($products as &$product) {
-                $categories = $this->db->selectWithJoins('product_categories', [
-                    [
-                        'type' => 'INNER',
-                        'table' => 'categories',
-                        'condition' => 'product_categories.category_id = categories.id'
-                    ]
-                ], ['product_categories.product_id' => $product['id']], 'categories.name', ['limit' => 1]);
+                $category_relations = $this->db->select('product_categories', ['product_id' => $product['id']], 'category_id', ['limit' => 1]);
                 
-                $product['category_name'] = !empty($categories) ? $categories[0]['name'] : 'Kategorisiz';
+                if (!empty($category_relations)) {
+                    $categories = $this->db->select('categories', ['id' => $category_relations[0]['category_id']], 'name', ['limit' => 1]);
+                    $product['category_name'] = !empty($categories) ? $categories[0]['name'] : 'Kategorisiz';
+                } else {
+                    $product['category_name'] = 'Kategorisiz';
+                }
             }
             
             return $products;
@@ -308,25 +307,25 @@ class ProductAdminService {
             
             $product = $products[0];
             
-            // Kategorileri ekle
-            $categories = $this->db->selectWithJoins('product_categories', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'categories',
-                    'condition' => 'product_categories.category_id = categories.id'
-                ]
-            ], ['product_categories.product_id' => $product_id], 'categories.id, categories.name, categories.slug');
+            // Kategorileri ekle - Supabase uyumlu şekilde
+            $category_relations = $this->db->select('product_categories', ['product_id' => $product_id], 'category_id');
+            $categories = [];
+            
+            if (!empty($category_relations)) {
+                $category_ids = array_column($category_relations, 'category_id');
+                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+            }
             
             $product['categories'] = $categories;
             
-            // Cinsiyetleri ekle
-            $genders = $this->db->selectWithJoins('product_genders', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'genders',
-                    'condition' => 'product_genders.gender_id = genders.id'
-                ]
-            ], ['product_genders.product_id' => $product_id], 'genders.id, genders.name, genders.slug');
+            // Cinsiyetleri ekle - Supabase uyumlu şekilde
+            $gender_relations = $this->db->select('product_genders', ['product_id' => $product_id], 'gender_id');
+            $genders = [];
+            
+            if (!empty($gender_relations)) {
+                $gender_ids = array_column($gender_relations, 'gender_id');
+                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            }
             
             $product['genders'] = $genders;
             

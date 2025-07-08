@@ -37,14 +37,14 @@ class ProductQueryService {
             $product = $products[0];
             $product['price'] = $product['base_price']; // Tutarlılık için
             
-            // Kategori bilgilerini ekle
-            $categories = $this->db->selectWithJoins('product_categories', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'categories',
-                    'condition' => 'product_categories.category_id = categories.id'
-                ]
-            ], ['product_categories.product_id' => $model_id], 'categories.id, categories.name, categories.slug');
+            // Kategori bilgilerini ekle - Supabase uyumlu şekilde
+            $category_relations = $this->db->select('product_categories', ['product_id' => $model_id], 'category_id');
+            $categories = [];
+            
+            if (!empty($category_relations)) {
+                $category_ids = array_column($category_relations, 'category_id');
+                $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], 'id, name, slug');
+            }
             
             if (!empty($categories)) {
                 $product['category_name'] = $categories[0]['name'];
@@ -52,14 +52,14 @@ class ProductQueryService {
                 $product['categories'] = $categories; // Tüm kategoriler
             }
             
-            // Cinsiyet bilgilerini ekle
-            $genders = $this->db->selectWithJoins('product_genders', [
-                [
-                    'type' => 'INNER',
-                    'table' => 'genders',
-                    'condition' => 'product_genders.gender_id = genders.id'
-                ]
-            ], ['product_genders.product_id' => $model_id], 'genders.id, genders.name, genders.slug');
+            // Cinsiyet bilgilerini ekle - Supabase uyumlu şekilde
+            $gender_relations = $this->db->select('product_genders', ['product_id' => $model_id], 'gender_id');
+            $genders = [];
+            
+            if (!empty($gender_relations)) {
+                $gender_ids = array_column($gender_relations, 'gender_id');
+                $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], 'id, name, slug');
+            }
             
             $product['genders'] = $genders;
             

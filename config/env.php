@@ -20,7 +20,7 @@ if (file_exists($envFile)) {
 
 // Database Türü Seçimi
 // 'supabase' veya 'mariadb' değerlerini alabilir
-define('DB_TYPE', getenv('DB_TYPE') ?: 'mariadb');
+define('DB_TYPE', getenv('DB_TYPE') ?: 'supabase');
 
 // Supabase Bağlantı Bilgileri
 // Vercel ortam değişkenlerinden veya yerel geliştirme için doğrudan tanımlanır

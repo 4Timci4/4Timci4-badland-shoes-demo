@@ -21,7 +21,7 @@ $breadcrumb_items = [
 
 // Sayfalama parametreleri
 $page = max(1, intval($_GET['page'] ?? 1));
-$limit = 20;
+$limit = 7;
 $offset = ($page - 1) * $limit;
 
 // POST işlemleri
@@ -303,6 +303,34 @@ include 'includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pagination link'leri için event listener
+    const paginationLinks = document.querySelectorAll('.pagination-link');
+    
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetPage = this.getAttribute('data-page');
+            if (targetPage) {
+                // Yükleme göstergesi göster
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.remove('hidden');
+                }
+                
+                // Sayfayı yönlendir
+                const url = new URL(window.location);
+                url.searchParams.set('page', targetPage);
+                window.location.href = url.toString();
+            }
+        });
+    });
+});
+</script>
 
 <?php
 // Footer dahil et

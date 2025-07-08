@@ -334,7 +334,7 @@ class SupabaseAdapter implements DatabaseInterface {
         
         // Sıralama
         if (isset($options['order'])) {
-            $queryParts['order'] = $options['order'];
+            $queryParts['order'] = $this->convertOrderBy($options['order']);
         }
         
         // Query string oluştur
@@ -409,5 +409,55 @@ class SupabaseAdapter implements DatabaseInterface {
         ];
         
         return $operatorMap[strtoupper($operator)] ?? 'eq';
+    }
+    
+    /**
+     * ORDER BY ifadesini Supabase formatına çevirir
+     */
+    private function convertOrderBy($orderBy) {
+        // Örnek: "sort_order ASC" -> "sort_order.asc"
+        // Örnek: "created_at DESC" -> "created_at.desc"
+        
+        $orderBy = trim($orderBy);
+        
+        // Birden fazla sıralama varsa virgülle ayır
+        if (strpos($orderBy, ',') !== false) {
+            $parts = explode(',', $orderBy);
+            $converted = [];
+            
+            foreach ($parts as $part) {
+                $converted[] = $this->convertSingleOrderBy(trim($part));
+            }
+            
+            return implode(',', $converted);
+        }
+        
+        return $this->convertSingleOrderBy($orderBy);
+    }
+    
+    /**
+     * Tek bir ORDER BY ifadesini çevirir
+     */
+    private function convertSingleOrderBy($orderBy) {
+        $parts = explode(' ', trim($orderBy));
+        
+        if (count($parts) == 1) {
+            // Sadece sütun adı varsa, ASC olarak kabul et
+            return $parts[0] . '.asc';
+        }
+        
+        if (count($parts) == 2) {
+            $column = $parts[0];
+            $direction = strtoupper($parts[1]);
+            
+            if ($direction === 'ASC') {
+                return $column . '.asc';
+            } elseif ($direction === 'DESC') {
+                return $column . '.desc';
+            }
+        }
+        
+        // Varsayılan olarak ASC
+        return $parts[0] . '.asc';
     }
 }
