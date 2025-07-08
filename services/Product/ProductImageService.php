@@ -6,7 +6,7 @@
  */
 
 require_once __DIR__ . '/../../lib/DatabaseFactory.php';
-require_once __DIR__ . '/../../lib/ImageManager.php';
+require_once __DIR__ . '/../../lib/SupabaseImageManager.php';
 
 class ProductImageService {
     private $db;
@@ -14,7 +14,7 @@ class ProductImageService {
     
     public function __construct() {
         $this->db = database();
-        $this->imageManager = ImageManager::getInstance();
+        $this->imageManager = SupabaseImageManager::getInstance();
     }
     
     /**
@@ -70,10 +70,14 @@ class ProductImageService {
             }
             
             // Mevcut resim sayısını kontrol et
-            $existing_count = $this->db->count('product_images', [
-                'model_id' => $model_id,
-                'color_id' => $color_id
-            ]);
+            $count_conditions = ['model_id' => intval($model_id)];
+            if ($color_id !== null && $color_id !== '') {
+                $count_conditions['color_id'] = intval($color_id);
+            } else {
+                $count_conditions['color_id'] = null;
+            }
+            
+            $existing_count = $this->db->count('product_images', $count_conditions);
             
             $max_images = $options['max_images'] ?? 10;
             if ($existing_count + count($file_list) > $max_images) {
@@ -93,7 +97,7 @@ class ProductImageService {
                 }
                 $prefix .= "_";
                 
-                // Resim yükle ve optimize et
+                // Resim yükle ve optimize et (Supabase Storage)
                 $upload_result = $this->imageManager->uploadAndOptimize($file, array_merge([
                     'prefix' => $prefix,
                     'generate_thumbnail' => true,
@@ -104,33 +108,40 @@ class ProductImageService {
                 ], $options));
                 
                 if ($upload_result['success']) {
-                    // Veritabanına kaydet
-                    $image_data = [
-                        'model_id' => $model_id,
-                        'color_id' => $color_id,
-                        'image_url' => $upload_result['optimized']['url'],
-                        'original_url' => $upload_result['original']['url'],
-                        'thumbnail_url' => $upload_result['thumbnail']['url'] ?? null,
-                        'webp_url' => $upload_result['webp']['url'] ?? null,
-                        'alt_text' => $this->generateAltText($model_id, $color_id),
-                        'file_size' => $upload_result['optimized']['size'],
-                        'width' => $upload_result['optimized']['width'],
-                        'height' => $upload_result['optimized']['height'],
-                        'sort_order' => $this->getNextSortOrder($model_id, $color_id),
-                        'is_primary' => $existing_count === 0 // İlk resim otomatik primary
-                    ];
+                    // Image URL belirle - önce optimized, sonra original kontrol et
+                    $image_url = null;
+                    if (isset($upload_result['optimized']['url']) && !empty($upload_result['optimized']['url'])) {
+                        $image_url = $upload_result['optimized']['url'];
+                    } elseif (isset($upload_result['original']['url']) && !empty($upload_result['original']['url'])) {
+                        $image_url = $upload_result['original']['url'];
+                    }
                     
-                    $db_result = $this->db->insert('product_images', $image_data, ['returning' => true]);
-                    
-                    if (!empty($db_result)) {
-                        $results[] = array_merge($upload_result, [
-                            'db_id' => is_array($db_result) && isset($db_result[0]['id']) ? $db_result[0]['id'] : null,
-                            'image_data' => $image_data
-                        ]);
+                    // URL varsa veritabanına kaydet
+                    if ($image_url) {
+                        $image_data = [
+                            'model_id' => intval($model_id),
+                            'color_id' => $color_id ? intval($color_id) : null,
+                            'image_url' => $image_url,
+                            'alt_text' => $this->generateAltText($model_id, $color_id),
+                            'sort_order' => intval($this->getNextSortOrder($model_id, $color_id)),
+                            'is_primary' => $existing_count === 0 // İlk resim otomatik primary
+                        ];
+                        
+                        $db_result = $this->db->insert('product_images', $image_data, ['returning' => true]);
+                        
+                        if (!empty($db_result)) {
+                            $results[] = array_merge($upload_result, [
+                                'db_id' => is_array($db_result) && isset($db_result[0]['id']) ? $db_result[0]['id'] : null,
+                                'image_data' => $image_data
+                            ]);
+                        } else {
+                            $errors[] = "Veritabanına kayıt hatası: " . $file['name'];
+                            // Yüklenen dosyaları temizle
+                            $this->cleanupUploadedFiles($upload_result);
+                        }
                     } else {
-                        $errors[] = "Veritabanına kayıt hatası: " . $file['name'];
-                        // Yüklenen dosyaları temizle
-                        $this->cleanupUploadedFiles($upload_result);
+                        $errors[] = "Resim URL'si alınamadı: " . $file['name'];
+                        error_log("Upload result but no URL: " . json_encode($upload_result));
                     }
                 } else {
                     $errors = array_merge($errors, $upload_result['errors'] ?? ['Bilinmeyen resim yükleme hatası']);
@@ -377,24 +388,28 @@ class ProductImageService {
      */
     private function getNextSortOrder($model_id, $color_id = null) {
         try {
-            $conditions = ['model_id' => $model_id];
-            if ($color_id) {
-                $conditions['color_id'] = $color_id;
+            // Conditions'ı güvenli şekilde hazırla
+            $conditions = ['model_id' => intval($model_id)];
+            
+            if ($color_id !== null && $color_id !== '') {
+                $conditions['color_id'] = intval($color_id);
+                $sql = "SELECT COALESCE(MAX(sort_order), 0) + 1 as next_order FROM product_images WHERE model_id = ? AND color_id = ?";
+                $params = [intval($model_id), intval($color_id)];
+            } else {
+                $sql = "SELECT COALESCE(MAX(sort_order), 0) + 1 as next_order FROM product_images WHERE model_id = ? AND color_id IS NULL";
+                $params = [intval($model_id)];
             }
             
-            $result = $this->db->executeRawSql(
-                "SELECT MAX(sort_order) as max_order FROM product_images WHERE model_id = ? " . 
-                ($color_id ? "AND color_id = ?" : ""),
-                $color_id ? [$model_id, $color_id] : [$model_id]
-            );
+            $result = $this->db->executeRawSql($sql, $params);
             
-            if (!empty($result)) {
-                return (intval($result[0]['max_order']) ?? 0) + 1;
+            if (!empty($result) && isset($result[0]['next_order'])) {
+                return intval($result[0]['next_order']);
             }
             
             return 1;
             
         } catch (Exception $e) {
+            error_log("ProductImageService::getNextSortOrder - " . $e->getMessage());
             return 1;
         }
     }
@@ -430,29 +445,15 @@ class ProductImageService {
     }
     
     /**
-     * Resim dosyalarını sil
+     * Resim dosyalarını sil (Supabase Storage'dan)
      */
     private function deleteImageFiles($image) {
         try {
-            // URL'den dosya yolunu çıkar
-            $paths_to_delete = [];
-            
-            if ($image['image_url']) {
-                $paths_to_delete[] = $_SERVER['DOCUMENT_ROOT'] . $image['image_url'];
-            }
-            if ($image['original_url']) {
-                $paths_to_delete[] = $_SERVER['DOCUMENT_ROOT'] . $image['original_url'];
-            }
-            if ($image['thumbnail_url']) {
-                $paths_to_delete[] = $_SERVER['DOCUMENT_ROOT'] . $image['thumbnail_url'];
-            }
-            if ($image['webp_url']) {
-                $paths_to_delete[] = $_SERVER['DOCUMENT_ROOT'] . $image['webp_url'];
-            }
-            
-            foreach ($paths_to_delete as $path) {
-                if (file_exists($path)) {
-                    unlink($path);
+            // Sadece mevcut image_url kolonunu kullan
+            if (!empty($image['image_url'])) {
+                $storage_path = $this->extractStoragePath($image['image_url']);
+                if ($storage_path) {
+                    $this->imageManager->deleteFromSupabase($storage_path);
                 }
             }
             
@@ -462,28 +463,47 @@ class ProductImageService {
     }
     
     /**
-     * Upload edilen dosyaları temizle (hata durumunda)
+     * Supabase URL'den storage path çıkar
+     */
+    private function extractStoragePath($url) {
+        // Supabase public URL formatı:
+        // https://xxx.supabase.co/storage/v1/object/public/bucket-name/path/to/file.jpg
+        if (strpos($url, '/storage/v1/object/public/') !== false) {
+            $parts = explode('/storage/v1/object/public/', $url);
+            if (count($parts) > 1) {
+                // bucket-name/path/to/file.jpg formatından sadece path/to/file.jpg kısmını al
+                $bucket_and_path = $parts[1];
+                $path_parts = explode('/', $bucket_and_path, 2);
+                return count($path_parts) > 1 ? $path_parts[1] : null;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Upload edilen dosyaları temizle (hata durumında - Supabase Storage'dan)
      */
     private function cleanupUploadedFiles($upload_result) {
         try {
-            $paths_to_clean = [];
+            $storage_paths = [];
             
             if (isset($upload_result['original']['path'])) {
-                $paths_to_clean[] = $upload_result['original']['path'];
+                $storage_paths[] = $upload_result['original']['path'];
             }
             if (isset($upload_result['optimized']['path'])) {
-                $paths_to_clean[] = $upload_result['optimized']['path'];
+                $storage_paths[] = $upload_result['optimized']['path'];
             }
             if (isset($upload_result['thumbnail']['path'])) {
-                $paths_to_clean[] = $upload_result['thumbnail']['path'];
+                $storage_paths[] = $upload_result['thumbnail']['path'];
             }
             if (isset($upload_result['webp']['path'])) {
-                $paths_to_clean[] = $upload_result['webp']['path'];
+                $storage_paths[] = $upload_result['webp']['path'];
             }
             
-            foreach ($paths_to_clean as $path) {
-                if (file_exists($path)) {
-                    unlink($path);
+            // Supabase Storage'dan sil
+            foreach ($storage_paths as $storage_path) {
+                if ($storage_path) {
+                    $this->imageManager->deleteFromSupabase($storage_path);
                 }
             }
             
@@ -493,11 +513,12 @@ class ProductImageService {
     }
     
     /**
-     * Resim dosyalarının varlığını kontrol et
+     * Resim dosyalarının varlığını kontrol et (Supabase için her zaman true döndür)
      */
     private function validateImageFiles($image) {
-        $main_file = $_SERVER['DOCUMENT_ROOT'] . $image['image_url'];
-        return file_exists($main_file);
+        // Supabase Storage için dosya varlığı kontrolü gerekmez
+        // URL'ler her zaman erişilebilir olmalı
+        return !empty($image['image_url']);
     }
     
     /**

@@ -74,10 +74,11 @@ include 'includes/header.php';
 <?php
 // Include scripts
 include_product_edit_scripts(
-    $product_id, 
-    $productImagesByColor, 
-    $all_colors, 
-    $product['base_price']
+    $product_id,
+    $productImagesByColor,
+    $all_colors,
+    $product['base_price'],
+    $variants
 );
 
 // Include footer

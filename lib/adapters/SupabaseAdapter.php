@@ -373,11 +373,23 @@ class SupabaseAdapter implements DatabaseInterface {
                         $parts[] = $key . '=' . $this->convertOperator($operator) . '.(' . implode(',', $val) . ')';
                     }
                 } else {
-                    $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
+                    // Null değer kontrolü
+                    if ($val === null) {
+                        $parts[] = $key . '=is.null';
+                    } else {
+                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
+                    }
                 }
             } else {
-                // Basit eşitlik
-                $parts[] = $key . '=eq.' . $value;
+                // Basit eşitlik - null değer kontrolü
+                if ($value === null) {
+                    $parts[] = $key . '=is.null';
+                } elseif ($value === '') {
+                    // Boş string'i de null olarak işle
+                    $parts[] = $key . '=is.null';
+                } else {
+                    $parts[] = $key . '=eq.' . $value;
+                }
             }
         }
         

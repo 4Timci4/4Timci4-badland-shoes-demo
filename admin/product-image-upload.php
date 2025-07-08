@@ -16,18 +16,19 @@ $productImageService = productImageService();
 $productService = product_service();
 
 // Ürün ID'si kontrolü
-$product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$product_id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_GET['product_id']) ? intval($_GET['product_id']) : 0);
 if (!$product_id) {
     header('Location: products.php');
     exit;
 }
 
 // Ürün bilgilerini getir
-$product = $productService->getProductModel($product_id);
-if (empty($product)) {
+$product_data = $productService->getProductModel($product_id);
+if (empty($product_data)) {
     header('Location: products.php');
     exit;
 }
+$product = $product_data[0];
 
 // Renkleri getir
 $colors = get_colors();
@@ -105,119 +106,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include 'includes/header.php';
 ?>
 
-<div class="container-fluid">
-    <!-- Sayfa başlığı -->
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">
-                    <i class="fas fa-images me-2"></i><?= $pageTitle ?>
-                </h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="products.php">Ürünler</a></li>
-                        <li class="breadcrumb-item active">Resim Yönetimi</li>
-                    </ol>
-                </div>
-            </div>
+<!-- Modern Image Management Content -->
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-images mr-3 text-blue-600"></i><?= $pageTitle ?>
+            </h1>
+            <p class="text-gray-600">Ürün resimlerini yükleyin, düzenleyin ve yönetin</p>
+        </div>
+        <div class="mt-4 lg:mt-0">
+            <a href="product-edit.php?id=<?= $product['id'] ?>" 
+               class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
+                <i class="fas fa-edit mr-2"></i>
+                Ürünü Düzenle
+            </a>
         </div>
     </div>
 
-    <!-- Ürün bilgisi -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <h5 class="card-title mb-0">
-                            <?= htmlspecialchars($product['name']) ?>
-                        </h5>
-                        <span class="badge bg-info ms-2">ID: <?= $product['id'] ?></span>
-                        <a href="product-edit.php?id=<?= $product['id'] ?>" class="btn btn-outline-secondary btn-sm ms-auto">
-                            <i class="fas fa-edit"></i> Ürünü Düzenle
-                        </a>
+    <!-- Product Info Card -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-box text-blue-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($product['name']) ?></h2>
+                    <div class="flex items-center space-x-2 mt-1">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            ID: <?= $product['id'] ?>
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Mesajlar -->
+    <!-- Flash Messages -->
     <?php if ($success_message): ?>
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i><?= $success_message ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            </div>
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+            <span class="text-green-800 font-medium"><?= htmlspecialchars($success_message) ?></span>
         </div>
     <?php endif; ?>
 
     <?php if ($error_message): ?>
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i><?= $error_message ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            </div>
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center">
+            <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+            <span class="text-red-800 font-medium"><?= $error_message ?></span>
         </div>
     <?php endif; ?>
 
-    <!-- Resim yükleme formu -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-cloud-upload-alt me-2"></i>Yeni Resim Yükle
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data" id="upload-form">
-                        <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-                        <input type="hidden" name="action" value="upload">
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Renk Seçimi <small class="text-muted">(Opsiyonel)</small></label>
-                                    <select name="color_id" class="form-select">
-                                        <option value="">Tüm Renkler</option>
-                                        <?php foreach ($colors as $color): ?>
-                                            <option value="<?= $color['id'] ?>">
-                                                <?= htmlspecialchars($color['name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <div class="form-text">Belirli bir renge ait resimler için renk seçin.</div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Resimler <span class="text-danger">*</span></label>
-                                    <input type="file" name="images[]" class="form-control" multiple accept="image/*" required>
-                                    <div class="form-text">
-                                        Çoklu resim seçebilirsiniz. Desteklenen formatlar: JPG, PNG, GIF, WebP
-                                        <br>Maksimum dosya boyutu: 5MB, Önerilen boyut: 1200x1200px
-                                    </div>
-                                </div>
-                            </div>
+    <!-- Upload Form -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-cloud-upload-alt mr-2 text-blue-600"></i>
+                Yeni Resim Yükle
+            </h3>
+        </div>
+        <div class="p-6">
+            <form method="POST" enctype="multipart/form-data" id="upload-form" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
+                <input type="hidden" name="action" value="upload">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Renk Seçimi <span class="text-gray-400 font-normal">(Opsiyonel)</span>
+                        </label>
+                        <select name="color_id" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <option value="">Tüm Renkler</option>
+                            <?php foreach ($colors as $color): ?>
+                                <option value="<?= $color['id'] ?>">
+                                    <?= htmlspecialchars($color['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-sm text-gray-500 mt-1">Belirli bir renge ait resimler için renk seçin.</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Resimler <span class="text-red-500">*</span>
+                        </label>
+                        <input type="file" name="images[]" 
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+                               multiple accept="image/*" required>
+                        <div class="text-sm text-gray-500 mt-1">
+                            <p>Çoklu resim seçebilirsiniz. Desteklenen formatlar: JPG, PNG, GIF, WebP</p>
+                            <p>Maksimum dosya boyutu: 5MB, Önerilen boyut: 1200x1200px</p>
                         </div>
-                        
-                        <div class="mb-3">
-                            <div id="image-preview" class="row"></div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload me-2"></i>Resimleri Yükle
-                        </button>
-                    </form>
+                    </div>
                 </div>
-            </div>
+                
+                <div id="image-preview" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+                
+                <div class="flex justify-start">
+                    <button type="submit" 
+                            class="inline-flex items-center px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
+                        <i class="fas fa-upload mr-2"></i>
+                        Resimleri Yükle
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -287,15 +282,20 @@ include 'includes/header.php';
                                                         
                                                         <div class="position-absolute top-0 end-0 m-2">
                                                             <div class="btn-group-vertical">
+                                                                <?php
+                                                                    $image_url = $image['image_url'] ?? '';
+                                                                    $original_url = str_replace('/optimized/', '/original/', $image_url);
+                                                                    $original_url = preg_replace('/_optimized(\..+?)$/', '$1', $original_url);
+                                                                ?>
                                                                 <button type="button" 
                                                                         class="btn btn-sm btn-outline-light"
-                                                                        onclick="viewImage('<?= htmlspecialchars($image['original_url']) ?>')"
+                                                                        onclick="viewImage('<?= htmlspecialchars($original_url) ?>')"
                                                                         title="Büyük Görüntüle">
                                                                     <i class="fas fa-search-plus"></i>
                                                                 </button>
                                                                 <button type="button" 
                                                                         class="btn btn-sm btn-outline-light"
-                                                                        onclick="downloadImage('<?= htmlspecialchars($image['original_url']) ?>')"
+                                                                        onclick="downloadImage('<?= htmlspecialchars($original_url) ?>')"
                                                                         title="İndir">
                                                                     <i class="fas fa-download"></i>
                                                                 </button>
@@ -306,10 +306,7 @@ include 'includes/header.php';
                                                     <div class="card-body p-2">
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <small class="text-muted">
-                                                                Sıra: <?= $image['sort_order'] ?>
-                                                            </small>
-                                                            <small class="text-muted">
-                                                                <?= number_format($image['file_size'] / 1024, 1) ?> KB
+                                                                Sıra: <?= $image['sort_order'] ?? 'N/A' ?>
                                                             </small>
                                                         </div>
                                                         

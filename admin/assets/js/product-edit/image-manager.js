@@ -7,7 +7,9 @@ class ProductImageManager {
         this.productId = productId;
         this.currentColorId = 'default';
         this.productImages = window.productImagesByColor || {};
-        this.allColors = window.allColors || [];
+        // Sadece varyant renklerini kullan
+        this.variantColors = window.variantColors || [];
+        this.allColors = window.allColors || []; // Eski uyumluluk için sakla
         this.init();
     }
     
@@ -172,6 +174,11 @@ class ProductImageManager {
     getColorName(colorId) {
         if (colorId === 'default') return 'Varsayılan';
         
+        // Önce varyant renklerinde ara
+        const variantColor = this.variantColors.find(c => c.id == colorId);
+        if (variantColor) return variantColor.name;
+        
+        // Bulamazsa tüm renklerde ara (eski uyumluluk için)
         const color = this.allColors.find(c => c.id == colorId);
         return color ? color.name : 'Bilinmeyen Renk';
     }

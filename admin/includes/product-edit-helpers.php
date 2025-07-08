@@ -46,7 +46,23 @@ function render_flash_message() {
     <?php
 }
 
-function include_product_edit_scripts($product_id, $product_images_by_color, $all_colors, $product_base_price) {
+function include_product_edit_scripts($product_id, $product_images_by_color, $all_colors, $product_base_price, $variants = []) {
+    // Varyantlardan sadece renk bilgilerini çıkar
+    $variant_colors = [];
+    if (!empty($variants)) {
+        $temp_colors = [];
+        foreach ($variants as $variant) {
+            if (!empty($variant['color_id']) && !isset($temp_colors[$variant['color_id']])) {
+                $temp_colors[$variant['color_id']] = [
+                    'id' => $variant['color_id'],
+                    'name' => $variant['color_name'] ?? 'Bilinmeyen Renk',
+                    'hex_code' => $variant['color_hex'] ?? '#cccccc'
+                ];
+            }
+        }
+        $variant_colors = array_values($temp_colors);
+    }
+    
     ?>
     <!-- Modular JavaScript Files -->
     <script src="assets/js/product-edit/form-validation.js"></script>
@@ -58,7 +74,8 @@ function include_product_edit_scripts($product_id, $product_images_by_color, $al
     <script>
     // Global variables for JavaScript components
     window.productImagesByColor = <?= json_encode($product_images_by_color) ?>;
-    window.allColors = <?= json_encode($all_colors) ?>;
+    window.allColors = <?= json_encode($all_colors) ?>; // Tüm renkler (eski uyumluluk için)
+    window.variantColors = <?= json_encode($variant_colors) ?>; // Sadece varyant renkleri
 
     // Initialize Product Edit and Image Manager
     document.addEventListener('DOMContentLoaded', function() {

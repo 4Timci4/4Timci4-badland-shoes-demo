@@ -3,8 +3,8 @@
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
             <div>
-                <h3 class="text-xl font-bold text-gray-900 mb-1">Varyant Görsel Yönetimi</h3>
-                <p class="text-gray-600 text-sm">Her renk varyantı için görselleri yönetin</p>
+                <h3 class="text-xl font-bold text-gray-900 mb-1">Ürün Görsel Yönetimi</h3>
+                <p class="text-gray-600 text-sm">Ürün ve varyant görselleri için kapsamlı yönetim</p>
             </div>
             <div class="text-right">
                 <div class="text-2xl font-bold text-blue-600"><?= count($productImages) ?></div>
@@ -61,7 +61,7 @@
         <?php if (!empty($variant_colors)): ?>
         <div class="space-y-4">
             <h4 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-palette mr-2"></i>Varyant Renkleri - Görsel Yönetimi
+                <i class="fas fa-palette mr-2"></i>Renk Varyantlarına Özel Görseller
             </h4>
             <p class="text-sm text-gray-600 mb-4">
                 <i class="fas fa-info-circle mr-1"></i>
