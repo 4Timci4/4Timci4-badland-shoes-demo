@@ -62,7 +62,7 @@ class ProductAdminService {
             
             // Ürünleri getir - sadece gerekli alanlar
             $options = [
-                'order' => 'created_at DESC',
+                'order' => 'id ASC',
                 'limit' => $limit,
                 'offset' => $offset
             ];

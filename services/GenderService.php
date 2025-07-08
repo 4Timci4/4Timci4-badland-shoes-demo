@@ -30,7 +30,7 @@ class GenderService {
      */
     public function getAllGenders() {
         try {
-            return $this->db->select('genders', [], '*', ['order' => 'name ASC']);
+            return $this->db->select('genders', [], '*', ['order' => 'id ASC']);
         } catch (Exception $e) {
             error_log("Tüm cinsiyetleri getirme hatası: " . $e->getMessage());
             return [];

@@ -59,12 +59,32 @@ class VariantService {
      */
     public function getProductVariants($model_id) {
         try {
-            $variants = $this->db->selectWithJoins('product_variants', [
-                ['type' => 'LEFT', 'table' => 'colors', 'condition' => 'product_variants.color_id = colors.id'],
-                ['type' => 'LEFT', 'table' => 'sizes', 'condition' => 'product_variants.size_id = sizes.id']
-            ], ['product_variants.model_id' => intval($model_id)], 
-            'product_variants.*, colors.name as color_name, colors.hex_code as color_hex, sizes.size_value, sizes.size_type',
-            ['order' => 'product_variants.id ASC']);
+            // Supabase için basit select kullan (JOIN işlemini manuel yapalım)
+            $variants = $this->db->select('product_variants', 
+                ['model_id' => intval($model_id)], 
+                '*',
+                ['order' => 'id ASC']);
+            
+            // Manual join işlemi
+            foreach ($variants as &$variant) {
+                // Renk bilgisini al
+                if (!empty($variant['color_id'])) {
+                    $colors = $this->db->select('colors', ['id' => $variant['color_id']], '*', ['limit' => 1]);
+                    if (!empty($colors)) {
+                        $variant['color_name'] = $colors[0]['name'];
+                        $variant['color_hex'] = $colors[0]['hex_code'];
+                    }
+                }
+                
+                // Beden bilgisini al
+                if (!empty($variant['size_id'])) {
+                    $sizes = $this->db->select('sizes', ['id' => $variant['size_id']], '*', ['limit' => 1]);
+                    if (!empty($sizes)) {
+                        $variant['size_value'] = $sizes[0]['size_value'];
+                        $variant['size_type'] = $sizes[0]['size_type'];
+                    }
+                }
+            }
             
             return $variants;
         } catch (Exception $e) {
@@ -77,10 +97,23 @@ class VariantService {
      * Yeni varyant oluşturma metodu
      * 
      * @param array $data Varyant verileri
-     * @return bool Başarı durumu
+     * @return bool|string Başarı durumu veya hata mesajı
      */
     public function createVariant($data) {
         try {
+            // Varyant zaten var mı kontrol et
+            if (!empty($data['model_id']) && !empty($data['color_id']) && !empty($data['size_id'])) {
+                $existing = $this->db->select('product_variants', [
+                    'model_id' => intval($data['model_id']),
+                    'color_id' => intval($data['color_id']),
+                    'size_id' => intval($data['size_id'])
+                ], 'id', ['limit' => 1]);
+                
+                if (!empty($existing)) {
+                    return "Bu model, renk ve beden kombinasyonu zaten mevcut";
+                }
+            }
+            
             // SKU otomatik oluştur (eğer belirtilmemişse)
             if (empty($data['sku'])) {
                 $data['sku'] = $this->generateSKU($data['model_id'], $data['color_id'], $data['size_id']);
@@ -89,7 +122,14 @@ class VariantService {
             $result = $this->db->insert('product_variants', $data);
             return $result !== false;
         } catch (Exception $e) {
-            error_log("Varyant oluşturma hatası: " . $e->getMessage());
+            $error_message = $e->getMessage();
+            
+            // Duplicate key hatası için özel mesaj
+            if (strpos($error_message, 'duplicate key') !== false || strpos($error_message, '23505') !== false) {
+                return "Bu model, renk ve beden kombinasyonu zaten mevcut";
+            }
+            
+            error_log("Varyant oluşturma hatası: " . $error_message);
             return false;
         }
     }

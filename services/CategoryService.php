@@ -291,7 +291,8 @@ class CategoryService {
      */
     public function getCategoriesWithProductCounts($hierarchical = false) {
         try {
-            $categories = $this->getAllCategories();
+            // ID'ye göre sıralama ile kategorileri getir
+            $categories = $this->db->select('categories', [], '*', ['order' => 'id ASC']);
             
             foreach ($categories as &$category) {
                 // Ürün sayılarını ekle (yeni database interface kullan)

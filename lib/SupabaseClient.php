@@ -19,7 +19,7 @@ class SupabaseClient {
     private $requestTimeout = 30;
     private $connectTimeout = 10;
     private $useCache = true;
-    private $cacheExpiry = 300; // 5 dakika
+    private $cacheExpiry = 1; // 5 dakika
     private $cacheDir;
     
     /**

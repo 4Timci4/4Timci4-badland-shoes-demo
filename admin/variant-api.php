@@ -61,10 +61,57 @@ try {
             
             $result = $variant_service->createVariant($variant_data);
             
-            if ($result) {
-                echo json_encode(['success' => true, 'message' => 'Varyant başarıyla eklendi']);
+            if ($result === true) {
+                // Basit varyant verisi oluştur (manual join yapmaya gerek yok)
+                $colors = $variant_service->getAllColors();
+                $sizes = $variant_service->getAllSizes();
+                
+                // Renk ve beden bilgilerini bul
+                $color_info = null;
+                $size_info = null;
+                
+                foreach ($colors as $color) {
+                    if ($color['id'] == $variant_data['color_id']) {
+                        $color_info = $color;
+                        break;
+                    }
+                }
+                
+                foreach ($sizes as $size) {
+                    if ($size['id'] == $variant_data['size_id']) {
+                        $size_info = $size;
+                        break;
+                    }
+                }
+                
+                // SKU oluştur
+                $timestamp = time();
+                $sku = "PRD{$variant_data['model_id']}-C{$variant_data['color_id']}-S{$variant_data['size_id']}-{$timestamp}";
+                
+                // Mock varyant verisi oluştur (tabloya eklemek için)
+                $new_variant = [
+                    'id' => $timestamp, // Temporary ID for frontend
+                    'model_id' => $variant_data['model_id'],
+                    'color_id' => $variant_data['color_id'],
+                    'size_id' => $variant_data['size_id'],
+                    'sku' => $sku,
+                    'price' => $variant_data['price'],
+                    'stock_quantity' => $variant_data['stock_quantity'] ?? 0,
+                    'is_active' => $variant_data['is_active'] ?? true,
+                    'color_name' => $color_info ? $color_info['name'] : 'Bilinmeyen Renk',
+                    'color_hex' => $color_info ? $color_info['hex_code'] : '#cccccc',
+                    'size_value' => $size_info ? $size_info['size_value'] : 'Bilinmeyen Beden',
+                    'size_type' => $size_info ? $size_info['size_type'] : ''
+                ];
+                
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Varyant başarıyla eklendi',
+                    'variant' => $new_variant
+                ]);
             } else {
-                throw new Exception('Varyant eklenemedi');
+                // VariantService'den string error mesajı geldi
+                throw new Exception(is_string($result) ? $result : 'Varyant eklenemedi');
             }
             break;
             

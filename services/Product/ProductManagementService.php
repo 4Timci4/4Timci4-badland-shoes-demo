@@ -120,12 +120,21 @@ class ProductManagementService {
                 }
             }
             
+            // Fiyat validasyonu
+            $price = floatval($product_data['base_price']);
+            if ($price < 0) {
+                throw new Exception("Fiyat negatif olamaz");
+            }
+            if ($price > 99999999.99) {
+                throw new Exception("Fiyat çok yüksek. Maksimum değer: ₺99,999,999.99");
+            }
+            
             // Ürün verisini hazırla
             $insert_data = [
                 'name' => trim($product_data['name']),
                 'description' => $product_data['description'] ?? '',
                 'features' => $product_data['features'] ?? '',
-                'base_price' => floatval($product_data['base_price']),
+                'base_price' => $price,
                 'is_featured' => isset($product_data['is_featured']) ? 1 : 0,
                 'created_at' => date('Y-m-d H:i:s')
             ];
@@ -217,7 +226,14 @@ class ProductManagementService {
             }
             
             if (isset($product_data['base_price'])) {
-                $update_data['base_price'] = floatval($product_data['base_price']);
+                $price = floatval($product_data['base_price']);
+                if ($price < 0) {
+                    throw new Exception("Fiyat negatif olamaz");
+                }
+                if ($price > 99999999.99) {
+                    throw new Exception("Fiyat çok yüksek. Maksimum değer: ₺99,999,999.99");
+                }
+                $update_data['base_price'] = $price;
             }
             
             if (isset($product_data['is_featured'])) {
@@ -440,11 +456,17 @@ class ProductManagementService {
      */
     public function addProductVariant($model_id, $variant_data) {
         try {
+            // Fiyat düzeltmesi validasyonu
+            $price_adjustment = floatval($variant_data['price_adjustment'] ?? 0);
+            if ($price_adjustment < -99999999.99 || $price_adjustment > 99999999.99) {
+                throw new Exception("Fiyat düzeltmesi çok yüksek veya düşük. Aralık: -₺99,999,999.99 ile ₺99,999,999.99");
+            }
+            
             $insert_data = [
                 'model_id' => intval($model_id),
                 'size' => $variant_data['size'] ?? '',
                 'color' => $variant_data['color'] ?? '',
-                'price_adjustment' => floatval($variant_data['price_adjustment'] ?? 0),
+                'price_adjustment' => $price_adjustment,
                 'stock_quantity' => intval($variant_data['stock_quantity'] ?? 0),
                 'sku' => $variant_data['sku'] ?? '',
                 'created_at' => date('Y-m-d H:i:s')
@@ -485,7 +507,11 @@ class ProductManagementService {
             }
             
             if (isset($variant_data['price_adjustment'])) {
-                $update_data['price_adjustment'] = floatval($variant_data['price_adjustment']);
+                $price_adjustment = floatval($variant_data['price_adjustment']);
+                if ($price_adjustment < -99999999.99 || $price_adjustment > 99999999.99) {
+                    throw new Exception("Fiyat düzeltmesi çok yüksek veya düşük. Aralık: -₺99,999,999.99 ile ₺99,999,999.99");
+                }
+                $update_data['price_adjustment'] = $price_adjustment;
             }
             
             if (isset($variant_data['stock_quantity'])) {

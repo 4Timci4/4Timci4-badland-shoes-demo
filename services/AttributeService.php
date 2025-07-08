@@ -32,7 +32,7 @@ class AttributeService {
      */
     public function getAllColors() {
         try {
-            return $this->db->select('colors', [], '*', ['order' => 'name ASC']);
+            return $this->db->select('colors', [], '*', ['order' => 'id ASC']);
         } catch (Exception $e) {
             error_log("Renkleri getirme hatası: " . $e->getMessage());
             return [];

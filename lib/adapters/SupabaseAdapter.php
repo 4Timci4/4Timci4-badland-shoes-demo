@@ -337,10 +337,21 @@ class SupabaseAdapter implements DatabaseInterface {
             $queryParts['order'] = $this->convertOrderBy($options['order']);
         }
         
-        // Query string oluştur
+        // Query string oluştur - order parametresi için özel işlem
         $query = $table;
         if (!empty($queryParts)) {
-            $query .= '?' . http_build_query($queryParts);
+            $queryString = [];
+            
+            foreach ($queryParts as $key => $value) {
+                if ($key === 'order') {
+                    // Order parametresini encode etme, nokta karakterleri korunmalı
+                    $queryString[] = $key . '=' . $value;
+                } else {
+                    $queryString[] = $key . '=' . urlencode($value);
+                }
+            }
+            
+            $query .= '?' . implode('&', $queryString);
         }
         
         return $query;

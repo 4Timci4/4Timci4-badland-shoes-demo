@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const addToCartBtn = document.getElementById('add-to-cart');
         const addToCartText = document.getElementById('add-to-cart-text');
         const stockStatus = document.getElementById('stock-status');
+        const currentPriceElement = document.getElementById('current-price');
         
         if (selectedColor && selectedSize) {
             const variant = productVariants.find(v => 
@@ -134,6 +135,14 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             
             if (variant && variant.stock_quantity > 0) {
+                // Fiyatı güncelle
+                if (variant.price) {
+                    currentPriceElement.textContent = '₺ ' + parseFloat(variant.price).toLocaleString('tr-TR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+                
                 stockStatus.textContent = variant.stock_quantity <= 3 ? 'Son ' + variant.stock_quantity + ' ürün!' : ''; 
                 stockStatus.className = 'text-xs text-green-600';
                 addToCartBtn.disabled = false;
