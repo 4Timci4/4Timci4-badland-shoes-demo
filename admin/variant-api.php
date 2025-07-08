@@ -124,6 +124,11 @@ try {
             $variant_id = intval($data['variant_id']);
             $update_data = $data['data'];
             
+            // Boolean değerini doğru formata çevir
+            if (isset($update_data['is_active'])) {
+                $update_data['is_active'] = $update_data['is_active'] === true || $update_data['is_active'] === 'true' || $update_data['is_active'] === 1;
+            }
+            
             // Validation
             if (isset($update_data['price']) && $update_data['price'] <= 0) {
                 throw new Exception('Fiyat 0\'dan büyük olmalıdır');

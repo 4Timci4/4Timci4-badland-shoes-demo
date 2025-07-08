@@ -387,6 +387,9 @@ class SupabaseAdapter implements DatabaseInterface {
                 } elseif ($value === '') {
                     // Boş string'i de null olarak işle
                     $parts[] = $key . '=is.null';
+                } elseif (is_bool($value)) {
+                    // Boolean değerler için özel işlem
+                    $parts[] = $key . '=eq.' . ($value ? 'true' : 'false');
                 } else {
                     $parts[] = $key . '=eq.' . $value;
                 }

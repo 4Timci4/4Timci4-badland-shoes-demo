@@ -62,6 +62,11 @@ class VariantManagement {
         document.querySelectorAll('.variant-stock').forEach(input => {
             input.addEventListener('input', () => this.updateTotalStock());
         });
+
+        // Auto-save when active status changes
+        document.querySelectorAll('.variant-active').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => this.handleActiveStatusChange(e));
+        });
     }
 
     handleAddVariant() {
@@ -148,6 +153,57 @@ class VariantManagement {
         if (confirm('Bu varyantı silmek istediğinizden emin misiniz?')) {
             this.deleteVariant(variantId);
         }
+    }
+
+    handleActiveStatusChange(event) {
+        const checkbox = event.target;
+        const variantId = checkbox.dataset.variantId;
+        
+        if (!variantId) {
+            console.error('Varyant ID bulunamadı');
+            this.showNotification('Varyant ID bulunamadı.', 'error');
+            return;
+        }
+
+        // Checkbox değerini al
+        const isActive = checkbox.checked;
+        
+        // Diğer veriler için container'ı bul
+        let container = document.querySelector(`tr[data-variant-id="${variantId}"]`);
+        if (!container) {
+            container = document.querySelector(`div[data-variant-id="${variantId}"]`);
+        }
+        
+        if (!container) {
+            console.error('Varyant container bulunamadı:', variantId);
+            this.showNotification('Varyant container bulunamadı.', 'error');
+            return;
+        }
+
+        const priceInput = container.querySelector('.variant-price');
+        const stockInput = container.querySelector('.variant-stock');
+
+        if (!priceInput || !stockInput) {
+            console.error('Varyant form elemanları bulunamadı');
+            this.showNotification('Form elemanları bulunamadı.', 'error');
+            return;
+        }
+
+        // Mevcut verileri al
+        const price = priceInput.value;
+        const stock = stockInput.value;
+
+        const data = {
+            price: parseFloat(price),
+            stock_quantity: parseInt(stock) || 0,
+            is_active: isActive
+        };
+
+        // Kullanıcıya otomatik kayıt hakkında bilgi ver
+        this.showNotification(isActive ? 'Varyant aktif edildi.' : 'Varyant pasif edildi.', 'info');
+        
+        // Varyantı güncelle
+        this.updateVariant(variantId, data);
     }
 
     // AJAX Functions
@@ -444,6 +500,10 @@ class VariantManagement {
         // Stock input change
         const stockInput = row.querySelector('.variant-stock');
         stockInput.addEventListener('input', () => this.updateTotalStock());
+
+        // Active status change
+        const activeCheckbox = row.querySelector('.variant-active');
+        activeCheckbox.addEventListener('change', (e) => this.handleActiveStatusChange(e));
     }
 
     clearVariantForm() {
