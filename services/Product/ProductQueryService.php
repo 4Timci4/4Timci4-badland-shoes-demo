@@ -102,16 +102,24 @@ class ProductQueryService {
      * Bir ürün modeline ait varyantları getir
      * 
      * @param int $model_id Ürün model ID'si
+     * @param bool $active_only Sadece aktif varyantları getir (varsayılan: true)
      * @return array Ürün varyantları
      */
-    public function getProductVariants($model_id) {
+    public function getProductVariants($model_id, $active_only = true) {
         try {
             $model_id = intval($model_id);
             if ($model_id <= 0) {
                 return [];
             }
             
-            return $this->db->select('product_variants', ['model_id' => $model_id], ['*']);
+            $conditions = ['model_id' => $model_id];
+            
+            // Eğer sadece aktif varyantlar isteniyorsa filtrele
+            if ($active_only) {
+                $conditions['is_active'] = true;
+            }
+            
+            return $this->db->select('product_variants', $conditions, ['*']);
             
         } catch (Exception $e) {
             error_log("Ürün varyantları getirme hatası: " . $e->getMessage());

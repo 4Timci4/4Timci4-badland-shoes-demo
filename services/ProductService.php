@@ -105,10 +105,11 @@ class ProductService {
      * Bir ürün modeline ait varyantları getiren metod
      * 
      * @param int $model_id Ürün model ID'si
+     * @param bool $active_only Sadece aktif varyantları getir (varsayılan: true)
      * @return array Ürün varyantları
      */
-    public function getProductVariants($model_id) {
-        return $this->queryService->getProductVariants($model_id);
+    public function getProductVariants($model_id, $active_only = true) {
+        return $this->queryService->getProductVariants($model_id, $active_only);
     }
     
     /**
@@ -217,10 +218,11 @@ function get_product_model($model_id) {
  * Bir ürün modeline ait varyantları getiren fonksiyon
  * 
  * @param int $model_id Ürün model ID'si
+ * @param bool $active_only Sadece aktif varyantları getir (varsayılan: true)
  * @return array Ürün varyantları
  */
-function get_product_variants($model_id) {
-    return product_service()->getProductVariants($model_id);
+function get_product_variants($model_id, $active_only = true) {
+    return product_service()->getProductVariants($model_id, $active_only);
 }
 
 /**

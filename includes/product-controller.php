@@ -37,8 +37,8 @@ if (!$product_data) {
     exit;
 }
 
-// Ürün verileri bulunduktan sonra diğer verileri çek
-$product_variants = get_product_variants($product_id);
+// Ürün verileri bulunduktan sonra diğer verileri çek - Sadece aktif varyantları al
+$product_variants = get_product_variants($product_id, true); // Sadece aktif varyantlar
 $all_colors = get_colors(); // Performans için renkleri bir kez çek
 $all_sizes = get_sizes();   // Performans için bedenleri bir kez çek
 

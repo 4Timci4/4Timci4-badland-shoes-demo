@@ -89,7 +89,8 @@ class VariantManagement {
     }
 
     handleSaveVariant(event) {
-        const variantId = event.target.dataset.variantId;
+        const button = event.currentTarget;
+        const variantId = button.dataset.variantId;
         
         if (!variantId) {
             console.error('Varyant ID bulunamadı');
@@ -135,7 +136,8 @@ class VariantManagement {
     }
 
     handleDeleteVariant(event) {
-        const variantId = event.target.dataset.variantId;
+        const button = event.currentTarget;
+        const variantId = button.dataset.variantId;
         
         if (!variantId) {
             console.error('Varyant ID bulunamadı');
