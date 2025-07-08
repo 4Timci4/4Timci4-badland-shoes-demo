@@ -109,16 +109,34 @@
                             }
                         }
                     }
+                    
+                    // Sort images by sort_order
+                    usort($images, function($a, $b) {
+                        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+                    });
                     ?>
                     <div class="color-tab-content <?= $tab_index === 0 ? 'block' : 'hidden' ?>" 
                          id="color-<?= $color_id ?>" 
                          data-color="<?= $color_id ?>">
                         
+                        <?php if (count($images) > 1): ?>
+                            <div class="mb-4 flex justify-end space-x-2">
+                                <button type="button" 
+                                        id="save-order-btn-<?= $color_id ?>" 
+                                        class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition-colors"
+                                        onclick="saveImageOrder('<?= $color_id ?>')">
+                                    <i class="fas fa-save mr-2"></i>
+                                    Sıralamayı Kaydet
+                                </button>
+                            </div>
+                        <?php endif; ?>
                         
                         <!-- Image Grid -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="sortable-<?= $color_id ?>">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="images-<?= $color_id ?>">
+                            <?php $image_index = 0; ?>
                             <?php foreach ($images as $image): ?>
-                                <div class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200 cursor-move" 
+                                <?php $image_index++; ?>
+                                <div class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200" 
                                      data-image-id="<?= $image['id'] ?>">
                                     <div class="relative">
                                         <img src="<?= htmlspecialchars($image['image_url']) ?>" 
@@ -161,7 +179,29 @@
                                     <!-- Card Body -->
                                     <div class="p-4">
                                         <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
-                                            <span>Sıra: <?= $image['sort_order'] ?? 'N/A' ?></span>
+                                            <span>Sıra: <span class="image-order"><?= $image_index ?></span></span>
+                                            
+                                            <?php if (count($images) > 1): ?>
+                                                <div class="flex space-x-1">
+                                                    <?php if ($image_index > 1): ?>
+                                                        <button type="button" 
+                                                                class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md"
+                                                                onclick="moveImage(this, 'up')"
+                                                                title="Yukarı Taşı">
+                                                            <i class="fas fa-chevron-up text-xs"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                    
+                                                    <?php if ($image_index < count($images)): ?>
+                                                        <button type="button" 
+                                                                class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md"
+                                                                onclick="moveImage(this, 'down')"
+                                                                title="Aşağı Taşı">
+                                                            <i class="fas fa-chevron-down text-xs"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                         
                                         <!-- Action Buttons -->
@@ -191,7 +231,7 @@
                         <?php if (count($images) > 1): ?>
                             <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center">
                                 <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                                <span class="text-blue-800 text-sm">Resimlerin sırasını değiştirmek için sürükleyip bırakın.</span>
+                                <span class="text-blue-800 text-sm">Görselleri sıralamak için yukarı/aşağı oklarını kullanın ve "Sıralamayı Kaydet" butonuna tıklayın.</span>
                             </div>
                         <?php endif; ?>
                         
@@ -216,7 +256,6 @@
                 </div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Henüz görsel yüklenmemiş</h3>
                 <p class="text-gray-600 mb-4">Bu ürün için henüz hiç görsel yüklenmemiş.</p>
-                
             </div>
         <?php endif; ?>
     </div>
@@ -252,124 +291,22 @@
  * Görsel Yönetimi - JavaScript
  */
 
-// DOM elementlerine güvenli erişim
-document.addEventListener('DOMContentLoaded', function() {
-  try {
-    // DOM elementleri
-    const hiddenFileInput = document.getElementById('hidden-file-input');
-    const uploadContainer = document.getElementById('upload-container');
-    const uploadForm = document.getElementById('image-upload-form');
-    const colorSelect = document.getElementById('color-select');
-    const selectMoreFilesBtn = document.getElementById('select-more-files');
-    const cancelUploadBtn = document.getElementById('cancel-upload');
-    const fileCountEl = document.getElementById('selected-file-count');
-    const imagePreview = document.getElementById('image-preview');
-    const progressContainer = document.getElementById('upload-progress');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    
-    // Element kontrolü
-    if (!hiddenFileInput || !uploadContainer || !uploadForm) {
-      console.warn('Görsel yönetimi için gereken DOM elementleri bulunamadı');
-      return; // Elementler yoksa işlemi sonlandır
-    }
-
-    // Görsel yükleme formunu açma
-    function triggerFileInput(colorId = null) {
-        // Renk seçimi varsa, select'i ayarla
-        if (colorId && colorSelect) {
-            colorSelect.value = colorId;
-        }
-        
-        // Yükleme alanını göster ve dosya seçim penceresini aç
-        uploadContainer.classList.remove('hidden');
-        hiddenFileInput.click();
-    }
-
-    // Yükleme panelini sıfırlama ve kapatma
-    function resetUploadPanel() {
-        uploadContainer.classList.add('hidden');
-        imagePreview.innerHTML = '';
-        fileCountEl.textContent = '0';
-        hiddenFileInput.value = '';
-    }
-
-    // Event Listeners - tüm elementlerin varlığını kontrol ederek ekle
-    if (selectMoreFilesBtn) {
-        selectMoreFilesBtn.addEventListener('click', function() {
-            hiddenFileInput.click();
-        });
-    }
-
-    if (cancelUploadBtn) {
-        cancelUploadBtn.addEventListener('click', resetUploadPanel);
-    }
-
-    // Görsel önizleme - element kontrolü
-    if (hiddenFileInput) {
-        hiddenFileInput.addEventListener('change', function(e) {
-    if (e.target.files.length > 0) {
-        // Dosya sayısını güncelle
-        fileCountEl.textContent = e.target.files.length;
-        
-        // Önizleme alanını temizle ve yeni görselleri ekle
-        imagePreview.innerHTML = '';
-        
-        Array.from(e.target.files).forEach(file => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'relative group';
-                    previewItem.innerHTML = `
-                        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 transition-colors">
-                            <img src="${e.target.result}" class="w-full h-24 object-cover">
-                            <div class="p-2">
-                                <p class="text-xs text-gray-600 truncate">${file.name}</p>
-                            </div>
-                        </div>
-                    `;
-                    imagePreview.appendChild(previewItem);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // Yükleme alanını göster
-        uploadContainer.classList.remove('hidden');
-    }
-        });
-    }
-
-    // Global fonksiyonları window nesnesine ekle
-    window.triggerFileInput = triggerFileInput;
-    window.switchColorTab = switchColorTab;
-    window.viewImage = viewImage;
-    window.downloadImage = downloadImage;
-    window.setPrimaryImage = setPrimaryImage;
-    window.deleteImage = deleteImage;
-
-    // Renk sekmesi değiştirme
-    function switchColorTab(colorId, element) {
-    // Tüm sekme içeriklerini gizle
+// Global scope'ta tanımlanması gereken fonksiyonlar (onclick için)
+function switchColorTab(colorId, element) {
     document.querySelectorAll('.color-tab-content').forEach(content => {
         content.classList.add('hidden');
         content.classList.remove('block');
     });
     
-    // Seçili sekme içeriğini göster
     const targetContent = document.getElementById('color-' + colorId);
     if (targetContent) {
         targetContent.classList.remove('hidden');
         targetContent.classList.add('block');
     }
     
-    // Sekme butonlarını güncelle
     document.querySelectorAll('.color-tab-btn').forEach(btn => {
         btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
         btn.classList.add('border-transparent', 'text-gray-500');
-        
-        // Rozet renklerini güncelle
         const badge = btn.querySelector('span');
         if (badge) {
             badge.classList.remove('bg-blue-100', 'text-blue-800');
@@ -377,11 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Tıklanan sekmeyi aktifleştir
     element.classList.remove('border-transparent', 'text-gray-500');
     element.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
-    
-    // Aktif sekmenin rozet renklerini güncelle
     const activeBadge = element.querySelector('span');
     if (activeBadge) {
         activeBadge.classList.remove('bg-gray-100', 'text-gray-800');
@@ -389,38 +323,122 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-// Büyük görsel görüntüleme
 function viewImage(url) {
-    document.getElementById('modal-image').src = url;
-    new bootstrap.Modal(document.getElementById('imageModal')).show();
+    const modalImage = document.getElementById('modal-image');
+    if (modalImage) {
+        modalImage.src = url;
+        const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        imageModal.show();
+    }
 }
 
-// Görsel indirme
 function downloadImage(url) {
     const link = document.createElement('a');
     link.href = url;
     link.download = url.split('/').pop();
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
 }
 
-// Ana görsel yapma
-function setPrimaryImage(imageId) {
-    if (!confirm('Bu görseli ana görsel yapmak istediğinizden emin misiniz?')) {
-        return;
+function moveImage(button, direction) {
+    const imageCard = button.closest('[data-image-id]');
+    const container = imageCard.parentElement;
+    const cards = Array.from(container.children);
+    const currentIndex = cards.indexOf(imageCard);
+    
+    // Hareket ettirme işlemleri
+    if (direction === 'up' && currentIndex > 0) {
+        container.insertBefore(imageCard, cards[currentIndex - 1]);
+    } else if (direction === 'down' && currentIndex < cards.length - 1) {
+        container.insertBefore(imageCard, cards[currentIndex + 1].nextSibling);
     }
+    
+    // Sıra numaralarını güncelle
+    updateImageOrder(container);
+}
+
+function updateImageOrder(container) {
+    // Tüm görsel kartlarını seç ve sıra numaralarını güncelle
+    const cards = Array.from(container.children);
+    cards.forEach((card, index) => {
+        const orderElement = card.querySelector('.image-order');
+        if (orderElement) {
+            orderElement.textContent = index + 1;
+        }
+        
+        // Yukarı/aşağı butonlarını güncelle
+        const upButton = card.querySelector('button[onclick*="moveImage"][onclick*="up"]');
+        const downButton = card.querySelector('button[onclick*="moveImage"][onclick*="down"]');
+        
+        if (upButton) {
+            upButton.style.display = index > 0 ? 'flex' : 'none';
+        }
+        if (downButton) {
+            downButton.style.display = index < cards.length - 1 ? 'flex' : 'none';
+        }
+    });
+}
+
+function saveImageOrder(colorId) {
+    const container = document.getElementById('images-' + colorId);
+    if (!container) return;
+    
+    const cards = Array.from(container.children);
+    const orderData = [];
+    
+    cards.forEach((card, index) => {
+        const imageId = card.getAttribute('data-image-id');
+        if (imageId) {
+            orderData.push({
+                id: parseInt(imageId),
+                sort_order: index + 1
+            });
+        }
+    });
+    
+    if (orderData.length === 0) return;
     
     const csrf_token = document.querySelector('input[name="csrf_token"]').value;
     const product_id = <?= $product_id ?>;
     
-    // İlerleme göstergesi
-    showNotification('İşlem yapılıyor...', 'info');
+    showNotification('Sıralama kaydediliyor...', 'info');
     
-    // AJAX isteği
     fetch('ajax/image-upload.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            csrf_token: csrf_token,
+            action: 'reorder_images',
+            order_data: orderData,
+            product_id: product_id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Görsel sıralaması kaydedildi.', 'success');
+        } else {
+            showNotification(data.error || 'Sıralama kaydedilirken hata oluştu.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Reorder Error:', error);
+        showNotification('Bağlantı hatası oluştu.', 'error');
+    });
+}
+
+function setPrimaryImage(imageId) {
+    if (!confirm('Bu görseli ana görsel yapmak istediğinizden emin misiniz?')) return;
+    
+    const csrf_token = document.querySelector('input[name="csrf_token"]').value;
+    const product_id = <?= $product_id ?>;
+    
+    showNotification('İşlem yapılıyor...', 'info');
+    
+    fetch('ajax/image-upload.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             'csrf_token': csrf_token,
             'action': 'set_primary',
@@ -431,39 +449,30 @@ function setPrimaryImage(imageId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('Ana görsel başarıyla güncellendi', 'success');
+            showNotification('Ana görsel başarıyla güncellendi.', 'success');
             setTimeout(() => window.location.reload(), 1000);
         } else {
-            showNotification(data.error || 'Bilinmeyen hata', 'error');
+            showNotification(data.error || 'Bilinmeyen bir hata oluştu.', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification('Bağlantı hatası', 'error');
+        console.error('Set Primary Image Error:', error);
+        showNotification('Bağlantı hatası oluştu.', 'error');
     });
 }
 
-// Görsel silme
 function deleteImage(imageId, buttonElement) {
-    if (!confirm('Bu görseli silmek istediğinizden emin misiniz?')) {
-        return;
-    }
-    
+    if (!confirm('Bu görseli silmek istediğinizden emin misiniz?')) return;
+
     const csrf_token = document.querySelector('input[name="csrf_token"]').value;
     const product_id = <?= $product_id ?>;
+    const imageCard = buttonElement.closest('[data-image-id]');
     
-    // Görselin bulunduğu karta ulaş
-    const imageCard = buttonElement.closest('[data-image-id="' + imageId + '"]');
-    
-    // İlerleme göstergesi
     showNotification('Görsel siliniyor...', 'info');
     
-    // AJAX isteği
     fetch('ajax/image-upload.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             'csrf_token': csrf_token,
             'action': 'delete_image',
@@ -474,254 +483,189 @@ function deleteImage(imageId, buttonElement) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Görsel kartını animasyonla kaldır
             if (imageCard) {
                 imageCard.style.transition = 'all 0.3s ease';
                 imageCard.style.opacity = '0';
                 imageCard.style.transform = 'scale(0.8)';
-                
                 setTimeout(() => {
+                    const container = imageCard.parentElement;
                     imageCard.remove();
-                    
-                    // Mevcut sekmede kalan görsel sayısını kontrol et
-                    const currentTab = document.querySelector('.color-tab-content.block');
-                    const remainingImages = currentTab.querySelectorAll('[data-image-id]');
-                    
-                    // Görsel kalmadıysa boş durum mesajını göster
-                    if (remainingImages.length === 0) {
-                        const emptyMessage = document.createElement('div');
-                        emptyMessage.className = 'text-center py-8 bg-gray-50 rounded-xl';
-                        emptyMessage.innerHTML = `
-                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-images text-gray-400 text-xl"></i>
-                            </div>
-                            <p class="text-gray-600">Bu kategoride henüz görsel bulunmuyor.</p>
-                        `;
-                        currentTab.appendChild(emptyMessage);
-                    }
-                    
-                    // Sekme sayaçlarını güncelle
+                    updateImageOrder(container);
                     updateTabCounts();
-                    
-                    // Başarı bildirimi göster
-                    showNotification('Görsel başarıyla silindi', 'success');
+                    showNotification('Görsel başarıyla silindi.', 'success');
                 }, 300);
             }
         } else {
-            showNotification(data.error || 'Silme işlemi başarısız oldu', 'error');
+            showNotification(data.error || 'Silme işlemi başarısız oldu.', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification('Bağlantı hatası', 'error');
+        console.error('Delete Image Error:', error);
+        showNotification('Bağlantı hatası oluştu.', 'error');
     });
 }
 
-// Sekme sayaçlarını güncelleme
-function updateTabCounts() {
-    document.querySelectorAll('.color-tab-btn').forEach(tab => {
-        const colorId = tab.getAttribute('data-color');
-        const tabContent = document.getElementById('color-' + colorId);
-        
-        if (tabContent) {
-            const imageCount = tabContent.querySelectorAll('[data-image-id]').length;
-            const countBadge = tab.querySelector('span');
-            
-            if (countBadge) {
-                countBadge.textContent = imageCount;
-            }
+function triggerFileInput(colorId = null) {
+    const uploadContainer = document.getElementById('upload-container');
+    const colorSelect = document.getElementById('color-select');
+    const hiddenFileInput = document.getElementById('hidden-file-input');
+
+    if (uploadContainer && colorSelect && hiddenFileInput) {
+        if (colorId) {
+            colorSelect.value = colorId;
         }
-    });
+        uploadContainer.classList.remove('hidden');
+        hiddenFileInput.click();
+    }
 }
 
-// Bildirim gösterme fonksiyonu
 function showNotification(message, type = 'info') {
-    // Mevcut bildirimleri kaldır
-    const existingAlerts = document.querySelectorAll('.alert-notification');
-    existingAlerts.forEach(alert => alert.remove());
-    
-    // Bildirim tipi sınıfları
+    document.querySelectorAll('.alert-notification').forEach(alert => alert.remove());
     const typeClasses = {
-        'success': 'bg-green-50 border-green-200 text-green-800',
-        'error': 'bg-red-50 border-red-200 text-red-800',
-        'info': 'bg-blue-50 border-blue-200 text-blue-800'
+        success: 'bg-green-50 border-green-200 text-green-800',
+        error: 'bg-red-50 border-red-200 text-red-800',
+        info: 'bg-blue-50 border-blue-200 text-blue-800'
     };
-    
-    // İkon sınıfları
     const iconClasses = {
-        'success': 'fas fa-check-circle text-green-500',
-        'error': 'fas fa-exclamation-triangle text-red-500',
-        'info': 'fas fa-info-circle text-blue-500'
+        success: 'fas fa-check-circle text-green-500',
+        error: 'fas fa-exclamation-triangle text-red-500',
+        info: 'fas fa-info-circle text-blue-500'
     };
-    
-    // Bildirim oluştur
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert-notification fixed top-5 right-5 p-4 rounded-lg border shadow-lg z-50 flex items-center ${typeClasses[type] || typeClasses.info}`;
-    alertDiv.innerHTML = `
-        <i class="${iconClasses[type] || iconClasses.info} mr-3"></i>
-        <span>${message}</span>
-    `;
-    
+    alertDiv.innerHTML = `<i class="${iconClasses[type] || iconClasses.info} mr-3"></i><span>${message}</span>`;
     document.body.appendChild(alertDiv);
-    
-    // 3 saniye sonra kaldır
     setTimeout(() => {
         alertDiv.style.opacity = '0';
         alertDiv.style.transform = 'translateY(-20px)';
         alertDiv.style.transition = 'all 0.5s ease';
-        
         setTimeout(() => alertDiv.remove(), 500);
     }, 3000);
 }
 
-    // Form gönderimi - AJAX ile görsel yükleme
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Gizli dosya alanından dosyaları al
-    if (hiddenFileInput.files.length === 0) {
-        showNotification('Lütfen yüklenecek görsel seçin', 'error');
-        return;
-    }
-    
-    // Form verilerini oluştur
-    const formData = new FormData(this);
-    
-    // Dosyaları ekle
-    for (let i = 0; i < hiddenFileInput.files.length; i++) {
-        formData.append('product_images[]', hiddenFileInput.files[i]);
-    }
-    
-    // İlerleme çubuğunu göster
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
-    
-    // Kullanıcı deneyimi için yapay ilerleme
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        if (progress < 80) {
-            progress += 5;
-            progressBar.style.width = progress + '%';
-            progressText.textContent = progress + '%';
+function updateTabCounts() {
+    document.querySelectorAll('.color-tab-btn').forEach(tab => {
+        const colorId = tab.dataset.color;
+        const tabContent = document.getElementById('color-' + colorId);
+        if (tabContent) {
+            const imageCount = tabContent.querySelectorAll('[data-image-id]').length;
+            const countBadge = tab.querySelector('span');
+            if (countBadge) {
+                countBadge.textContent = imageCount;
+            }
+            if (imageCount === 0) {
+                const emptyMessage = tabContent.querySelector('.text-center.py-8');
+                if (!emptyMessage) {
+                    const newEmptyMessage = document.createElement('div');
+                    newEmptyMessage.className = 'text-center py-8 bg-gray-50 rounded-xl';
+                    newEmptyMessage.innerHTML = `<div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-images text-gray-400 text-xl"></i></div><p class="text-gray-600">Bu kategoride henüz görsel bulunmuyor.</p>`;
+                    tabContent.querySelector('.grid').appendChild(newEmptyMessage);
+                }
+            }
         }
-    }, 150);
-    
-    // AJAX yükleme
-    fetch('ajax/image-upload.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        progressText.textContent = '100%';
-        
-        if (data.success) {
-            // Başarı bildirimi göster
-            showNotification(data.message || 'Görseller başarıyla yüklendi', 'success');
-            
-            // Formu sıfırla
-            resetUploadPanel();
-            
-            // Sayfayı yenilemeden önce biraz bekle
-            setTimeout(() => {
-                progressContainer.classList.add('hidden');
-                window.location.reload();
-            }, 1000);
-        } else {
-            // Hata bildirimi göster
-            showNotification(data.message || 'Yükleme sırasında bir hata oluştu', 'error');
-            
-            // İlerleme çubuğunu gizle
-            setTimeout(() => {
-                progressContainer.classList.add('hidden');
-            }, 2000);
-        }
-    })
-    .catch(error => {
-        clearInterval(progressInterval);
-        console.error('Upload error:', error);
-        
-        // Hata bildirimi göster
-        showNotification('Bağlantı hatası: ' + error.message, 'error');
-        
-        // İlerleme çubuğunu gizle
-        setTimeout(() => {
-            progressContainer.classList.add('hidden');
-        }, 2000);
     });
+}
+
+// DOM hazır olduğunda
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenFileInput = document.getElementById('hidden-file-input');
+    const uploadContainer = document.getElementById('upload-container');
+    const uploadForm = document.getElementById('image-upload-form');
+    const selectMoreFilesBtn = document.getElementById('select-more-files');
+    const cancelUploadBtn = document.getElementById('cancel-upload');
+    const fileCountEl = document.getElementById('selected-file-count');
+    const imagePreview = document.getElementById('image-preview');
+    const progressContainer = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    
+    function resetUploadPanel() {
+        uploadContainer.classList.add('hidden');
+        if(imagePreview) imagePreview.innerHTML = '';
+        if(fileCountEl) fileCountEl.textContent = '0';
+        hiddenFileInput.value = '';
+    }
+    
+    if (selectMoreFilesBtn) {
+        selectMoreFilesBtn.addEventListener('click', () => hiddenFileInput.click());
+    }
+    
+    if (cancelUploadBtn) {
+        cancelUploadBtn.addEventListener('click', resetUploadPanel);
+    }
+    
+    if (hiddenFileInput) {
+        hiddenFileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileCountEl.textContent = e.target.files.length;
+                imagePreview.innerHTML = '';
+                Array.from(e.target.files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'relative group';
+                            previewItem.innerHTML = `<div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 transition-colors"><img src="${ev.target.result}" class="w-full h-24 object-cover"><div class="p-2"><p class="text-xs text-gray-600 truncate">${file.name}</p></div></div>`;
+                            imagePreview.appendChild(previewItem);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                uploadContainer.classList.remove('hidden');
+            }
         });
     }
-
-    // Sortable başlatma
-    if (typeof Sortable !== 'undefined') {
-    // Sürükle-bırak işlemi için Sortable'ı başlat
-    document.querySelectorAll('[id^="sortable-"]').forEach(el => {
-        if (typeof Sortable !== 'undefined') {
-            new Sortable(el, {
-                animation: 200,
-                ghostClass: 'opacity-40',
-                chosenClass: 'scale-105',
-                dragClass: 'rotate-1',
-                onEnd: function(evt) {
-                    const items = evt.to.children;
-                    const orderData = [];
-                    
-                    // Yeni sıralamayı oluştur
-                    for (let i = 0; i < items.length; i++) {
-                        const imageId = items[i].getAttribute('data-image-id');
-                        if (imageId) {
-                            orderData.push({
-                                id: parseInt(imageId),
-                                sort_order: i + 1
-                            });
-                        }
-                    }
-                    
-                    // Sıralama boşsa işlem yapma
-                    if (orderData.length === 0) return;
-                    
-                    // CSRF token ve ürün ID'si
-                    const csrf_token = document.querySelector('input[name="csrf_token"]').value;
-                    const product_id = <?= $product_id ?>;
-                    
-                    // AJAX ile sıralama güncelleme
-                    fetch('ajax/image-upload.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            csrf_token: csrf_token,
-                            action: 'reorder_images',
-                            order_data: orderData,
-                            product_id: product_id
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Sessiz başarı bildirimi
-                            showNotification('Görsel sıralaması güncellendi', 'success');
-                        } else {
-                            console.error('Sıralama güncellenirken hata oluştu');
-                            showNotification('Sıralama güncellenirken hata oluştu', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Sıralama hatası:', error);
-                        showNotification('Bağlantı hatası', 'error');
-                    });
+    
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (hiddenFileInput.files.length === 0) {
+                showNotification('Lütfen yüklenecek görsel seçin.', 'error');
+                return;
+            }
+            const formData = new FormData(uploadForm);
+            for (let i = 0; i < hiddenFileInput.files.length; i++) {
+                formData.append('product_images[]', hiddenFileInput.files[i]);
+            }
+            
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+            
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                if (progress < 80) {
+                    progress += 5;
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
                 }
+            }, 150);
+            
+            fetch('ajax/image-upload.php', { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressText.textContent = '100%';
+                if (data.success) {
+                    showNotification(data.message || 'Görseller başarıyla yüklendi.', 'success');
+                    resetUploadPanel();
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showNotification(data.message || 'Yükleme sırasında bir hata oluştu.', 'error');
+                    setTimeout(() => progressContainer.classList.add('hidden'), 2000);
+                }
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                console.error('Upload error:', error);
+                showNotification('Bağlantı hatası: ' + error.message, 'error');
+                setTimeout(() => progressContainer.classList.add('hidden'), 2000);
             });
-        }
-    });
+        });
     }
-  } catch (error) {
-    console.error('Görsel yönetimi JavaScript hatası:', error);
-  }
 });
 </script>
