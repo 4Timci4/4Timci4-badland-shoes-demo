@@ -90,11 +90,40 @@ class VariantManagement {
 
     handleSaveVariant(event) {
         const variantId = event.target.dataset.variantId;
-        const row = document.querySelector(`tr[data-variant-id="${variantId}"]`);
         
-        const price = row.querySelector('.variant-price').value;
-        const stock = row.querySelector('.variant-stock').value;
-        const isActive = row.querySelector('.variant-active').checked;
+        if (!variantId) {
+            console.error('Varyant ID bulunamadı');
+            this.showNotification('Varyant ID bulunamadı.', 'error');
+            return;
+        }
+
+        // Desktop table view için kontrol
+        let container = document.querySelector(`tr[data-variant-id="${variantId}"]`);
+        
+        // Mobile card view için kontrol
+        if (!container) {
+            container = document.querySelector(`div[data-variant-id="${variantId}"]`);
+        }
+        
+        if (!container) {
+            console.error('Varyant container bulunamadı:', variantId);
+            this.showNotification('Varyant container bulunamadı.', 'error');
+            return;
+        }
+
+        const priceInput = container.querySelector('.variant-price');
+        const stockInput = container.querySelector('.variant-stock');
+        const activeInput = container.querySelector('.variant-active');
+
+        if (!priceInput || !stockInput || !activeInput) {
+            console.error('Varyant form elemanları bulunamadı');
+            this.showNotification('Form elemanları bulunamadı.', 'error');
+            return;
+        }
+
+        const price = priceInput.value;
+        const stock = stockInput.value;
+        const isActive = activeInput.checked;
 
         const data = {
             price: parseFloat(price),
@@ -107,6 +136,12 @@ class VariantManagement {
 
     handleDeleteVariant(event) {
         const variantId = event.target.dataset.variantId;
+        
+        if (!variantId) {
+            console.error('Varyant ID bulunamadı');
+            this.showNotification('Varyant ID bulunamadı.', 'error');
+            return;
+        }
         
         if (confirm('Bu varyantı silmek istediğinizden emin misiniz?')) {
             this.deleteVariant(variantId);
@@ -203,8 +238,21 @@ class VariantManagement {
         .then(result => {
             if (result.success) {
                 this.showNotification('Varyant başarıyla silindi.', 'success');
-                document.querySelector(`tr[data-variant-id="${variantId}"]`).remove();
+                
+                // Desktop table view için kontrol
+                let element = document.querySelector(`tr[data-variant-id="${variantId}"]`);
+                
+                // Mobile card view için kontrol
+                if (!element) {
+                    element = document.querySelector(`div[data-variant-id="${variantId}"]`);
+                }
+                
+                if (element) {
+                    element.remove();
+                }
+                
                 this.updateTotalStock();
+                this.updateVariantCount();
             } else {
                 this.showNotification(result.message || 'Varyant silinirken hata oluştu.', 'error');
             }
@@ -418,7 +466,7 @@ class VariantManagement {
             totalStock += parseInt(input.value) || 0;
         });
         
-        const totalStockElement = document.querySelector('.text-2xl.font-bold.text-green-600');
+        const totalStockElement = document.getElementById('total-stock-display');
         if (totalStockElement) {
             totalStockElement.textContent = totalStock;
         }

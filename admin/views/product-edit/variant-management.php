@@ -7,7 +7,7 @@
                 <p class="text-gray-600 text-sm">Renk/beden kombinasyonları ve stok yönetimi</p>
             </div>
             <div class="text-right">
-                <div class="text-2xl font-bold text-green-600"><?= $total_stock ?></div>
+                <div id="total-stock-display" class="text-2xl font-bold text-green-600"><?= $total_stock ?></div>
                 <div class="text-xs text-gray-500">Toplam Stok</div>
             </div>
         </div>
@@ -19,7 +19,7 @@
         <?php if (!empty($variants)): ?>
         <div class="space-y-4">
             <h4 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-list mr-2"></i>Mevcut Varyantlar (<?= count($variants) ?>)
+                <i class="fas fa-list mr-2"></i>Mevcut Varyantlar (<span id="variant-count"><?= count($variants) ?></span>)
             </h4>
             
             <!-- Desktop Table View -->
