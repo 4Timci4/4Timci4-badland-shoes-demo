@@ -179,7 +179,7 @@ class ProductApiService {
                       LEFT JOIN genders g ON pg.gender_id = g.id";
         
         if (!empty($whereConditions)) {
-            $countQuery .= " WHERE (" . implode(' OR ', $whereConditions) . ")";
+            $countQuery .= " WHERE " . implode(' AND ', $whereConditions);
         }
         
         $countResult = $this->db->executeRawSql($countQuery, $whereParams);
@@ -197,7 +197,7 @@ class ProductApiService {
                        LEFT JOIN genders g ON pg.gender_id = g.id";
         
         if (!empty($whereConditions)) {
-            $selectQuery .= " WHERE (" . implode(' OR ', $whereConditions) . ")";
+            $selectQuery .= " WHERE " . implode(' AND ', $whereConditions);
         }
         
         $selectQuery .= " GROUP BY p.id ORDER BY $order LIMIT $limit OFFSET $offset";
