@@ -10,7 +10,7 @@ class AuthService {
     public function __construct() {
         $this->authUrl = rtrim(SUPABASE_URL, '/') . '/auth/v1';
         $this->apiKey = SUPABASE_KEY;
-        $this->db = database(); // Genel veritabanı istemcisi
+        $this->db = database();
     }
 
     private function request($endpoint, $method = 'POST', $data = [], $headers = []) {
@@ -21,7 +21,14 @@ class AuthService {
             'Content-Type: application/json'
         ];
 
-        if (isset($_SESSION['user_session']['access_token'])) {
+        $hasExternalAuth = false;
+        foreach ($headers as $header) {
+            if (stripos($header, 'Authorization:') === 0) {
+                $hasExternalAuth = true;
+                break;
+            }
+        }
+        if (!$hasExternalAuth && isset($_SESSION['user_session']['access_token'])) {
             $defaultHeaders[] = 'Authorization: Bearer ' . $_SESSION['user_session']['access_token'];
         }
 
@@ -52,7 +59,7 @@ class AuthService {
         
         $defaultHeaders = [
             'apikey: ' . $this->apiKey,
-            'Authorization: Bearer ' . $this->apiKey, // service_role key
+            'Authorization: Bearer ' . $this->apiKey,
             'Content-Type: application/json',
             'Prefer: return=representation'
         ];
@@ -80,15 +87,11 @@ class AuthService {
     }
 
     public function registerUser($email, $password, $options = []) {
-        // 'data' alanını Supabase'in beklediği formatta oluştur
         $userData = [];
         if (!empty($options['full_name'])) {
             $userData['full_name'] = $options['full_name'];
         }
-        if (!empty($options['phone_number'])) {
-            $userData['phone_number'] = $options['phone_number'];
-        }
-
+        
         $response = $this->request('signup', 'POST', [
             'email'    => $email,
             'password' => $password,
@@ -98,7 +101,18 @@ class AuthService {
         if ($response['http_code'] === 200 && isset($response['body']['id'])) {
             $user = $response['body'];
             
-            // Profil kaydını manuel olarak public.users tablosuna ekle
+            // E-posta doğrulaması açıksa, access_token hemen gelmez.
+            // Bu yüzden telefon güncellemesini sadece token varsa yaparız.
+            if (isset($user['access_token']) && !empty($options['phone_number'])) {
+                $this->request(
+                    'user',
+                    'PUT',
+                    ['phone' => $options['phone_number']],
+                    ['Authorization: Bearer ' . $user['access_token']]
+                );
+            }
+
+            // Profil kaydını public.users tablosuna ekle
             $profileData = [
                 'id' => $user['id'],
                 'email' => $user['email'],
