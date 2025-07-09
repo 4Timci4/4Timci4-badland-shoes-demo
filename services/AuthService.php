@@ -88,8 +88,8 @@ class AuthService {
 
     public function registerUser($email, $password, $options = []) {
         $userData = [];
-        if (!empty($options['full_name'])) {
-            $userData['full_name'] = $options['full_name'];
+        if (!empty($options['first_name']) && !empty($options['last_name'])) {
+            $userData['full_name'] = trim($options['first_name'] . ' ' . $options['last_name']);
         }
         
         $response = $this->request('signup', 'POST', [
@@ -101,8 +101,6 @@ class AuthService {
         if ($response['http_code'] === 200 && isset($response['body']['id'])) {
             $user = $response['body'];
             
-            // E-posta doğrulaması açıksa, access_token hemen gelmez.
-            // Bu yüzden telefon güncellemesini sadece token varsa yaparız.
             if (isset($user['access_token']) && !empty($options['phone_number'])) {
                 $this->request(
                     'user',
@@ -112,11 +110,11 @@ class AuthService {
                 );
             }
 
-            // Profil kaydını public.users tablosuna ekle
             $profileData = [
                 'id' => $user['id'],
                 'email' => $user['email'],
-                'full_name' => $options['full_name'] ?? null,
+                'first_name' => $options['first_name'] ?? null,
+                'last_name' => $options['last_name'] ?? null,
                 'phone_number' => $options['phone_number'] ?? null
             ];
             
@@ -193,6 +191,42 @@ class AuthService {
         
         error_log('Kullanıcı profili alınamadı: ' . json_encode($profileResponse));
         return null;
+    }
+
+    public function updateUserProfile($userId, $data) {
+        if (!$this->isLoggedIn()) {
+            return ['success' => false, 'message' => 'Oturum bulunamadı.'];
+        }
+
+        $updateData = [];
+        if (isset($data['first_name']) && isset($data['last_name'])) {
+            $updateData['data']['full_name'] = trim($data['first_name'] . ' ' . $data['last_name']);
+        }
+        if (isset($data['phone_number'])) {
+            $updateData['phone'] = $data['phone_number'];
+        }
+        if (isset($data['email'])) {
+            $updateData['email'] = $data['email'];
+        }
+        
+        if (!empty($updateData)) {
+            $this->request('user', 'PUT', $updateData);
+        }
+
+        $publicUsersUpdateData = [];
+        if (isset($data['first_name'])) $publicUsersUpdateData['first_name'] = $data['first_name'];
+        if (isset($data['last_name'])) $publicUsersUpdateData['last_name'] = $data['last_name'];
+        if (isset($data['phone_number'])) $publicUsersUpdateData['phone_number'] = $data['phone_number'];
+        if (isset($data['email'])) $publicUsersUpdateData['email'] = $data['email'];
+
+        $profileUpdateResponse = $this->dbRequest('users?id=eq.' . urlencode($userId), 'PATCH', $publicUsersUpdateData);
+
+        if ($profileUpdateResponse['http_code'] === 200) {
+            return ['success' => true];
+        }
+
+        error_log('public.users güncelleme hatası: ' . json_encode($profileUpdateResponse));
+        return ['success' => false, 'message' => 'Profil güncellenirken bir hata oluştu.'];
     }
 }
 

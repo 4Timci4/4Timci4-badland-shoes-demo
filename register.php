@@ -7,7 +7,8 @@ $error_message = '';
 $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fullName = $_POST['full_name'] ?? '';
+    $firstName = $_POST['first_name'] ?? '';
+    $lastName = $_POST['last_name'] ?? '';
     $email = $_POST['email'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -17,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = 'Şifreler uyuşmuyor.';
     } else {
         $result = $auth_service->registerUser($email, $password, [
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'phone_number' => $phone
         ]);
         if ($result['success']) {
@@ -70,24 +72,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php else: ?>
                 <form class="mt-8 space-y-6" action="register.php" method="POST">
                     
-                    <div>
-                        <label for="full-name" class="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <i class="fas fa-user text-gray-400"></i>
-                            </span>
-                            <input id="full-name" name="full_name" type="text" required class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="Adınız ve soyadınız">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="first-name" class="block text-sm font-medium text-gray-700 mb-1">Ad</label>
+                            <input id="first-name" name="first_name" type="text" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="Adınız">
+                        </div>
+                        <div>
+                            <label for="last-name" class="block text-sm font-medium text-gray-700 mb-1">Soyad</label>
+                            <input id="last-name" name="last_name" type="text" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="Soyadınız">
                         </div>
                     </div>
 
                     <div>
                         <label for="email-address" class="block text-sm font-medium text-gray-700 mb-1">E-posta Adresi</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <i class="fas fa-envelope text-gray-400"></i>
-                            </span>
-                            <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="ornek@mail.com">
-                        </div>
+                        <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="ornek@mail.com">
                     </div>
                     
                     <div>
@@ -95,23 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input id="phone" name="phone" type="tel" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm">
                     </div>
 
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
-                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <i class="fas fa-lock text-gray-400"></i>
-                            </span>
-                            <input id="password" name="password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="En az 6 karakter">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+                            <input id="password" name="password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="En az 6 karakter">
                         </div>
-                    </div>
-
-                    <div>
-                        <label for="password-confirm" class="block text-sm font-medium text-gray-700 mb-1">Şifre Tekrar</label>
-                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <i class="fas fa-lock text-gray-400"></i>
-                            </span>
-                            <input id="password-confirm" name="password_confirm" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="Şifrenizi tekrar girin">
+                        <div>
+                            <label for="password-confirm" class="block text-sm font-medium text-gray-700 mb-1">Şifre Tekrar</label>
+                            <input id="password-confirm" name="password_confirm" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="Şifrenizi tekrar girin">
                         </div>
                     </div>
                     
@@ -137,20 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/intlTelInput.min.js"></script>
     <style>
         .iti { width: 100%; }
-        .iti__selected-dial-code { font-size: 0.9em; } /* Alan kodunu biraz küçült */
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const phoneInputField = document.querySelector("#phone");
-            const nameInputField = document.querySelector("#full-name");
+            const nameInputField = document.querySelector("#first-name"); // Referans olarak ilk input'u alalım
 
-            // Kopyalanacak stil sınıflarını al
             const inputClasses = nameInputField.className;
-
-            // Telefon input'una aynı sınıfları uygula
-            phoneInputField.className += ' ' + inputClasses;
-            // Kütüphanenin eklediği bazı stilleri sıfırlamak gerekebilir
-            phoneInputField.style.paddingLeft = '52px'; // Bayrak için boşluk bırak
+            // phoneInputField.className += ' ' + inputClasses; // Bu satır artık gerekli değil, çünkü tüm inputlar aynı sınıfa sahip
 
             const phoneInput = window.intlTelInput(phoneInputField, {
                 initialCountry: "tr",
@@ -158,7 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js",
             });
 
-            // Form gönderildiğinde uluslararası formatı al
             const form = phoneInputField.closest("form");
             form.addEventListener("submit", () => {
                 phoneInputField.value = phoneInput.getNumber();
