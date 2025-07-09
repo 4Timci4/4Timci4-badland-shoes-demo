@@ -34,7 +34,6 @@ class AuthService {
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         }
 
-        // Geliştirme ortamında SSL doğrulamasını atla
         if (defined('APP_ENV') && APP_ENV === 'development') {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
@@ -49,7 +48,6 @@ class AuthService {
     }
 
     private function dbRequest($path, $method = 'POST', $data = [], $headers = []) {
-        // Bu fonksiyon, /rest/v1 endpoint'ine istek yapar
         $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($path, '/');
         
         $defaultHeaders = [
@@ -87,11 +85,14 @@ class AuthService {
         if (!empty($options['full_name'])) {
             $userData['full_name'] = $options['full_name'];
         }
+        if (!empty($options['phone_number'])) {
+            $userData['phone_number'] = $options['phone_number'];
+        }
 
         $response = $this->request('signup', 'POST', [
             'email'    => $email,
             'password' => $password,
-            'data'     => (object)$userData // Her zaman bir obje gönderildiğinden emin ol
+            'data'     => (object)$userData
         ]);
 
         if ($response['http_code'] === 200 && isset($response['body']['id'])) {
@@ -101,22 +102,20 @@ class AuthService {
             $profileData = [
                 'id' => $user['id'],
                 'email' => $user['email'],
-                'full_name' => $user['raw_user_meta_data']['full_name'] ?? null
+                'full_name' => $options['full_name'] ?? null,
+                'phone_number' => $options['phone_number'] ?? null
             ];
             
             $profileResponse = $this->dbRequest('users', 'POST', $profileData);
 
             if ($profileResponse['http_code'] !== 201) {
-                // Profil oluşturma başarısız olursa logla ama kullanıcıya genel bir hata ver.
                 error_log('Kullanıcı profili oluşturma hatası: ' . json_encode($profileResponse));
-                // İdeal senaryoda, bu durumda auth kullanıcısını silmek de gerekebilir.
                 return ['success' => false, 'message' => 'Kullanıcı oluşturuldu ancak profil bilgileri kaydedilemedi.'];
             }
 
             return ['success' => true, 'user' => $user];
         }
         
-        // Hata ayıklama için detaylı loglama
         $errorMessage = $response['body']['msg'] ?? 'Bilinmeyen bir hata oluştu.';
         error_log('Supabase Kayıt Hatası: ' . json_encode($response));
         
@@ -155,14 +154,10 @@ class AuthService {
 
     public function sendPasswordResetEmail($email) {
         $this->request('recover', 'POST', ['email' => $email]);
-        // Güvenlik nedeniyle her zaman başarılı döner
         return ['success' => true];
     }
 
     public function updateUserPassword($newPassword) {
-        // Bu işlem, kullanıcının e-postasındaki linke tıkladığında aldığı
-        // access_token ile frontend tarafında yapılmalıdır.
-        // Ancak, bu projede doğrudan backend'den yapıyorsak, access token'ı session'dan almalıyız.
         if (!$this->isLoggedIn()) {
             return ['success' => false, 'message' => 'Oturum bulunamadı.'];
         }
