@@ -33,8 +33,8 @@ $product_api_service = optimized_product_api_service();
 // Sayfa parametrelerini al
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = 9;
-$category_filter = isset($_GET['category']) ? $_GET['category'] : null;
-$gender_filter = isset($_GET['gender']) ? $_GET['gender'] : null;
+$category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
+$gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
 $featured_filter = isset($_GET['featured']) ? (bool)$_GET['featured'] : null;
 
@@ -43,13 +43,22 @@ $categories_start = microtime(true);
 $categories = $category_service->getCategoriesWithProductCountsOptimized(false);
 $categories_time = round((microtime(true) - $categories_start) * 1000, 2);
 
+// ✅ OPTIMIZED: Cinsiyetleri al
+$genders_start = microtime(true);
+$genders = gender_service()->getAllGenders();
+$genders_time = round((microtime(true) - $genders_start) * 1000, 2);
+
+// ✅ OPTIMIZED: Slug'ları ID'lere dönüştür
+$category_ids = !empty($category_filters) ? $category_service->getCategoryIdsBySlug($category_filters) : [];
+$gender_ids = !empty($gender_filters) ? gender_service()->getGenderIdsBySlug($gender_filters) : [];
+
 // ✅ OPTIMIZED: Ürünleri batch processing ile al
 $products_start = microtime(true);
-$products_result = $product_api_service->getProductsForApiOptimized([
+$products_result = $product_api_service->getProductsForApi([
     'page' => $page,
     'limit' => $limit,
-    'categories' => $category_filter ? [$category_filter] : [],
-    'genders' => $gender_filter ? [$gender_filter] : [],
+    'categories' => $category_ids,
+    'genders' => $gender_ids,
     'sort' => $sort_filter,
     'featured' => $featured_filter
 ]);
@@ -199,35 +208,36 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                             <!-- Kategori Filtreleri -->
                             <div class="border-b pb-6">
                                 <h4 class="font-semibold text-secondary mb-4">Kategoriler</h4>
-                                <select name="category" class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
-                                    <option value="">Tüm Kategoriler</option>
+                                <div class="space-y-2 max-h-48 overflow-y-auto">
                                     <?php foreach ($categories as $category): ?>
-                                        <option value="<?php echo htmlspecialchars($category['slug']); ?>"
-                                                <?php echo ($category_filter === $category['slug']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($category['name']); ?>
-                                            (<?php echo $category['product_count']; ?>)
-                                        </option>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" name="categories[]" value="<?php echo htmlspecialchars($category['slug']); ?>"
+                                                   <?php echo in_array($category['slug'], $category_filters) ? 'checked' : ''; ?>
+                                                   class="mr-3 text-primary focus:ring-primary rounded">
+                                            <span class="text-gray-700 text-sm">
+                                                <?php echo htmlspecialchars($category['name']); ?>
+                                                <span class="text-gray-500">(<?php echo $category['product_count']; ?>)</span>
+                                            </span>
+                                        </label>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                             </div>
                             
-                            <!-- Sıralama -->
+                            <!-- Cinsiyet Filtreleri -->
                             <div class="border-b pb-6">
-                                <h4 class="font-semibold text-secondary mb-4">Sırala</h4>
-                                <select name="sort" class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
-                                    <option value="created_at-desc" <?php echo ($sort_filter === 'created_at-desc') ? 'selected' : ''; ?>>
-                                        Önce En Yeni
-                                    </option>
-                                    <option value="price-asc" <?php echo ($sort_filter === 'price-asc') ? 'selected' : ''; ?>>
-                                        Fiyat: Düşükten Yükseğe
-                                    </option>
-                                    <option value="price-desc" <?php echo ($sort_filter === 'price-desc') ? 'selected' : ''; ?>>
-                                        Fiyat: Yüksekten Düşüğe
-                                    </option>
-                                    <option value="name-asc" <?php echo ($sort_filter === 'name-asc') ? 'selected' : ''; ?>>
-                                        İsim A-Z
-                                    </option>
-                                </select>
+                                <h4 class="font-semibold text-secondary mb-4">Cinsiyet</h4>
+                                <div class="space-y-2">
+                                    <?php foreach ($genders as $gender): ?>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" name="genders[]" value="<?php echo htmlspecialchars($gender['slug']); ?>"
+                                                   <?php echo in_array($gender['slug'], $gender_filters) ? 'checked' : ''; ?>
+                                                   class="mr-3 text-primary focus:ring-primary rounded">
+                                            <span class="text-gray-700 text-sm">
+                                                <?php echo htmlspecialchars($gender['name']); ?>
+                                            </span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                             
                             <!-- Öne Çıkanlar -->
@@ -254,16 +264,49 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                 
                 <!-- Sağ İçerik Alanı -->
                 <main class="lg:w-3/4">
-                    <!-- Sonuç Sayısı -->
+                    <!-- Sonuç Sayısı ve Sıralama -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div class="text-gray-600">
                             <strong><?php echo number_format($total_products); ?></strong> ürün bulundu
+                            <?php if ($show_debug): ?>
+                                <span class="text-sm text-green-600 ml-2">
+                                    (<?php echo $total_page_time; ?>ms'de yüklendi)
+                                </span>
+                            <?php endif; ?>
                         </div>
-                        <?php if ($show_debug): ?>
-                            <div class="text-sm text-green-600">
-                                Sayfa yükleme: <?php echo $total_page_time; ?>ms
-                            </div>
-                        <?php endif; ?>
+                        
+                        <!-- Sıralama -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-600">Sırala:</span>
+                            <form method="GET" action="products.php" class="inline">
+                                <!-- Mevcut filtreleri koruyalım -->
+                                <?php foreach ($category_filters as $cat_filter): ?>
+                                    <input type="hidden" name="categories[]" value="<?php echo htmlspecialchars($cat_filter); ?>">
+                                <?php endforeach; ?>
+                                <?php foreach ($gender_filters as $gender_filter): ?>
+                                    <input type="hidden" name="genders[]" value="<?php echo htmlspecialchars($gender_filter); ?>">
+                                <?php endforeach; ?>
+                                <?php if ($featured_filter): ?>
+                                    <input type="hidden" name="featured" value="1">
+                                <?php endif; ?>
+                                <input type="hidden" name="page" value="<?php echo $page; ?>">
+                                
+                                <select name="sort" onchange="this.form.submit()" class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
+                                    <option value="created_at-desc" <?php echo ($sort_filter === 'created_at-desc') ? 'selected' : ''; ?>>
+                                        Önce En Yeni
+                                    </option>
+                                    <option value="price-asc" <?php echo ($sort_filter === 'price-asc') ? 'selected' : ''; ?>>
+                                        Fiyat: Düşükten Yükseğe
+                                    </option>
+                                    <option value="price-desc" <?php echo ($sort_filter === 'price-desc') ? 'selected' : ''; ?>>
+                                        Fiyat: Yüksekten Düşüğe
+                                    </option>
+                                    <option value="name-asc" <?php echo ($sort_filter === 'name-asc') ? 'selected' : ''; ?>>
+                                        İsim A-Z
+                                    </option>
+                                </select>
+                            </form>
+                        </div>
                     </div>
                     
                     <!-- Ürün Grid -->

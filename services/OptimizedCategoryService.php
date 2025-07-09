@@ -329,6 +329,31 @@ class OptimizedCategoryService {
     }
     
     /**
+     * Get category IDs from slugs
+     */
+    public function getCategoryIdsBySlug($slugs) {
+        if (empty($slugs)) {
+            return [];
+        }
+        
+        if (!is_array($slugs)) {
+            $slugs = [$slugs];
+        }
+        
+        try {
+            $categories = $this->db->select('categories',
+                ['slug' => ['IN', $slugs]],
+                'id, slug'
+            );
+            
+            return array_column($categories, 'id');
+        } catch (Exception $e) {
+            error_log("OptimizedCategoryService::getCategoryIdsBySlug Error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Get performance metrics
      */
     public function getPerformanceMetrics() {

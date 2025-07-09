@@ -47,10 +47,18 @@ class OptimizedProductApiService {
         $sort = $params['sort'] ?? 'created_at-desc';
         $categories = $params['categories'] ?? [];
         $genders = $params['genders'] ?? [];
+        $featured = $params['featured'] ?? null;
         
         $offset = ($page - 1) * $limit;
         
-        $cache_key = "products_api_" . md5(serialize($params));
+        $cache_key = "products_api_" . md5(serialize([
+            'page' => $page,
+            'limit' => $limit,
+            'sort' => $sort,
+            'categories' => $categories,
+            'genders' => $genders,
+            'featured' => $featured
+        ]));
         
         // Try cache first
         $cached_result = $this->cache->get($cache_key);
@@ -124,6 +132,11 @@ class OptimizedProductApiService {
                     $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
                     return $result;
                 }
+            }
+            
+            // Apply featured filter if provided
+            if ($featured !== null) {
+                $conditions['is_featured'] = (bool)$featured;
             }
             
             // Build sort order

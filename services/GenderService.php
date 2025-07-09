@@ -222,6 +222,34 @@ class GenderService {
         
         return $text;
     }
+    
+    /**
+     * Get gender IDs from slugs
+     *
+     * @param array|string $slugs Slug(s) to convert
+     * @return array Gender IDs
+     */
+    public function getGenderIdsBySlug($slugs) {
+        if (empty($slugs)) {
+            return [];
+        }
+        
+        if (!is_array($slugs)) {
+            $slugs = [$slugs];
+        }
+        
+        try {
+            $genders = $this->db->select('genders',
+                ['slug' => ['IN', $slugs]],
+                'id, slug'
+            );
+            
+            return array_column($genders, 'id');
+        } catch (Exception $e) {
+            error_log("GenderService::getGenderIdsBySlug Error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
 
 // GenderService sınıfı singleton örneği
