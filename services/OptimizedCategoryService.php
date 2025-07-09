@@ -36,9 +36,9 @@ class OptimizedCategoryService {
     /**
      * Get categories with product counts using REST API (N+1 solution)
      */
-    public function getCategoriesWithProductCountsOptimized() {
+    public function getCategoriesWithProductCountsOptimized($include_empty = true) {
         $start_time = microtime(true);
-        $cache_key = 'categories_with_counts_optimized';
+        $cache_key = 'categories_with_counts_optimized_' . ($include_empty ? 'all' : 'non_empty');
         
         // Try cache first
         $cached_result = $this->cache->get($cache_key);
@@ -63,26 +63,32 @@ class OptimizedCategoryService {
                 return [];
             }
             
-            // Get product counts for all categories in one query
+            // Get all product-category relationships for counting
             $category_ids = array_column($categories, 'id');
-            $product_counts = $this->db->select('product_categories', 
-                ['category_id' => ['IN', $category_ids]], 
-                'category_id, COUNT(*) as product_count', 
-                ['group_by' => 'category_id']
+            $product_categories = $this->db->select('product_categories',
+                ['category_id' => ['IN', $category_ids]],
+                'category_id'
             );
             
             $this->performance_metrics['queries_executed']++;
             
-            // Create lookup array for counts
+            // Count products per category in PHP
             $counts_lookup = [];
-            foreach ($product_counts as $count) {
-                $counts_lookup[$count['category_id']] = intval($count['product_count']);
+            foreach ($product_categories as $pc) {
+                $category_id = $pc['category_id'];
+                $counts_lookup[$category_id] = ($counts_lookup[$category_id] ?? 0) + 1;
             }
             
             // Merge categories with their counts
             $result = [];
             foreach ($categories as $category) {
                 $category['product_count'] = $counts_lookup[$category['id']] ?? 0;
+                
+                // If include_empty is false, skip categories with 0 products
+                if (!$include_empty && $category['product_count'] == 0) {
+                    continue;
+                }
+                
                 $result[] = $category;
             }
             
@@ -364,7 +370,8 @@ class OptimizedCategoryService {
      * Clear category cache
      */
     public function clearCache() {
-        $this->cache->delete('categories_with_counts_optimized');
+        $this->cache->delete('categories_with_counts_optimized_all');
+        $this->cache->delete('categories_with_counts_optimized_non_empty');
         $this->cache->delete('category_product_counts_optimized');
         $this->cache->delete('categories_hierarchy_optimized');
     }

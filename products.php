@@ -40,7 +40,7 @@ $featured_filter = isset($_GET['featured']) ? (bool)$_GET['featured'] : null;
 
 // ✅ OPTIMIZED: Kategorileri tek sorguda al (N+1 problem çözüldü)
 $categories_start = microtime(true);
-$categories = $category_service->getCategoriesWithProductCountsOptimized(false);
+$categories = $category_service->getCategoriesWithProductCountsOptimized(true);
 $categories_time = round((microtime(true) - $categories_start) * 1000, 2);
 
 // ✅ OPTIMIZED: Cinsiyetleri al
