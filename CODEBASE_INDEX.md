@@ -28,11 +28,12 @@ bandland-shoes-phpp/
 ├── .env                          # Ortam değişkenleri
 ├── index.php                     # Ana sayfa
 ├── products.php                  # Ürün listesi (AJAX tabanlı)
+├── product-details.php           # Ürün detay sayfası (MVC pattern)
 ├── about.php                     # Hakkımızda sayfası
 ├── contact.php                   # İletişim sayfası
 ├── blog.php                      # Blog listesi
 ├── blog-detail.php               # Blog detay sayfası
-├── 
+├──
 ├── admin/                        # Admin panel (Modern UI)
 │   ├── index.php                 # Admin giriş
 │   ├── dashboard.php             # Admin ana sayfa
@@ -79,7 +80,18 @@ bandland-shoes-phpp/
 ├── includes/                     # Ortak include dosyaları
 │   ├── header.php               # Site header
 │   ├── footer.php               # Site footer
-│   └── functions.php            # Yardımcı fonksiyonlar
+│   ├── functions.php            # Yardımcı fonksiyonlar
+│   └── product-controller.php   # Ürün detay controller
+│
+├── views/                       # MVC View komponenleri
+│   └── product/                 # Ürün detay view'leri
+│       ├── breadcrumb.php       # Breadcrumb navigasyonu
+│       ├── product-detail.php   # Ana ürün detay layout
+│       ├── product-images.php   # Ürün resim galerisi
+│       ├── product-info.php     # Ürün bilgileri
+│       ├── product-tabs.php     # Açıklama ve özellikler
+│       ├── similar-products.php # Benzer ürünler
+│       └── product-scripts.php  # JavaScript entegrasyonu
 │
 └── assets/                      # Frontend assets
     ├── css/                     # Stil dosyaları
