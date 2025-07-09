@@ -21,6 +21,11 @@ require_once 'includes/product-edit-controller.php';
 require_once 'includes/product-edit-data.php';
 require_once 'includes/product-edit-helpers.php';
 
+// Handle AJAX image actions if this is an AJAX request
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && isset($_POST['action'])) {
+    handle_ajax_image_actions();
+}
+
 // Validate product ID
 $product_id = validate_product_id($_GET['id'] ?? null);
 

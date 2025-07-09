@@ -211,7 +211,12 @@ class MariaDBClient implements DatabaseInterface {
             // Parametreleri birleştir
             $params = [];
             foreach ($data as $key => $value) {
-                $params['set_' . $key] = $value;
+                // Boolean değerleri manuel olarak 1/0'a dönüştür
+                if (is_bool($value)) {
+                    $params['set_' . $key] = $value ? 1 : 0;
+                } else {
+                    $params['set_' . $key] = $value;
+                }
             }
             $params = array_merge($params, $whereClause['params']);
             

@@ -118,13 +118,24 @@ class ProductImageService {
                     
                     // URL varsa veritabanına kaydet
                     if ($image_url) {
+                        $is_primary_image = ($existing_count === 0);
+
+                        if ($is_primary_image) {
+                             // Bu modele ait diğer tüm resimlerin "is_primary" işaretini kaldır
+                            $this->db->update(
+                                'product_images',
+                                ['is_primary' => false],
+                                ['model_id' => intval($model_id)]
+                            );
+                        }
+
                         $image_data = [
                             'model_id' => intval($model_id),
                             'color_id' => $color_id ? intval($color_id) : null,
                             'image_url' => $image_url,
                             'alt_text' => $this->generateAltText($model_id, $color_id),
                             'sort_order' => intval($this->getNextSortOrder($model_id, $color_id)),
-                            'is_primary' => $existing_count === 0 // İlk resim otomatik primary
+                            'is_primary' => $is_primary_image
                         ];
                         
                         $db_result = $this->db->insert('product_images', $image_data, ['returning' => true]);
@@ -250,16 +261,16 @@ class ProductImageService {
             
             $image = $image[0];
             
-            // Önce aynı model ve renkteki tüm resimleri primary olmaktan çıkar
-            $conditions = ['model_id' => $image['model_id']];
-            if ($image['color_id']) {
-                $conditions['color_id'] = $image['color_id'];
-            }
-            
-            $this->db->update('product_images', ['is_primary' => false], $conditions);
+            // Bu modele ait diğer tüm resimlerin "is_primary" işaretini kaldır
+            $this->db->update(
+                'product_images',
+                ['is_primary' => false],
+                ['model_id' => $image['model_id']]
+            );
             
             // Seçilen resmi primary yap
-            return $this->db->update('product_images', ['is_primary' => true], ['id' => $image_id]);
+            $result = $this->db->update('product_images', ['is_primary' => true], ['id' => $image_id]);
+            return !empty($result);
             
         } catch (Exception $e) {
             error_log("ProductImageService::setPrimaryImage - " . $e->getMessage());
@@ -349,7 +360,8 @@ class ProductImageService {
             }
             
             // Veritabanından sil
-            return $this->db->delete('product_images', $conditions);
+            $result = $this->db->delete('product_images', $conditions);
+            return !empty($result);
             
         } catch (Exception $e) {
             error_log("ProductImageService::deleteAllProductImages - " . $e->getMessage());

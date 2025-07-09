@@ -264,7 +264,7 @@ class ProductImageManager {
         try {
             const formData = new FormData();
             formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
-            formData.append('action', 'set_primary');
+            formData.append('action', 'set_primary_image');
             formData.append('image_id', imageId);
             formData.append('product_id', this.productId);
             
