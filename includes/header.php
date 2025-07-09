@@ -7,7 +7,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 // SEO Manager'ı dahil et
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/SEOManager.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/services/AuthService.php';
 $seo = seo();
+$auth_service = auth_service();
+$is_logged_in = $auth_service->isLoggedIn();
 
 // Sayfa bazlı SEO ayarları
 switch($current_page) {
@@ -105,6 +108,7 @@ if (!empty($breadcrumbs)) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -214,7 +218,43 @@ if (!empty($breadcrumbs)) {
                 </nav>
                 <div class="flex items-center space-x-4">
                     <a href="#" class="text-gray-600 hover:text-primary"><i class="fas fa-search"></i></a>
-                    <a href="#" class="text-gray-600 hover:text-primary"><i class="fas fa-user"></i></a>
+                    <?php if ($is_logged_in): ?>
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="text-gray-600 hover:text-primary focus:outline-none">
+                                <i class="fas fa-user-circle"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5"
+                                 style="display: none;">
+                                <a href="/profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profilim</a>
+                                <a href="/logout.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Çıkış Yap</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="text-gray-600 hover:text-primary focus:outline-none">
+                                <i class="fas fa-user"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5"
+                                 style="display: none;">
+                                <a href="/login.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Giriş Yap</a>
+                                <a href="/register.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Kayıt Ol</a>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <a href="#" class="text-gray-600 hover:text-primary relative">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
