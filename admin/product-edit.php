@@ -48,44 +48,71 @@ handle_product_edit_form($product_id);
 include 'includes/header.php';
 ?>
 
-<!-- Product Edit Content -->
-<div class="space-y-6">
-    
+<!-- Product Edit Wizard -->
+<div class="wizard-container bg-gray-50 p-4 sm:p-6 lg:p-8 rounded-2xl">
     <?php include 'views/product-edit/header-section.php'; ?>
-
-    <?php include 'views/product-edit/product-info-card.php'; ?>
-
-    <!-- Flash Messages -->
     <?php render_flash_message(); ?>
+
+    <!-- Wizard Header -->
+    <div class="wizard-header mb-8 p-4 bg-white rounded-xl shadow border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-800" id="wizard-step-title">Adım 1: Temel Bilgiler</h3>
+            <div class="text-sm font-medium text-gray-500"><span id="wizard-current-step">1</span> / 4</div>
+        </div>
+        <div class="progress-bar w-full bg-gray-200 rounded-full h-2.5">
+            <div id="wizard-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 25%"></div>
+        </div>
+    </div>
 
     <!-- Product Edit Form -->
     <form method="POST" class="space-y-8" id="productEditForm">
         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
         
-        <?php include 'views/product-edit/basic-info-form.php'; ?>
+        <!-- Step 1: Basic Info -->
+        <div class="wizard-step" data-step="1">
+            <?php include 'views/product-edit/basic-info-form.php'; ?>
+        </div>
 
-        <?php include 'views/product-edit/category-pricing-form.php'; ?>
+        <!-- Step 2: Category & Pricing -->
+        <div class="wizard-step hidden" data-step="2">
+            <?php include 'views/product-edit/category-pricing-form.php'; ?>
+            <?php include 'views/product-edit/product-status-form.php'; ?>
+        </div>
 
-        <?php include 'views/product-edit/product-status-form.php'; ?>
-
-        <?php include 'views/product-edit/variant-management.php'; ?>
+        <!-- Step 3: Variant Management -->
+        <div class="wizard-step hidden" data-step="3">
+            <?php include 'views/product-edit/variant-management.php'; ?>
+        </div>
         
-        <?php include 'views/product-edit/image-management.php'; ?>
+        <!-- Step 4: Image Management -->
+        <div class="wizard-step hidden" data-step="4">
+            <?php include 'views/product-edit/image-management.php'; ?>
+        </div>
 
-        <?php include 'views/product-edit/form-actions.php'; ?>
+        <!-- Wizard Navigation -->
+        <div class="wizard-navigation pt-6 border-t flex justify-between items-center">
+            <button type="button" id="prev-step-btn" class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50" disabled>
+                <i class="fas fa-arrow-left mr-2"></i> Önceki
+            </button>
+            <button type="button" id="next-step-btn" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                Sonraki <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+            <button type="submit" id="save-product-btn" name="action" value="update_product" class="hidden px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                <i class="fas fa-save mr-2"></i> Ürünü Kaydet
+            </button>
+        </div>
     </form>
 </div>
 
 <?php
-// Include scripts
-include_product_edit_scripts(
-    $product_id,
-    $productImagesByColor,
-    $all_colors,
-    $product['base_price'],
-    $variants
-);
-
 // Include footer
 include 'includes/footer.php';
 ?>
+<script>
+    // Pass PHP variables to JavaScript
+    const VENDOR_DATA = {
+        productId: <?= json_encode($product_id) ?>,
+        productBasePrice: <?= json_encode($product['base_price']) ?>
+    };
+</script>
+<script src="assets/js/product-edit.js"></script>
