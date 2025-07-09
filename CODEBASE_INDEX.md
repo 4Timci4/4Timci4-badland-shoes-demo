@@ -657,6 +657,64 @@ function renderGenderFilters() { ... }
 - Product cards with hover effects
 ```
 
+#### Product Detail (`/product-details.php`)
+```php
+// MVC Pattern Implementation
+- Controller: includes/product-controller.php
+- Views: views/product/ directory
+- Features:
+  * Color selection with Turkish slug support
+  * Size selection from variants
+  * Image gallery with color-based organization
+  * ProductImageService integration
+  * Similar products (same category)
+  * Dynamic breadcrumb navigation
+  * Tabbed content (description, features)
+  * PHP-JavaScript data transfer
+```
+
+**MVC Architecture:**
+```
+product-details.php (Main file)
+├── includes/product-controller.php (Controller)
+├── views/product/breadcrumb.php (Navigation)
+├── views/product/product-detail.php (Main layout)
+│   ├── views/product/product-images.php (Image gallery)
+│   └── views/product/product-info.php (Product information)
+├── views/product/product-tabs.php (Tabbed content)
+├── views/product/similar-products.php (Related products)
+└── views/product/product-scripts.php (JavaScript)
+```
+
+**Color Slug System:**
+```php
+// Turkish character support
+function createColorSlug($colorName) {
+    $slug = strtolower($colorName);
+    $slug = str_replace(['ı', 'İ', 'ş', 'Ş', 'ğ', 'Ğ', 'ü', 'Ü', 'ö', 'Ö', 'ç', 'Ç'],
+                       ['i', 'i', 's', 's', 'g', 'g', 'u', 'u', 'o', 'o', 'c', 'c'], $slug);
+    return preg_replace('/-+/', '-', trim($slug, '-'));
+}
+```
+
+**Product Data Flow:**
+```php
+// Controller (includes/product-controller.php)
+1. Get product ID from URL
+2. Fetch product data and variants
+3. Process color selection (?color=mavi)
+4. Organize images by color
+5. Filter available sizes
+6. Get similar products (same category)
+7. Pass data to views
+
+// View Integration
+- Global JavaScript variables
+- PHP-to-JS data transfer
+- Color-based image switching
+- Variant selection logic
+```
+
 #### Blog System (`/blog.php`, `/blog-detail.php`)
 ```php
 // Blog features
