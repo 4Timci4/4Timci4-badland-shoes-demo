@@ -11,8 +11,9 @@ $selected_color_slug = isset($_GET['color']) ? trim($_GET['color']) : '';
 
 // Renk slug'ları için helper fonksiyonlar
 function createColorSlug($colorName) {
-    $slug = mb_strtolower($colorName, 'UTF-8');
-    $slug = str_replace(['ı', 'İ', 'ş', 'Ş', 'ğ', 'Ğ', 'ü', 'Ü', 'ö', 'Ö', 'ç', 'Ç'], 
+    // mb_strtolower alternatifi - Türkçe karakterleri de işleyebilir
+    $slug = strtolower($colorName);
+    $slug = str_replace(['ı', 'İ', 'ş', 'Ş', 'ğ', 'Ğ', 'ü', 'Ü', 'ö', 'Ö', 'ç', 'Ç'],
                        ['i', 'i', 's', 's', 'g', 'g', 'u', 'u', 'o', 'o', 'c', 'c'], $slug);
     $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
     return preg_replace('/-+/', '-', trim($slug, '-'));
