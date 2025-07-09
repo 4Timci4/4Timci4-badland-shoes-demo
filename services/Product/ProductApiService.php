@@ -187,7 +187,9 @@ class ProductApiService {
         $this->performance_metrics['queries_executed']++;
 
         // Get products with JOINs
-        $selectQuery = "SELECT DISTINCT p.*
+        $selectQuery = "SELECT p.*,
+                            GROUP_CONCAT(DISTINCT c.name SEPARATOR '||') as category_names,
+                            GROUP_CONCAT(DISTINCT g.name SEPARATOR '||') as gender_names
                        FROM product_api_summary p
                        LEFT JOIN product_categories pc ON p.id = pc.product_id
                        LEFT JOIN categories c ON pc.category_id = c.id
@@ -198,10 +200,16 @@ class ProductApiService {
             $selectQuery .= " WHERE (" . implode(' OR ', $whereConditions) . ")";
         }
         
-        $selectQuery .= " ORDER BY $order LIMIT $limit OFFSET $offset";
+        $selectQuery .= " GROUP BY p.id ORDER BY $order LIMIT $limit OFFSET $offset";
         
         $products = $this->db->executeRawSql($selectQuery, $whereParams);
         $this->performance_metrics['queries_executed']++;
+
+        // Process results to convert concatenated strings to arrays
+        foreach ($products as &$product) {
+            $product['category_names'] = !empty($product['category_names']) ? explode('||', $product['category_names']) : [];
+            $product['gender_names'] = !empty($product['gender_names']) ? explode('||', $product['gender_names']) : [];
+        }
 
         $total_pages = $limit > 0 ? ceil($total_count / $limit) : 0;
         
@@ -359,9 +367,11 @@ class ProductApiService {
      * Clear product cache
      */
     public function clearCache() {
-        $this->cache->deleteByPattern('products_api_*');
-        $this->cache->deleteByPattern('popular_products_*');
-        $this->cache->deleteByPattern('similar_products_*');
+        // Önbellek, veritabanı adaptörü tarafından yönetilmektedir.
+        // Adaptör arayüzü desen tabanlı silmeyi desteklemediği için tüm önbellek temizlenir.
+        if (method_exists($this->db, 'clearCache')) {
+            $this->db->clearCache();
+        }
     }
 }
 
