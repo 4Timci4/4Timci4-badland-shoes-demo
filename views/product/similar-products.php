@@ -18,7 +18,7 @@
                     </div>
                     <div class="p-4 text-center flex flex-col flex-grow">
                         <h3 class="font-semibold text-secondary mb-2 h-12 flex items-center justify-center"><?php echo $p['name']; ?></h3>
-                        <div class="text-xl font-bold text-secondary mt-auto mb-4">₺ <?php echo number_format($p['price'], 2); ?></div>
+                        <div class="text-xl font-bold text-secondary mt-auto mb-4">₺ <?php echo number_format($p['base_price'], 2); ?></div>
                         <a href="/product-details.php?id=<?php echo $p['id']; ?>"
                            class="inline-block bg-brand text-secondary px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all duration-300 mx-auto text-center w-full">
                             Ürün Detayı

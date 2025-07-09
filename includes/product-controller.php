@@ -2,9 +2,10 @@
 // Ürün ID'sini al
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Veritabanı bağlantısı
+// Veritabanı bağlantısı ve optimize edilmiş servisler
 require_once 'config/database.php';
 require_once 'services/Product/ProductImageService.php';
+require_once 'services/Product/OptimizedProductApiService.php';
 
 // Renk slug'ını URL'den al
 $selected_color_slug = isset($_GET['color']) ? trim($_GET['color']) : '';
@@ -119,23 +120,7 @@ usort($sizes, function($a, $b) {
     return strnatcmp($a['size_value'], $b['size_value']);
 });
 
-// Benzer ürünleri getir - SADECE aynı kategoriden
-$similar_products = [];
-
-// Aynı kategoriden ürünleri getir
-$category_slug = isset($product['category_slug']) ? $product['category_slug'] : null;
-if ($category_slug) {
-    // Daha fazla ürün getir (20) çünkü filtreleme sonrası azalabilir
-    $category_products = get_product_models(20, 0, $category_slug, null);
-    
-    foreach($category_products as $p) {
-        // Sadece farklı ürünleri ekle (mevcut ürünü hariç tut)
-        if ($p['id'] != $product_id) {
-            $similar_products[] = $p;
-        }
-    }
-    
-    // En fazla 5 ürün göster
-    $similar_products = array_slice($similar_products, 0, 5);
-}
+// Benzer ürünleri getir - Optimize edilmiş servis kullan
+$optimizedProductService = new OptimizedProductApiService();
+$similar_products = $optimizedProductService->getSimilarProductsOptimized($product_id, 5);
 ?>
