@@ -288,6 +288,25 @@ class SupabaseAdapter implements DatabaseInterface {
     public function getClient() {
         return $this->client;
     }
+
+    /**
+     * Veritabanı fonksiyonlarını (RPC) çağırır
+     */
+    public function rpc($functionName, $params = []) {
+        try {
+            $endpoint = 'rpc/' . $functionName;
+            $response = $this->client->request($endpoint, 'POST', $params);
+
+            if (isset($response['body'])) {
+                return $response['body'];
+            }
+            return is_array($response) ? $response : [];
+        } catch (Exception $e) {
+            $this->lastError = $e->getMessage();
+            error_log("SupabaseAdapter::rpc - " . $e->getMessage());
+            return [];
+        }
+    }
     
     /**
      * Mevcut request metoduna proxy (geriye uyumluluk için)
@@ -364,6 +383,23 @@ class SupabaseAdapter implements DatabaseInterface {
         $parts = [];
         
         foreach ($conditions as $key => $value) {
+            // "or" anahtarı için özel işlem
+            if (strtolower($key) === 'or' && is_array($value)) {
+                $or_parts = [];
+                foreach ($value as $or_condition) {
+                     // Her bir or koşulunu 'field=operator.value' formatına çevir
+                    $or_key = key($or_condition);
+                    $or_val_array = $or_condition[$or_key];
+                    $or_operator = $this->convertOperator($or_val_array[0]);
+                    $or_value = $or_val_array[1];
+                    $or_parts[] = "{$or_key}.{$or_operator}.{$or_value}";
+                }
+                if (!empty($or_parts)) {
+                    $parts[] = 'or=(' . implode(',', $or_parts) . ')';
+                }
+                continue;
+            }
+
             if (is_array($value)) {
                 $operator = strtoupper($value[0]);
                 $val = $value[1];
@@ -373,7 +409,6 @@ class SupabaseAdapter implements DatabaseInterface {
                         $parts[] = $key . '=' . $this->convertOperator($operator) . '.(' . implode(',', $val) . ')';
                     }
                 } else {
-                    // Null değer kontrolü
                     if ($val === null) {
                         $parts[] = $key . '=is.null';
                     } else {
@@ -381,14 +416,11 @@ class SupabaseAdapter implements DatabaseInterface {
                     }
                 }
             } else {
-                // Basit eşitlik - null değer kontrolü
                 if ($value === null) {
                     $parts[] = $key . '=is.null';
                 } elseif ($value === '') {
-                    // Boş string'i de null olarak işle
                     $parts[] = $key . '=is.null';
                 } elseif (is_bool($value)) {
-                    // Boolean değerler için özel işlem
                     $parts[] = $key . '=eq.' . ($value ? 'true' : 'false');
                 } else {
                     $parts[] = $key . '=eq.' . $value;

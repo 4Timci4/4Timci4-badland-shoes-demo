@@ -106,46 +106,50 @@ class ProductApiService {
         }
     }
     /**
-     * Get similar products by category or gender, excluding variants of the current product.
-     * This is handled in PHP to avoid database permission issues with RPC functions.
+     * Get similar products using the 'get_similar_products_secure' RPC function.
+     * This is the modern, secure, and efficient way to fetch related items.
      */
     public function getSimilarProducts($product_id, $limit = 5) {
         $start_time = microtime(true);
 
         try {
-            // For debugging: First, let's get a simple list that just excludes the current product ID
-            // and see if we can get any results at all
-            
-            // Simple approach: Just get other products that are not the current one
-            $simple_conditions = [
-                'id' => ['neq', $product_id]
-            ];
-            
-            $all_products = $this->db->select(
+            // 1. Get details of the current product from the summary view.
+            $current_product_data = $this->db->select(
                 'product_api_summary',
-                $simple_conditions,
-                '*',
-                ['limit' => $limit * 3, 'order' => 'created_at DESC']
+                ['id' => ['eq', $product_id]],
+                'name, category_slugs, gender_slugs'
             );
             $this->performance_metrics['queries_executed']++;
-            
-            // If we got no results, there might be a database issue
-            if (empty($all_products)) {
-                error_log("ProductApiService: No products found excluding ID $product_id");
+
+            if (empty($current_product_data)) {
+                error_log("ProductApiService Error: Could not find product with ID {$product_id} for similar products.");
                 return [];
             }
+
+            $product_details = $current_product_data[0];
+
+            // 2. Prepare parameters for the RPC call.
+            // The SupabaseAdapter will correctly format the PHP arrays into PostgreSQL array literals (e.g., '{slug1,slug2}').
+            $params = [
+                'p_product_id' => $product_id,
+                'p_product_name' => $product_details['name'],
+                'p_category_slugs' => $product_details['category_slugs'] ?? [],
+                'p_gender_slugs' => $product_details['gender_slugs'] ?? [],
+                'p_limit' => $limit,
+            ];
+
+            // 3. Call the secure RPC function.
+            $similar_products = $this->db->rpc('get_similar_products_secure', $params);
+            $this->performance_metrics['queries_executed']++;
             
-            // Shuffle and take the limit
-            shuffle($all_products);
-            $final_list = array_slice($all_products, 0, $limit);
-            
-            $this->performance_metrics['products_processed'] = count($final_list);
+            $this->performance_metrics['products_processed'] = count($similar_products);
             $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
 
-            return $final_list;
+            return $similar_products;
 
         } catch (Exception $e) {
-            error_log("ProductApiService Error (getSimilarProducts Simple): " . $e->getMessage());
+            // Log the detailed error message for easier debugging.
+            error_log("ProductApiService Error (getSimilarProducts RPC): " . $e->getMessage());
             $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
             return [];
         }
