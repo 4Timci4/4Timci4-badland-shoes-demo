@@ -50,7 +50,8 @@ bandland-shoes-phpp/
 │   └── assets/                   # Admin assets
 │
 ├── api/                          # API endpoints
-│   └── products.php              # Ürün API (AJAX)
+│   ├── products.php              # Ürün API (JSON)
+│   └── ajax-products.php         # Ürün listesi (HTML)
 │
 ├── config/                       # Konfigürasyon dosyaları
 │   ├── database.php              # Veritabanı factory
@@ -66,7 +67,7 @@ bandland-shoes-phpp/
 │
 ├── services/                     # İş mantığı servisleri
 │   ├── ProductService.php        # Ürün ana servis
-│   ├── CategoryService.php       # Kategori servisi
+│   ├── CategoryService.php       # Kategori servisi (Optimize edilmiş)
 │   ├── BlogService.php           # Blog servisi
 │   ├── AdminAuthService.php      # Admin kimlik doğrulama
 │   ├── ContactService.php        # İletişim servisi
@@ -74,7 +75,7 @@ bandland-shoes-phpp/
 │   ├── SliderService.php         # Slider servisi
 │   ├── SettingsService.php       # Ayarlar servisi
 │   └── Product/                  # Ürün alt servisleri
-│       ├── ProductApiService.php # Frontend API servisi
+│       ├── ProductApiService.php # Ürün API servisi (Optimize edilmiş)
 │       └── ProductImageService.php # Resim yönetimi
 │
 ├── includes/                     # Ortak include dosyaları

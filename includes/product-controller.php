@@ -5,7 +5,7 @@ $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 // Veritabanı bağlantısı ve optimize edilmiş servisler
 require_once 'config/database.php';
 require_once 'services/Product/ProductImageService.php';
-require_once 'services/Product/OptimizedProductApiService.php';
+require_once 'services/Product/ProductApiService.php';
 
 // Renk slug'ını URL'den al
 $selected_color_slug = isset($_GET['color']) ? trim($_GET['color']) : '';
@@ -121,6 +121,6 @@ usort($sizes, function($a, $b) {
 });
 
 // Benzer ürünleri getir - Optimize edilmiş servis kullan
-$optimizedProductService = new OptimizedProductApiService();
-$similar_products = $optimizedProductService->getSimilarProductsOptimized($product_id, 5);
+$productApiService = product_api_service();
+$similar_products = $productApiService->getSimilarProductsOptimized($product_id, 5);
 ?>

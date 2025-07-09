@@ -1,364 +1,389 @@
 <?php
 /**
- * Kategori Servisi
+ * =================================================================
+ * BANDLAND SHOES - OPTIMIZED CATEGORY SERVICE
+ * =================================================================
+ * N+1 Query Problem Solution for Categories
  * 
- * Bu dosya, kategori verilerine erişim sağlayan servisi içerir.
+ * OPTIMIZATIONS:
+ * - Batch processing for category queries
+ * - Cache integration for frequent requests
+ * - Single JOIN operations instead of multiple queries
+ * - Performance metrics tracking
+ * =================================================================
  */
 
-// Gerekli dosyaları dahil et
 require_once __DIR__ . '/../lib/DatabaseFactory.php';
+require_once __DIR__ . '/../lib/SimpleCache.php';
 
-/**
- * Kategori servisi
- * 
- * Kategorilerle ilgili tüm veritabanı işlemlerini içerir
- */
 class CategoryService {
     private $db;
+    private $cache;
+    private $performance_metrics;
     
-    /**
-     * CategoryService sınıfını başlatır
-     */
     public function __construct() {
         $this->db = database();
+        $this->cache = simple_cache();
+        $this->performance_metrics = [
+            'execution_time_ms' => 0,
+            'queries_executed' => 0,
+            'cache_hits' => 0,
+            'cache_misses' => 0,
+            'categories_count' => 0
+        ];
     }
     
     /**
-     * Tüm kategorileri getiren metod
-     * 
-     * @return array Kategoriler
+     * Get categories with product counts using REST API (N+1 solution)
      */
-    public function getCategories() {
+    public function getCategoriesWithProductCountsOptimized($include_empty = true) {
+        $start_time = microtime(true);
+        $cache_key = 'categories_with_counts_optimized_' . ($include_empty ? 'all' : 'non_empty');
+        
+        // Try cache first
+        $cached_result = $this->cache->get($cache_key);
+        if ($cached_result !== null) {
+            $this->performance_metrics['cache_hits']++;
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return $cached_result;
+        }
+        
+        $this->performance_metrics['cache_misses']++;
+        
         try {
-            return $this->db->select('categories', [], '*', ['order' => 'name ASC']);
+            // Get categories using REST API
+            $categories = $this->db->select('categories', [], '*', [
+                'order' => 'name ASC'
+            ]);
+            
+            $this->performance_metrics['queries_executed']++;
+            
+            if (empty($categories)) {
+                $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+                return [];
+            }
+            
+            // Get all product-category relationships for counting
+            $category_ids = array_column($categories, 'id');
+            $product_categories = $this->db->select('product_categories',
+                ['category_id' => ['IN', $category_ids]],
+                'category_id'
+            );
+            
+            $this->performance_metrics['queries_executed']++;
+            
+            // Count products per category in PHP
+            $counts_lookup = [];
+            foreach ($product_categories as $pc) {
+                $category_id = $pc['category_id'];
+                $counts_lookup[$category_id] = ($counts_lookup[$category_id] ?? 0) + 1;
+            }
+            
+            // Merge categories with their counts
+            $result = [];
+            foreach ($categories as $category) {
+                $category['product_count'] = $counts_lookup[$category['id']] ?? 0;
+                
+                // If include_empty is false, skip categories with 0 products
+                if (!$include_empty && $category['product_count'] == 0) {
+                    continue;
+                }
+                
+                $result[] = $category;
+            }
+            
+            $this->performance_metrics['categories_count'] = count($result);
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Cache for 1 hour
+            $this->cache->set($cache_key, $result, 3600);
+            
+            return $result;
+            
         } catch (Exception $e) {
-            error_log("Kategorileri getirme hatası: " . $e->getMessage());
+            error_log("CategoryService Error: " . $e->getMessage());
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
             return [];
         }
     }
     
     /**
-     * Tüm kategorileri getiren metod (Admin panel için)
-     * 
-     * @param string|null $category_type Kategori tipi filtresi (geriye uyumluluk için)
-     * @param int|null $parent_id Üst kategori filtresi (NULL ise ana kategoriler)
-     * @return array Kategoriler
+     * Get category product counts using REST API
      */
-    public function getAllCategories($category_type = null, $parent_id = null) {
+    public function getCategoryProductCountsOptimized() {
+        $start_time = microtime(true);
+        $cache_key = 'category_product_counts_optimized';
+        
+        // Try cache first
+        $cached_result = $this->cache->get($cache_key);
+        if ($cached_result !== null) {
+            $this->performance_metrics['cache_hits']++;
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return $cached_result;
+        }
+        
+        $this->performance_metrics['cache_misses']++;
+        
         try {
-            $conditions = [];
+            // Get categories
+            $categories = $this->db->select('categories', [], 'id, name');
+            $this->performance_metrics['queries_executed']++;
             
-            // Kategori tipi filtresi (eski sistem için)
-            if ($category_type) {
-                $conditions['category_type'] = $category_type;
+            if (empty($categories)) {
+                $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+                return [];
             }
             
-            // parent_id parametresi belirtilmişse, buna göre filtrele
-            if ($parent_id !== null) {
-                if ($parent_id === 0) {
-                    // Ana kategoriler (parent_id IS NULL)
-                    $conditions['parent_id'] = null;
+            // Get product counts using REST API
+            $category_ids = array_column($categories, 'id');
+            $product_counts = $this->db->select('product_categories', 
+                ['category_id' => ['IN', $category_ids]], 
+                'category_id, COUNT(*) as product_count',
+                ['group_by' => 'category_id']
+            );
+            
+            $this->performance_metrics['queries_executed']++;
+            
+            // Create result array
+            $result = [];
+            foreach ($categories as $category) {
+                $count = 0;
+                foreach ($product_counts as $pc) {
+                    if ($pc['category_id'] == $category['id']) {
+                        $count = intval($pc['product_count']);
+                        break;
+                    }
+                }
+                $result[] = [
+                    'category_id' => $category['id'],
+                    'category_name' => $category['name'],
+                    'product_count' => $count
+                ];
+            }
+            
+            $this->performance_metrics['categories_count'] = count($result);
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Cache for 30 minutes
+            $this->cache->set($cache_key, $result, 1800);
+            
+            return $result;
+            
+        } catch (Exception $e) {
+            error_log("CategoryService Error: " . $e->getMessage());
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return [];
+        }
+    }
+    
+    /**
+     * Get categories hierarchy using REST API
+     */
+    public function getCategoriesHierarchyOptimized() {
+        $start_time = microtime(true);
+        $cache_key = 'categories_hierarchy_optimized';
+        
+        // Try cache first
+        $cached_result = $this->cache->get($cache_key);
+        if ($cached_result !== null) {
+            $this->performance_metrics['cache_hits']++;
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return $cached_result;
+        }
+        
+        $this->performance_metrics['cache_misses']++;
+        
+        try {
+            // Get all categories with parent relationships
+            $categories = $this->db->select('categories', [], '*', [
+                'order' => 'name ASC'
+            ]);
+            
+            $this->performance_metrics['queries_executed']++;
+            
+            if (empty($categories)) {
+                $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+                return [];
+            }
+            
+            // Build hierarchy
+            $hierarchy = [];
+            $categories_by_id = [];
+            
+            // Index categories by ID
+            foreach ($categories as $category) {
+                $categories_by_id[$category['id']] = $category;
+                $categories_by_id[$category['id']]['children'] = [];
+            }
+            
+            // Build parent-child relationships
+            foreach ($categories as $category) {
+                if ($category['parent_id'] === null) {
+                    // Root category
+                    $hierarchy[] = &$categories_by_id[$category['id']];
                 } else {
-                    // Belirli bir üst kategorinin alt kategorileri
-                    $conditions['parent_id'] = intval($parent_id);
-                }
-            }
-            
-            return $this->db->select('categories', $conditions, '*', ['order' => 'name ASC']);
-        } catch (Exception $e) {
-            error_log("Tüm kategorileri getirme hatası: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    /**
-     * Ana kategorileri getiren metod (parent_id = NULL)
-     * 
-     * @return array Ana kategoriler
-     */
-    public function getMainCategories() {
-        return $this->getAllCategories(null, 0); // 0 = ana kategoriler (parent_id IS NULL)
-    }
-    
-    /**
-     * Belirli bir ana kategoriye ait alt kategorileri getir
-     * 
-     * @param int $parent_id Ana kategori ID
-     * @return array Alt kategoriler
-     */
-    public function getSubcategories($parent_id) {
-        if (!$parent_id) return [];
-        return $this->getAllCategories(null, $parent_id);
-    }
-    
-    /**
-     * Tüm kategorileri hiyerarşik yapıda getir
-     * 
-     * @return array Ana kategoriler ve alt kategorileri içeren hiyerarşik yapı
-     */
-    public function getCategoriesHierarchy() {
-        try {
-            // Ana kategorileri al
-            $main_categories = $this->getMainCategories();
-            
-            // Her ana kategori için alt kategorileri ekle
-            foreach ($main_categories as &$main_category) {
-                $main_category['subcategories'] = $this->getSubcategories($main_category['id']);
-            }
-            
-            return $main_categories;
-        } catch (Exception $e) {
-            error_log("Kategorileri hiyerarşik yapıda getirme hatası: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    /**
-     * Her kategori için ürün sayılarını getiren metod
-     *
-     * @return array Kategori slug'ı anahtar, ürün sayısı değer olan bir dizi
-     */
-    public function getCategoryProductCounts() {
-        try {
-            // Bu metod artık basit kategori listesi döndürür
-            $categories = $this->getAllCategories();
-            $counts = [];
-            
-            foreach ($categories as $category) {
-                $count = $this->db->count('product_categories', ['category_id' => $category['id']]);
-                $counts[$category['slug']] = $count;
-            }
-            
-            return $counts;
-        } catch (Exception $e) {
-            error_log("Kategori ürün sayıları getirme hatası: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    /**
-     * Belirli bir kategoriyi slug'a göre getiren metod
-     * 
-     * @param string $slug Kategori slug'ı
-     * @return array|null Kategori veya bulunamazsa boş dizi
-     */
-    public function getCategoryBySlug($slug) {
-        try {
-            $result = $this->db->select('categories', ['slug' => $slug], '*', ['limit' => 1]);
-            
-            if (!empty($result)) {
-                return $result[0];
-            }
-            
-            return [];
-        } catch (Exception $e) {
-            error_log("Kategori getirme hatası: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    /**
-     * Yeni kategori oluşturma metodu
-     * 
-     * @param array $data Kategori verileri
-     * @return bool Başarı durumu
-     */
-    public function createCategory($data) {
-        try {
-            $result = $this->db->insert('categories', $data, ['returning' => true]);
-            return !empty($result);
-        } catch (Exception $e) {
-            error_log("CategoryService::createCategory - Exception: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Kategori güncelleme metodu
-     * 
-     * @param int $category_id Kategori ID
-     * @param array $data Güncellenecek veriler
-     * @return bool Başarı durumu
-     */
-    public function updateCategory($category_id, $data) {
-        try {
-            $result = $this->db->update('categories', $data, ['id' => intval($category_id)]);
-            return !empty($result);
-        } catch (Exception $e) {
-            error_log("Kategori güncelleme hatası: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Kategori silme metodu
-     * 
-     * @param int $category_id Kategori ID
-     * @return bool Başarı durumu
-     */
-    public function deleteCategory($category_id) {
-        try {
-            // Önce bu kategoriye ait ürün var mı kontrol et
-            $product_count = $this->db->count('product_categories', ['category_id' => intval($category_id)]);
-            
-            if ($product_count > 0) {
-                return false; // Kategoriye ait ürün varsa silinemez
-            }
-            
-            $result = $this->db->delete('categories', ['id' => intval($category_id)]);
-            return !empty($result);
-        } catch (Exception $e) {
-            error_log("Kategori silme hatası: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Kategori ID'ye göre kategori getirme metodu
-     * 
-     * @param int $category_id Kategori ID
-     * @return array|null Kategori veya bulunamazsa boş dizi
-     */
-    public function getCategoryById($category_id) {
-        try {
-            $result = $this->db->select('categories', ['id' => intval($category_id)], '*', ['limit' => 1]);
-            
-            if (!empty($result)) {
-                return $result[0];
-            }
-            
-            return [];
-        } catch (Exception $e) {
-            error_log("Kategori getirme hatası: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    /**
-     * Slug oluşturma metodu
-     * 
-     * @param string $text Dönüştürülecek metin
-     * @return string Slug
-     */
-    public function generateSlug($text) {
-        // Türkçe karakterleri dönüştür
-        $turkish = ['ç', 'ğ', 'ı', 'ö', 'ş', 'ü', 'Ç', 'Ğ', 'I', 'İ', 'Ö', 'Ş', 'Ü'];
-        $english = ['c', 'g', 'i', 'o', 's', 'u', 'C', 'G', 'I', 'I', 'O', 'S', 'U'];
-        $text = str_replace($turkish, $english, $text);
-        
-        // Küçük harfe dönüştür ve sadece alfanumerik karakterleri bırak
-        $text = strtolower($text);
-        $text = preg_replace('/[^a-z0-9]+/', '-', $text);
-        $text = trim($text, '-');
-        
-        return $text;
-    }
-    
-    /**
-     * Kategorileri tipine göre gruplu olarak getir (Eski kategori yapısı ile uyumlu)
-     * Stil kategorileri hariç tutulur.
-     * 
-     * @return array Kategori tipi anahtarlı, kategoriler değerli dizi
-     */
-    public function getCategoriesGroupedByType() {
-        try {
-            $categories = $this->getAllCategories();
-            $grouped = [];
-            
-            foreach ($categories as $category) {
-                $type = $category['category_type'] ?? 'product_type';
-                // Stil kategorilerini hariç tut
-                if ($type !== 'style') {
-                    if (!isset($grouped[$type])) {
-                        $grouped[$type] = [];
-                    }
-                    $grouped[$type][] = $category;
-                }
-            }
-            
-            return $grouped;
-        } catch (Exception $e) {
-            error_log("Kategorileri gruplama hatası: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    /**
-     * Admin için kategorileri ürün sayılarıyla getir
-     * 
-     * @param bool $hierarchical Hiyerarşik yapıda döndürülsün mü?
-     * @return array Kategoriler ve ürün sayıları
-     */
-    public function getCategoriesWithProductCounts($hierarchical = false) {
-        try {
-            // ID'ye göre sıralama ile kategorileri getir
-            $categories = $this->db->select('categories', [], '*', ['order' => 'id ASC']);
-            
-            foreach ($categories as &$category) {
-                // Ürün sayılarını ekle (yeni database interface kullan)
-                $product_count = $this->db->count('product_categories', ['category_id' => $category['id']]);
-                $category['product_count'] = $product_count;
-            }
-            
-            // Hiyerarşik yapı isteniyorsa düzenle
-            if ($hierarchical) {
-                $hierarchy = [];
-                $categories_indexed = [];
-                
-                // Kategorileri ID'ye göre indeksle
-                foreach ($categories as $category) {
-                    $categories_indexed[$category['id']] = $category;
-                    $categories_indexed[$category['id']]['subcategories'] = [];
-                }
-                
-                // Hiyerarşik yapıyı oluştur
-                foreach ($categories as $category) {
-                    if ($category['parent_id'] === null) {
-                        // Ana kategori
-                        $hierarchy[] = &$categories_indexed[$category['id']];
-                    } else if (isset($categories_indexed[$category['parent_id']])) {
-                        // Alt kategori
-                        $categories_indexed[$category['parent_id']]['subcategories'][] = $category;
+                    // Child category
+                    if (isset($categories_by_id[$category['parent_id']])) {
+                        $categories_by_id[$category['parent_id']]['children'][] = &$categories_by_id[$category['id']];
                     }
                 }
-                
-                return $hierarchy;
             }
             
-            return $categories;
+            $this->performance_metrics['categories_count'] = count($hierarchy);
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Cache for 2 hours
+            $this->cache->set($cache_key, $hierarchy, 7200);
+            
+            return $hierarchy;
+            
         } catch (Exception $e) {
-            error_log("Kategoriler ve ürün sayıları getirme hatası: " . $e->getMessage());
+            error_log("CategoryService Error: " . $e->getMessage());
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
             return [];
         }
+    }
+    
+    /**
+     * Get categories with subcategories and counts (for JavaScript frontend)
+     */
+    public function getCategoriesWithSubcategoriesAndCounts() {
+        $start_time = microtime(true);
+        $cache_key = 'categories_with_subcategories_counts';
+        
+        // Try cache first
+        $cached_result = $this->cache->get($cache_key);
+        if ($cached_result !== null) {
+            $this->performance_metrics['cache_hits']++;
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return $cached_result;
+        }
+        
+        $this->performance_metrics['cache_misses']++;
+        
+        try {
+            // Get all categories
+            $categories = $this->db->select('categories', [], '*', [
+                'order' => 'name ASC'
+            ]);
+            
+            $this->performance_metrics['queries_executed']++;
+            
+            if (empty($categories)) {
+                $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+                return [];
+            }
+            
+            // Get product counts for all categories
+            $category_ids = array_column($categories, 'id');
+            $product_counts = $this->db->select('product_categories',
+                ['category_id' => ['IN', $category_ids]],
+                'category_id, COUNT(*) as product_count',
+                ['group_by' => 'category_id']
+            );
+            
+            $this->performance_metrics['queries_executed']++;
+            
+            // Create lookup array for counts
+            $counts_lookup = [];
+            foreach ($product_counts as $count) {
+                $counts_lookup[$count['category_id']] = intval($count['product_count']);
+            }
+            
+            // Build hierarchy with subcategories
+            $result = [];
+            $categories_by_id = [];
+            
+            // Index categories by ID and add product counts
+            foreach ($categories as $category) {
+                $category['product_count'] = $counts_lookup[$category['id']] ?? 0;
+                $categories_by_id[$category['id']] = $category;
+            }
+            
+            // Build parent-child relationships
+            foreach ($categories as $category) {
+                if ($category['parent_id'] === null) {
+                    // Root category
+                    $main_category = $categories_by_id[$category['id']];
+                    $main_category['subcategories'] = [];
+                    
+                    // Find subcategories
+                    foreach ($categories as $sub_category) {
+                        if ($sub_category['parent_id'] == $category['id']) {
+                            $sub_category['product_count'] = $counts_lookup[$sub_category['id']] ?? 0;
+                            $main_category['subcategories'][] = $sub_category;
+                        }
+                    }
+                    
+                    $result[] = $main_category;
+                }
+            }
+            
+            $this->performance_metrics['categories_count'] = count($result);
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Cache for 1 hour
+            $this->cache->set($cache_key, $result, 3600);
+            
+            return $result;
+            
+        } catch (Exception $e) {
+            error_log("CategoryService Error: " . $e->getMessage());
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return [];
+        }
+    }
+    
+    /**
+     * Get category IDs from slugs
+     */
+    public function getCategoryIdsBySlug($slugs) {
+        if (empty($slugs)) {
+            return [];
+        }
+        
+        if (!is_array($slugs)) {
+            $slugs = [$slugs];
+        }
+        
+        try {
+            $categories = $this->db->select('categories',
+                ['slug' => ['IN', $slugs]],
+                'id, slug'
+            );
+            
+            return array_column($categories, 'id');
+        } catch (Exception $e) {
+            error_log("CategoryService::getCategoryIdsBySlug Error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get performance metrics
+     */
+    public function getPerformanceMetrics() {
+        return $this->performance_metrics;
+    }
+    
+    /**
+     * Clear category cache
+     */
+    public function clearCache() {
+        $this->cache->delete('categories_with_counts_optimized_all');
+        $this->cache->delete('categories_with_counts_optimized_non_empty');
+        $this->cache->delete('category_product_counts_optimized');
+        $this->cache->delete('categories_hierarchy_optimized');
     }
 }
 
-// CategoryService sınıfı singleton örneği
+/**
+ * Global function for service access
+ */
 function category_service() {
     static $instance = null;
-    
     if ($instance === null) {
         $instance = new CategoryService();
     }
-    
     return $instance;
-}
-
-// Geriye uyumluluk için fonksiyonlar
-/**
- * Tüm kategorileri getiren fonksiyon
- * 
- * @return array Kategoriler
- */
-function get_categories() {
-    return category_service()->getCategories();
-}
-
-/**
- * Her kategori için ürün sayılarını getiren fonksiyon
- *
- * @return array Kategori slug'ı anahtar, ürün sayısı değer olan bir dizi
- */
-function get_category_product_counts() {
-    return category_service()->getCategoryProductCounts();
 }

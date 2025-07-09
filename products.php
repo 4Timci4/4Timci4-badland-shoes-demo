@@ -6,7 +6,7 @@
  * Bu dosya products.php'nin optimize edilmiş versiyonudur
  * 
  * PERFORMANS İYİLEŞTİRMELERİ:
- * - OptimizedCategoryService kullanımı
+ * - CategoryService kullanımı
  * - Batch data loading
  * - Cache layer integration
  * - N+1 query problems eliminated
@@ -15,8 +15,8 @@
  */
 
 // Optimize edilmiş servisleri dahil et
-require_once 'services/OptimizedCategoryService.php';
-require_once 'services/Product/OptimizedProductApiService.php';
+require_once 'services/CategoryService.php';
+require_once 'services/Product/ProductApiService.php';
 require_once 'services/GenderService.php';
 require_once 'lib/SimpleCache.php';
 
@@ -27,8 +27,8 @@ $page_start_time = microtime(true);
 $cache = simple_cache();
 
 // Optimize edilmiş servisler
-$category_service = optimized_category_service();
-$product_api_service = optimized_product_api_service();
+$category_service = category_service();
+$product_api_service = product_api_service();
 
 // Sayfa parametrelerini al
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -45,7 +45,7 @@ $categories_time = round((microtime(true) - $categories_start) * 1000, 2);
 
 // ✅ OPTIMIZED: Cinsiyetleri al
 $genders_start = microtime(true);
-$genders = gender_service()->getAllGenders();
+$genders = gender_service()->getGendersWithProductCounts();
 $genders_time = round((microtime(true) - $genders_start) * 1000, 2);
 
 // ✅ OPTIMIZED: Slug'ları ID'lere dönüştür
@@ -197,14 +197,15 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
     <!-- Main Content -->
     <section class="py-8 bg-white">
         <div class="max-w-7xl mx-auto px-5">
-            <div class="flex flex-col lg:flex-row gap-8">
-                
-                <!-- Sol Sidebar - Filtreler -->
-                <aside class="lg:w-1/4">
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-xl font-bold text-secondary mb-6">FİLTRELE</h3>
-                        
-                        <form method="GET" action="products.php" class="space-y-6">
+            <form method="GET" action="products.php" id="filter-form">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    
+                    <!-- Sol Sidebar - Filtreler -->
+                    <aside class="lg:w-1/4">
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-bold text-secondary mb-6">FİLTRELE</h3>
+                            
+                            <div class="space-y-6">
                             <!-- Kategori Filtreleri -->
                             <div class="border-b pb-6">
                                 <h4 class="font-semibold text-secondary mb-4">Kategoriler</h4>
@@ -234,6 +235,7 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                                                    class="mr-3 text-primary focus:ring-primary rounded">
                                             <span class="text-gray-700 text-sm">
                                                 <?php echo htmlspecialchars($gender['name']); ?>
+                                                <span class="text-gray-500">(<?php echo $gender['product_count']; ?>)</span>
                                             </span>
                                         </label>
                                     <?php endforeach; ?>
@@ -250,15 +252,8 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                                 </label>
                             </div>
                             
-                            <div class="flex gap-3">
-                                <button type="submit" class="flex-1 bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition-colors">
-                                    Filtrele
-                                </button>
-                                <a href="products.php" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors text-center">
-                                    Temizle
-                                </a>
-                            </div>
-                        </form>
+                            <!-- Butonlar kaldırıldı, filtreleme otomatik olacak -->
+                        <!-- form tag moved -->
                     </div>
                 </aside>
                 
@@ -266,7 +261,7 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                 <main class="lg:w-3/4">
                     <!-- Sonuç Sayısı ve Sıralama -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <div class="text-gray-600">
+                        <div class="text-gray-600" id="product-count-display">
                             <strong><?php echo number_format($total_products); ?></strong> ürün bulundu
                             <?php if ($show_debug): ?>
                                 <span class="text-sm text-green-600 ml-2">
@@ -278,39 +273,26 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                         <!-- Sıralama -->
                         <div class="flex items-center gap-2">
                             <span class="text-sm text-gray-600">Sırala:</span>
-                            <form method="GET" action="products.php" class="inline">
-                                <!-- Mevcut filtreleri koruyalım -->
-                                <?php foreach ($category_filters as $cat_filter): ?>
-                                    <input type="hidden" name="categories[]" value="<?php echo htmlspecialchars($cat_filter); ?>">
-                                <?php endforeach; ?>
-                                <?php foreach ($gender_filters as $gender_filter): ?>
-                                    <input type="hidden" name="genders[]" value="<?php echo htmlspecialchars($gender_filter); ?>">
-                                <?php endforeach; ?>
-                                <?php if ($featured_filter): ?>
-                                    <input type="hidden" name="featured" value="1">
-                                <?php endif; ?>
-                                <input type="hidden" name="page" value="<?php echo $page; ?>">
-                                
-                                <select name="sort" onchange="this.form.submit()" class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
-                                    <option value="created_at-desc" <?php echo ($sort_filter === 'created_at-desc') ? 'selected' : ''; ?>>
-                                        Önce En Yeni
-                                    </option>
-                                    <option value="price-asc" <?php echo ($sort_filter === 'price-asc') ? 'selected' : ''; ?>>
-                                        Fiyat: Düşükten Yükseğe
-                                    </option>
-                                    <option value="price-desc" <?php echo ($sort_filter === 'price-desc') ? 'selected' : ''; ?>>
-                                        Fiyat: Yüksekten Düşüğe
-                                    </option>
-                                    <option value="name-asc" <?php echo ($sort_filter === 'name-asc') ? 'selected' : ''; ?>>
-                                        İsim A-Z
-                                    </option>
-                                </select>
-                            </form>
+                            <!-- Sıralama artık ana formun bir parçası -->
+                            <select name="sort" id="sort-filter" class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
+                                <option value="created_at-desc" <?php echo ($sort_filter === 'created_at-desc') ? 'selected' : ''; ?>>
+                                    Önce En Yeni
+                                </option>
+                                <option value="price-asc" <?php echo ($sort_filter === 'price-asc') ? 'selected' : ''; ?>>
+                                    Fiyat: Düşükten Yükseğe
+                                </option>
+                                <option value="price-desc" <?php echo ($sort_filter === 'price-desc') ? 'selected' : ''; ?>>
+                                    Fiyat: Yüksekten Düşüğe
+                                </option>
+                                <option value="name-asc" <?php echo ($sort_filter === 'name-asc') ? 'selected' : ''; ?>>
+                                    İsim A-Z
+                                </option>
+                            </select>
                         </div>
                     </div>
                     
                     <!-- Ürün Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="product-grid">
                         <?php if (!empty($products)): ?>
                             <?php foreach ($products as $product): ?>
                                 <div class="product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">
@@ -382,7 +364,7 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                     <!-- Sayfalama -->
                     <?php if ($total_pages > 1): ?>
                         <div class="flex justify-center mt-12">
-                            <nav class="flex items-center gap-2">
+                            <nav class="flex items-center gap-2" id="pagination-container">
                                 <?php if ($page > 1): ?>
                                     <a href="?page=<?php echo ($page - 1); ?>&<?php echo http_build_query(array_filter($_GET, function($k) { return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)); ?>"
                                        class="px-3 py-2 text-gray-600 hover:text-primary transition-colors">
@@ -418,6 +400,7 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
                                 <?php endif; ?>
                             </nav>
                         </div>
+                        </form>
                     <?php endif; ?>
                 </main>
             </div>
@@ -427,6 +410,7 @@ $show_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
     <?php include 'includes/footer.php'; ?>
     
     <script src="assets/js/script.js"></script>
+    <script src="assets/js/products-filter.js" defer></script>
     
     <!-- Performance monitoring script -->
     <?php if ($show_debug): ?>

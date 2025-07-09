@@ -10,11 +10,11 @@ header('Content-Type: application/json');
 
 // Veritabanı bağlantısı ve optimize edilmiş servisleri dahil et
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../services/Product/OptimizedProductApiService.php';
+require_once __DIR__ . '/../services/Product/ProductApiService.php';
 
 try {
-    // Optimize edilmiş ürün servisini başlat
-    $optimizedProductService = new OptimizedProductApiService();
+    // Ürün servisini başlat
+    $productApiService = new ProductApiService();
     
     // Parametreleri al
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -42,8 +42,8 @@ try {
         'genders' => $genders
     ];
     
-    // Optimize edilmiş ürün API servisini çağır
-    $result = $optimizedProductService->getProductsForApi($params);
+    // Ürün API servisini çağır
+    $result = $productApiService->getProductsForApi($params);
     
     // Sonuçları JSON olarak döndür
     echo json_encode($result);

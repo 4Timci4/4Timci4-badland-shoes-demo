@@ -1,6 +1,6 @@
 <?php
 require_once 'config/database.php';
-require_once 'services/OptimizedCategoryService.php';
+require_once 'services/CategoryService.php';
 require_once 'services/GenderService.php';
 
 // Sadece sayfa yapısı için gerekli verileri getir

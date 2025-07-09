@@ -1,0 +1,3 @@
+# Ignore cache files, but not the directory itself
+/cache/*
+!/cache/.gitkeep

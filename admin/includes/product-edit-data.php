@@ -5,6 +5,12 @@
  */
 
 function get_product_edit_data($product_id) {
+    // Gerekli servisleri dahil et (Proje kökünden - daha sağlam yol)
+    require_once dirname(__DIR__, 2) . '/services/CategoryService.php';
+    require_once dirname(__DIR__, 2) . '/services/GenderService.php';
+    require_once dirname(__DIR__, 2) . '/services/VariantService.php';
+    require_once dirname(__DIR__, 2) . '/services/Product/ProductImageService.php';
+
     // Ürün bilgilerini getir
     $product_data = get_product_model($product_id);
     if (empty($product_data)) {
@@ -13,8 +19,8 @@ function get_product_edit_data($product_id) {
     
     $product = $product_data[0];
     
-    // Kategorileri ve cinsiyetleri getir
-    $categories = category_service()->getAllCategories();
+    // Kategorileri ve cinsiyetleri getir (Optimize edilmiş)
+    $categories = category_service()->getCategoriesWithProductCountsOptimized(true);
     $genders = gender_service()->getAllGenders();
     
     // Varyant verilerini getir
