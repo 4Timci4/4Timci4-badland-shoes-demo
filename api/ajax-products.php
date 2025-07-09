@@ -57,14 +57,14 @@ if (!empty($products)) {
         echo '        </h3>';
         echo '        <div class="text-xl font-bold text-secondary mb-3">₺ ' . number_format($product['base_price'], 2) . '</div>';
         echo '        <div class="flex flex-wrap gap-1 justify-center mt-auto">';
-        if (!empty($product['categories'])) {
-            foreach ($product['categories'] as $category) {
-                echo '            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"><i class="fas fa-tag text-xs mr-1"></i>' . htmlspecialchars($category['name']) . '</span>';
+        if (!empty($product['category_names'])) {
+            foreach ($product['category_names'] as $category_name) {
+                echo '            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"><i class="fas fa-tag text-xs mr-1"></i>' . htmlspecialchars($category_name) . '</span>';
             }
         }
-        if (!empty($product['genders'])) {
-            foreach ($product['genders'] as $gender) {
-                echo '            <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"><i class="fas fa-venus-mars text-xs mr-1"></i>' . htmlspecialchars($gender['name']) . '</span>';
+        if (!empty($product['gender_names'])) {
+            foreach ($product['gender_names'] as $gender_name) {
+                echo '            <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"><i class="fas fa-venus-mars text-xs mr-1"></i>' . htmlspecialchars($gender_name) . '</span>';
             }
         }
         echo '        </div>';
