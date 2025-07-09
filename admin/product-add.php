@@ -170,7 +170,7 @@ if ($_POST) {
 }
 
 // Kategorileri ve cinsiyetleri getir
-$categories = category_service()->getAllCategories();
+$categories = category_service()->getCategoriesWithProductCountsOptimized();
 $genders = gender_service()->getAllGenders();
 
 // Image service'i initialize et
