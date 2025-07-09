@@ -11,8 +11,8 @@ if (!$user) {
 }
 
 // Tam profil bilgilerini public.users tablosundan alalım
-$user_profile = $auth_service->getUserProfile($user->id);
-$display_name = $user_profile->full_name ?? $user->email;
+$user_profile = $auth_service->getUserProfile($user['id']);
+$display_name = $user_profile['full_name'] ?? $user['email'];
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -64,11 +64,11 @@ $display_name = $user_profile->full_name ?? $user->email;
                             </div>
                             <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                                 <dt class="text-sm font-medium text-gray-500">E-posta adresi</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($user->email); ?></dd>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($user['email']); ?></dd>
                             </div>
                             <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                                 <dt class="text-sm font-medium text-gray-500">Üyelik Tarihi</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo date('d F Y', strtotime($user->created_at)); ?></dd>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo date('d F Y', strtotime($user['created_at'])); ?></dd>
                             </div>
                         </dl>
                     </div>

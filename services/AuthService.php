@@ -48,15 +48,72 @@ class AuthService {
         return ['http_code' => $http_code, 'body' => $body];
     }
 
+    private function dbRequest($path, $method = 'POST', $data = [], $headers = []) {
+        // Bu fonksiyon, /rest/v1 endpoint'ine istek yapar
+        $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($path, '/');
+        
+        $defaultHeaders = [
+            'apikey: ' . $this->apiKey,
+            'Authorization: Bearer ' . $this->apiKey, // service_role key
+            'Content-Type: application/json',
+            'Prefer: return=representation'
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($defaultHeaders, $headers));
+        if (!empty($data)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        }
+
+        if (defined('APP_ENV') && APP_ENV === 'development') {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        }
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $body = json_decode($response, true);
+        return ['http_code' => $http_code, 'body' => $body];
+    }
+
     public function registerUser($email, $password, $options = []) {
+        // 'data' alanını Supabase'in beklediği formatta oluştur
+        $userData = [];
+        if (!empty($options['full_name'])) {
+            $userData['full_name'] = $options['full_name'];
+        }
+
         $response = $this->request('signup', 'POST', [
-            'email' => $email,
+            'email'    => $email,
             'password' => $password,
-            'data' => $options['data'] ?? new stdClass()
+            'data'     => (object)$userData // Her zaman bir obje gönderildiğinden emin ol
         ]);
 
         if ($response['http_code'] === 200 && isset($response['body']['id'])) {
-            return ['success' => true, 'user' => $response['body']];
+            $user = $response['body'];
+            
+            // Profil kaydını manuel olarak public.users tablosuna ekle
+            $profileData = [
+                'id' => $user['id'],
+                'email' => $user['email'],
+                'full_name' => $user['raw_user_meta_data']['full_name'] ?? null
+            ];
+            
+            $profileResponse = $this->dbRequest('users', 'POST', $profileData);
+
+            if ($profileResponse['http_code'] !== 201) {
+                // Profil oluşturma başarısız olursa logla ama kullanıcıya genel bir hata ver.
+                error_log('Kullanıcı profili oluşturma hatası: ' . json_encode($profileResponse));
+                // İdeal senaryoda, bu durumda auth kullanıcısını silmek de gerekebilir.
+                return ['success' => false, 'message' => 'Kullanıcı oluşturuldu ancak profil bilgileri kaydedilemedi.'];
+            }
+
+            return ['success' => true, 'user' => $user];
         }
         
         // Hata ayıklama için detaylı loglama
@@ -119,12 +176,14 @@ class AuthService {
     }
 
     public function getUserProfile($userId) {
-        try {
-            $response = $this->db->from('users')->select('*')->eq('id', $userId)->single()->execute();
-            return $response;
-        } catch (Exception $e) {
-            return null;
+        $profileResponse = $this->dbRequest('users?id=eq.' . urlencode($userId), 'GET');
+        
+        if ($profileResponse['http_code'] === 200 && !empty($profileResponse['body'])) {
+            return $profileResponse['body'][0];
         }
+        
+        error_log('Kullanıcı profili alınamadı: ' . json_encode($profileResponse));
+        return null;
     }
 }
 
