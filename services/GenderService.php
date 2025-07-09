@@ -258,34 +258,10 @@ class GenderService {
     */
    public function getGendersWithProductCounts() {
        try {
-           // Get all genders
-           $genders = $this->db->select('genders', [], '*', ['order' => 'name ASC']);
-
-           if (empty($genders)) {
-               return [];
-           }
-
-           // Get all product-gender relationships for counting
-           $product_genders = $this->db->select('product_genders', [], 'gender_id');
-
-           // Count products per gender in PHP
-           $counts_lookup = [];
-           foreach ($product_genders as $pg) {
-               $gender_id = $pg['gender_id'];
-               $counts_lookup[$gender_id] = ($counts_lookup[$gender_id] ?? 0) + 1;
-           }
-
-           // Merge genders with their counts
-           $result = [];
-           foreach ($genders as $gender) {
-               $gender['product_count'] = $counts_lookup[$gender['id']] ?? 0;
-               $result[] = $gender;
-           }
-
-           return $result;
-
+           // Directly query the materialized view for efficiency
+           return $this->db->select('gender_product_counts', [], '*', ['order' => 'name ASC']);
        } catch (Exception $e) {
-           error_log("Error getting genders with product counts: " . $e->getMessage());
+           error_log("Error getting genders with product counts from view: " . $e->getMessage());
            return [];
        }
    }

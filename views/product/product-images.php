@@ -19,8 +19,6 @@
             if (!$main_image) {
                 $main_image = $current_images[0];
             }
-        } elseif (!empty($product_images)) {
-            $main_image = $product_images[0];
         }
         ?>
         
@@ -99,7 +97,15 @@
     
     <!-- Renk Bazlı Resim Değiştirme (JavaScript ile yönetilecek) -->
     <div id="color-image-data" style="display: none;">
-        <?php echo htmlspecialchars(json_encode($product_images_by_color)); ?>
+        <?php
+        $images_by_color = [];
+        if (!empty($product['images'])) {
+            foreach ($product['images'] as $image) {
+                $images_by_color[$image['color_id'] ?? 'default'][] = $image;
+            }
+        }
+        echo htmlspecialchars(json_encode($images_by_color));
+        ?>
     </div>
 </div>
 

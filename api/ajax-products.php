@@ -2,6 +2,7 @@
 // Bu dosya, AJAX istekleri için yalnızca ürün listesi, sayfalama ve ürün sayısı HTML'ini döndürür.
 
 // Gerekli servisleri ve ayarları dahil et
+require_once '../config/database.php'; // Ensure adapter is loaded
 require_once '../services/CategoryService.php';
 require_once '../services/Product/ProductApiService.php';
 require_once '../services/GenderService.php';
@@ -19,16 +20,12 @@ $category_service = category_service();
 $product_api_service = product_api_service();
 $gender_service = gender_service();
 
-// Slug'ları ID'lere dönüştür
-$category_ids = !empty($category_filters) ? $category_service->getCategoryIdsBySlug($category_filters) : [];
-$gender_ids = !empty($gender_filters) ? $gender_service->getGenderIdsBySlug($gender_filters) : [];
-
-// Ürünleri al
+// Ürünleri doğrudan slug'lar ile al
 $products_result = $product_api_service->getProductsForApi([
     'page' => $page,
     'limit' => $limit,
-    'categories' => $category_ids,
-    'genders' => $gender_ids,
+    'categories' => $category_filters,
+    'genders' => $gender_filters,
     'sort' => $sort_filter,
     'featured' => $featured_filter
 ]);
@@ -46,7 +43,7 @@ if (!empty($products)) {
         // Bu kısım products.php'deki ürün kartı ile aynı olmalı
         echo '<div class="product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">';
         echo '    <div class="relative overflow-hidden bg-gray-100 aspect-square">';
-        echo '        <img src="' . htmlspecialchars($product['image_url']) . '" alt="' . htmlspecialchars($product['name']) . '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">';
+        echo '        <img src="' . htmlspecialchars($product['primary_image'] ?? 'assets/images/placeholder.svg') . '" alt="' . htmlspecialchars($product['name']) . '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">';
         if ($product['is_featured']) {
             echo '        <span class="absolute top-3 left-3 bg-primary text-white text-xs px-2 py-1 rounded">Öne Çıkan</span>';
         }

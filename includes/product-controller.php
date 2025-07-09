@@ -1,126 +1,113 @@
 <?php
-// Ürün ID'sini al
-$product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+/**
+ * =================================================================
+ * OPTIMIZED PRODUCT DETAIL CONTROLLER V3
+ * =================================================================
+ * This is the final, simplified version. It relies solely on the
+ * 'product_details_view' and contains no caching logic.
+ * =================================================================
+ */
 
-// Veritabanı bağlantısı ve optimize edilmiş servisler
+// Required services and configuration
 require_once 'config/database.php';
-require_once 'services/Product/ProductImageService.php';
 require_once 'services/Product/ProductApiService.php';
 
-// Renk slug'ını URL'den al
-$selected_color_slug = isset($_GET['color']) ? trim($_GET['color']) : '';
+// --- MAIN DATA FETCH ---
 
-// Renk slug'ları için helper fonksiyonlar
-function createColorSlug($colorName) {
-    // mb_strtolower alternatifi - Türkçe karakterleri de işleyebilir
-    $slug = strtolower($colorName);
-    $slug = str_replace(['ı', 'İ', 'ş', 'Ş', 'ğ', 'Ğ', 'ü', 'Ü', 'ö', 'Ö', 'ç', 'Ç'],
-                       ['i', 'i', 's', 's', 'g', 'g', 'u', 'u', 'o', 'o', 'c', 'c'], $slug);
-    $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
-    return preg_replace('/-+/', '-', trim($slug, '-'));
-}
-
-function findColorIdBySlug($slug, $colors) {
-    foreach ($colors as $color) {
-        if (createColorSlug($color['name']) === $slug) {
-            return $color['id'];
-        }
-    }
-    return null;
-}
-
-// Veritabanından ürün bilgilerini çek
-$product_data_result = get_product_model($product_id);
-$product_data = $product_data_result ? $product_data_result[0] : null;
-
-// Eğer ürün bulunamazsa geri yönlendir
-if (!$product_data) {
+$product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if (!$product_id) {
     header("Location: products.php");
     exit;
 }
 
-// Ürün verileri bulunduktan sonra diğer verileri çek - Sadece aktif varyantları al
-$product_variants = get_product_variants($product_id, true); // Sadece aktif varyantlar
-$all_colors = get_colors(); // Performans için renkleri bir kez çek
-$all_sizes = get_sizes();   // Performans için bedenleri bir kez çek
+$db = database();
+$product_api_service = product_api_service();
 
-// Yeni Image Service'i kullan
-$productImageService = productImageService();
-$product_images_by_color = $productImageService->getProductImagesByColors($product_id);
-$product_images = $productImageService->getProductImages($product_id); // Tüm resimler (geriye uyumluluk için)
+$product_data = $db->select('product_details_view', ['id' => ['eq', $product_id]]);
+if (empty($product_data)) {
+    header("Location: products.php");
+    exit;
+}
 
-// Ürün bilgilerini al
-$product = $product_data;
+$product = $product_data[0];
+// The SupabaseAdapter already decodes JSON, so we just ensure the keys exist.
+$product['categories'] = $product['categories'] ?? [];
+$product['genders'] = $product['genders'] ?? [];
+$product['variants'] = $product['variants'] ?? [];
+$product['images'] = $product['images'] ?? [];
 
-// Ürün özelliklerini hazırla
-$features = !empty($product['features']) ? explode("\n", $product['features']) : [];
 
-// Renkleri hazırla (Optimize Edilmiş)
-$colors = [];
-$product_color_ids = array_unique(array_column($product_variants, 'color_id'));
-$all_colors_map = array_column($all_colors, null, 'id'); // Renkleri ID'ye göre haritala
+// --- DATA PREPARATION FOR THE VIEW ---
 
-foreach ($product_color_ids as $color_id) {
-    if (isset($all_colors_map[$color_id])) {
-        $colors[] = $all_colors_map[$color_id];
+// Color selection logic
+$selected_color_slug = isset($_GET['color']) ? trim($_GET['color']) : '';
+$all_colors = [];
+$variants_by_color_id = [];
+if (!empty($product['variants'])) {
+    foreach ($product['variants'] as $variant) {
+        $variants_by_color_id[$variant['color_id']][] = $variant;
+    }
+    $color_ids = array_keys($variants_by_color_id);
+    if (!empty($color_ids)) {
+        $all_colors = $db->select('colors', ['id' => ['in', $color_ids]]);
     }
 }
 
-// Seçilen renk ID'sini bul
+function createColorSlug($colorName) {
+    $slug = strtolower($colorName ?? '');
+    $slug = str_replace(['ı', 'İ', 'ş', 'Ş', 'ğ', 'Ğ', 'ü', 'Ü', 'ö', 'Ö', 'ç', 'Ç'], ['i', 'i', 's', 's', 'g', 'g', 'u', 'u', 'o', 'o', 'c', 'c'], $slug);
+    $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
+    return preg_replace('/-+/', '-', trim($slug, '-'));
+}
+
 $selected_color_id = null;
 if (!empty($selected_color_slug)) {
-    $selected_color_id = findColorIdBySlug($selected_color_slug, $colors);
-}
-
-// Eğer seçilen renk bulunamazsa veya hiç renk seçilmemişse, ilk rengi varsayılan yap
-if (!$selected_color_id && !empty($colors)) {
-    $selected_color_id = $colors[0]['id'];
-}
-
-// Seçilen renk bilgilerini al
-$selected_color = null;
-if ($selected_color_id) {
-    $selected_color = $all_colors_map[$selected_color_id] ?? null;
-}
-
-// Seçilen renge göre görselleri filtrele
-$current_images = [];
-if ($selected_color_id && isset($product_images_by_color[$selected_color_id])) {
-    $current_images = $product_images_by_color[$selected_color_id];
-    // Sort by sort_order
-    usort($current_images, function($a, $b) {
-        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
-    });
-} elseif (isset($product_images_by_color['default'])) {
-    // Varsayılan görseller varsa onları kullan
-    $current_images = $product_images_by_color['default'];
-    usort($current_images, function($a, $b) {
-        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
-    });
-} elseif (!empty($product_images_by_color)) {
-    // Hiç varsayılan yoksa ilk rengin görsellerini kullan
-    $current_images = reset($product_images_by_color);
-    usort($current_images, function($a, $b) {
-        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
-    });
-}
-
-// Bedenleri hazırla (Optimize Edilmiş)
-$sizes = [];
-$product_size_ids = array_unique(array_column($product_variants, 'size_id'));
-$all_sizes_map = array_column($all_sizes, null, 'id'); // Bedenleri ID'ye göre haritala
-
-foreach ($product_size_ids as $size_id) {
-    if (isset($all_sizes_map[$size_id])) {
-        $sizes[] = $all_sizes_map[$size_id];
+    foreach ($all_colors as $color) {
+        if (createColorSlug($color['name']) === $selected_color_slug) {
+            $selected_color_id = $color['id'];
+            break;
+        }
     }
 }
-// Bedenleri değere göre sırala
-usort($sizes, function($a, $b) {
-    return strnatcmp($a['size_value'], $b['size_value']);
-});
 
-// Benzer ürünleri getir - Optimize edilmiş servis kullan
-$productApiService = product_api_service();
-$similar_products = $productApiService->getSimilarProductsOptimized($product_id, 5);
+if (!$selected_color_id && !empty($all_colors)) {
+    $selected_color_id = $all_colors[0]['id'];
+}
+
+// Prepare images for the selected color
+$current_images = [];
+if (!empty($product['images'])) {
+    foreach ($product['images'] as $image) {
+        if ($image['color_id'] === $selected_color_id) {
+            $current_images[] = $image;
+        }
+    }
+    if (empty($current_images)) {
+       foreach ($product['images'] as $image) {
+            if ($image['is_primary']) {
+                $current_images[] = $image;
+            }
+        }
+    }
+    if (empty($current_images) && isset($product['images'][0])) {
+        $current_images[] = $product['images'][0];
+    }
+}
+
+// Prepare available sizes for the selected color
+$available_sizes = [];
+if ($selected_color_id && isset($variants_by_color_id[$selected_color_id])) {
+    $size_ids = array_column($variants_by_color_id[$selected_color_id], 'size_id');
+    if(!empty($size_ids)){
+        $available_sizes = $db->select('sizes', ['id' => ['in', $size_ids]]);
+        usort($available_sizes, fn($a, $b) => strnatcmp($a['size_value'], $b['size_value']));
+    }
+}
+
+// Prepare features
+$features = !empty($product['features']) ? explode("\n", $product['features']) : [];
+
+// Fetch similar products using the updated service method
+$similar_products = $product_api_service->getSimilarProducts($product['id'], 5);
+
 ?>

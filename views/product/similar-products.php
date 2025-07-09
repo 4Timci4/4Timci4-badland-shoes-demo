@@ -7,22 +7,28 @@
             <p class="text-gray-600">Beğenebileceğiniz diğer modellerimiz</p>
         </div>
         
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <!-- Benzer Ürünler -->
-            <?php foreach($similar_products as $p): ?>
-                <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col h-full">
-                    <div class="aspect-square bg-gray-100">
-                        <img src="<?php echo isset($p['image_url']) ? $p['image_url'] : ''; ?>"
-                             alt="<?php echo $p['name']; ?>"
-                             class="w-full h-full object-cover">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <?php foreach ($similar_products as $p): ?>
+                <div class="product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">
+                    <div class="relative overflow-hidden bg-gray-100 aspect-square">
+                        <a href="product-details.php?id=<?php echo $p['id']; ?>">
+                            <img src="<?php echo htmlspecialchars($p['primary_image'] ?? 'assets/images/placeholder.svg'); ?>"
+                                 alt="<?php echo htmlspecialchars($p['name']); ?>"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy">
+                        </a>
+                        <?php if ($p['is_featured']): ?>
+                            <span class="absolute top-3 left-3 bg-primary text-white text-xs px-2 py-1 rounded">Öne Çıkan</span>
+                        <?php endif; ?>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <a href="product-details.php?id=<?php echo $p['id']; ?>" class="w-10 h-10 bg-white rounded-full hover:bg-primary hover:text-white transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100" title="Ürün Detayı"><i class="fas fa-eye"></i></a>
+                        </div>
                     </div>
                     <div class="p-4 text-center flex flex-col flex-grow">
-                        <h3 class="font-semibold text-secondary mb-2 h-12 flex items-center justify-center"><?php echo $p['name']; ?></h3>
-                        <div class="text-xl font-bold text-secondary mt-auto mb-4">₺ <?php echo number_format($p['base_price'], 2); ?></div>
-                        <a href="/product-details.php?id=<?php echo $p['id']; ?>"
-                           class="inline-block bg-brand text-secondary px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all duration-300 mx-auto text-center w-full">
-                            Ürün Detayı
-                        </a>
+                        <h3 class="text-lg font-medium text-secondary mb-3 min-h-[3.5rem] flex items-center justify-center">
+                            <a href="product-details.php?id=<?php echo $p['id']; ?>" class="text-inherit hover:text-primary transition-colors line-clamp-2"><?php echo htmlspecialchars($p['name']); ?></a>
+                        </h3>
+                        <div class="text-xl font-bold text-secondary mb-3">₺ <?php echo number_format($p['base_price'], 2); ?></div>
                     </div>
                 </div>
             <?php endforeach; ?>

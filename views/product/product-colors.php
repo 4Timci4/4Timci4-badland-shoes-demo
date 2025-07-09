@@ -2,23 +2,8 @@
 <div class="color-selection">
     <h3 class="text-lg font-semibold text-secondary mb-3">Renk Seçimi:</h3>
     <div class="flex gap-3">
-        <?php 
-        // Benzersiz renkleri al
-        $unique_color_variants = [];
-        $seen_colors = [];
-        
-        foreach($product_variants as $variant) {
-            $color_id = $variant['color_id'];
-            if (!isset($seen_colors[$color_id])) {
-                $seen_colors[$color_id] = true;
-                $unique_color_variants[] = $variant;
-            }
-        }
-        
-        foreach($unique_color_variants as $index => $variant): 
-            $color_id = $variant['color_id'];
-            $color = $all_colors_map[$color_id] ?? null;
-            if (!$color) continue;
+        <?php foreach($all_colors as $color):
+            $color_id = $color['id'];
             
             // Renk slug'ını oluştur
             $color_slug = createColorSlug($color['name']);
@@ -39,7 +24,16 @@
             </a>
         <?php endforeach; ?>
     </div>
-    <p class="text-sm text-gray-600 mt-2">Seçili renk: <span id="selected-color"><?php 
-        echo $selected_color ? htmlspecialchars($selected_color['name']) : '-';
+    <p class="text-sm text-gray-600 mt-2">Seçili renk: <span id="selected-color"><?php
+        $selected_color_name = '-';
+        if ($selected_color_id) {
+            foreach ($all_colors as $color) {
+                if ($color['id'] === $selected_color_id) {
+                    $selected_color_name = htmlspecialchars($color['name']);
+                    break;
+                }
+            }
+        }
+        echo $selected_color_name;
     ?></span></p>
 </div>

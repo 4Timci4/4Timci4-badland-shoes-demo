@@ -431,7 +431,8 @@ class SupabaseAdapter implements DatabaseInterface {
             'LIKE' => 'like',
             'ILIKE' => 'ilike',
             'IN' => 'in',
-            'NOT IN' => 'not.in'
+            'NOT IN' => 'not.in',
+            '&&' => 'ov' // Overlap operator for arrays
         ];
         
         return $operatorMap[strtoupper($operator)] ?? 'eq';

@@ -2,7 +2,7 @@
 <div class="lg:col-span-2 space-y-5">
     <div>
         <h1 class="text-2xl font-bold text-secondary mb-2"><?php echo $product['name']; ?></h1>
-        <p class="text-gray-600"><?php echo $product['category_name']; ?></p>
+        <p class="text-gray-600"><?php echo htmlspecialchars($product['categories'][0]['name'] ?? 'Kategori Yok'); ?></p>
     </div>
     
     <!-- Fiyat Bilgisi -->

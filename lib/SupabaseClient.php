@@ -145,7 +145,17 @@ class SupabaseClient {
             throw new Exception("Supabase cURL Error: $curl_error", 500);
         }
 
+        // HTTP 204 No Content, DDL komutları için başarılı bir yanıttır.
+        if ($http_code === 204) {
+            return ['body' => null, 'headers' => $responseHeaders];
+        }
+
         if ($http_code >= 200 && $http_code < 300) {
+            // Yanıt boşsa, null body ile başarılı kabul et
+            if (empty($response)) {
+                return ['body' => null, 'headers' => $responseHeaders];
+            }
+            
             $body = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 error_log("Supabase API Error: Invalid JSON response. Body: $response");
