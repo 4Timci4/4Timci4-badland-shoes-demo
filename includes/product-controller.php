@@ -30,11 +30,12 @@ if (empty($product_data)) {
 }
 
 $product = $product_data[0];
-// The SupabaseAdapter already decodes JSON, so we just ensure the keys exist.
-$product['categories'] = $product['categories'] ?? [];
-$product['genders'] = $product['genders'] ?? [];
-$product['variants'] = $product['variants'] ?? [];
-$product['images'] = $product['images'] ?? [];
+
+// JSON verilerini decode et
+$product['categories'] = is_string($product['categories']) ? json_decode($product['categories'], true) : ($product['categories'] ?? []);
+$product['genders'] = is_string($product['genders']) ? json_decode($product['genders'], true) : ($product['genders'] ?? []);
+$product['variants'] = is_string($product['variants']) ? json_decode($product['variants'], true) : ($product['variants'] ?? []);
+$product['images'] = is_string($product['images']) ? json_decode($product['images'], true) : ($product['images'] ?? []);
 
 
 // --- DATA PREPARATION FOR THE VIEW ---

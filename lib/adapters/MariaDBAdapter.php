@@ -30,6 +30,20 @@ class MariaDBAdapter implements DatabaseInterface {
     }
     
     /**
+     * Veri ekleme veya değiştirme işlemi (duplicate hataları önler)
+     */
+    public function insertOrReplace($table, $data, $options = []) {
+        return $this->mariadbClient->insertOrReplace($table, $data, $options);
+    }
+    
+    /**
+     * Upsert işlemi (INSERT ON DUPLICATE KEY UPDATE)
+     */
+    public function upsert($table, $data, $options = []) {
+        return $this->mariadbClient->upsert($table, $data, $options);
+    }
+    
+    /**
      * Veri güncelleme işlemi
      */
     public function update($table, $data, $conditions, $options = []) {

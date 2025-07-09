@@ -53,7 +53,13 @@ class MariaDBClient implements DatabaseInterface {
     public function select($table, $conditions = [], $columns = '*', $options = []) {
         try {
             $sql = $this->buildSelectSql($table, $conditions, $columns, $options);
-            $params = $this->extractParams($conditions);
+            
+            // WHERE koşulları varsa parametreleri al
+            $params = [];
+            if (!empty($conditions)) {
+                $whereClause = $this->buildWhereClause($conditions);
+                $params = $whereClause['params'];
+            }
             
             // Cache kontrolü
             if ($this->cacheEnabled && empty($options['no_cache'])) {
@@ -113,6 +119,72 @@ class MariaDBClient implements DatabaseInterface {
         } catch (PDOException $e) {
             $this->lastError = $e->getMessage();
             error_log("MariaDBClient::insert - " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Veri ekleme veya değiştirme işlemi (REPLACE INTO - duplicate hataları önler)
+     */
+    public function insertOrReplace($table, $data, $options = []) {
+        try {
+            $columns = array_keys($data);
+            $placeholders = array_map(function($col) { return ':' . $col; }, $columns);
+            
+            $sql = sprintf(
+                'REPLACE INTO `%s` (`%s`) VALUES (%s)',
+                $table,
+                implode('`, `', $columns),
+                implode(', ', $placeholders)
+            );
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($data);
+            
+            return ['affected_rows' => $stmt->rowCount()];
+            
+        } catch (PDOException $e) {
+            $this->lastError = $e->getMessage();
+            error_log("MariaDBClient::insertOrReplace - " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Upsert işlemi (INSERT ON DUPLICATE KEY UPDATE)
+     */
+    public function upsert($table, $data, $options = []) {
+        try {
+            $columns = array_keys($data);
+            $placeholders = array_map(function($col) { return ':' . $col; }, $columns);
+            
+            // UPDATE kısmı için sütunları hazırla (id hariç)
+            $updateParts = [];
+            foreach ($columns as $column) {
+                if ($column !== 'id') { // Primary key'i güncelleme
+                    $updateParts[] = "`$column` = VALUES(`$column`)";
+                }
+            }
+            
+            $sql = sprintf(
+                'INSERT INTO `%s` (`%s`) VALUES (%s)',
+                $table,
+                implode('`, `', $columns),
+                implode(', ', $placeholders)
+            );
+            
+            if (!empty($updateParts)) {
+                $sql .= ' ON DUPLICATE KEY UPDATE ' . implode(', ', $updateParts);
+            }
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($data);
+            
+            return ['affected_rows' => $stmt->rowCount()];
+            
+        } catch (PDOException $e) {
+            $this->lastError = $e->getMessage();
+            error_log("MariaDBClient::upsert - " . $e->getMessage());
             return [];
         }
     }
@@ -455,12 +527,40 @@ class MariaDBClient implements DatabaseInterface {
             if (is_array($value)) {
                 // Operatör bazlı koşul ['>', 18]
                 if (count($value) >= 2) {
-                    $operator = $value[0];
+                    $operator = strtoupper($value[0]);
                     $val = $value[1];
+
+                    // Supabase operatörlerini SQL operatörlerine normalize et
+                    $operator_map = [
+                        'EQ' => '=',
+                        'NEQ' => '!=',
+                        'GT' => '>',
+                        'GTE' => '>=',
+                        'LT' => '<',
+                        'LTE' => '<=',
+                        'LIKE' => 'LIKE',
+                        'ILIKE' => 'LIKE',
+                        'IN' => 'IN',
+                        '&&' => 'LIKE' // PostgreSQL array overlap operatörünü LIKE'a dönüştür
+                    ];
                     
-                    if (strtoupper($operator) === 'IN') {
+                    if (isset($operator_map[$operator])) {
+                        $operator = $operator_map[$operator];
+                    }
+
+                    $allowed_operators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', 'IN'];
+                    if (!in_array($operator, $allowed_operators)) {
+                        // && operatörü için özel log
+                        if ($operator === '&&') {
+                            error_log("MariaDBClient: PostgreSQL array overlap operatörü (&&) LIKE operatörüne dönüştürüldü");
+                        } else {
+                            throw new Exception("Geçersiz operatör: $operator");
+                        }
+                    }
+                    
+                    if ($operator === 'IN') {
                         // IN operatörü için özel işlem
-                        if (is_array($val)) {
+                        if (is_array($val) && !empty($val)) {
                             $inPlaceholders = [];
                             foreach ($val as $i => $inVal) {
                                 $inKey = $paramKey . '_in_' . $i;
@@ -487,24 +587,6 @@ class MariaDBClient implements DatabaseInterface {
         ];
     }
     
-    /**
-     * Koşullardan parametreleri çıkarır
-     */
-    private function extractParams($conditions) {
-        $params = [];
-        
-        foreach ($conditions as $key => $value) {
-            if (is_array($value)) {
-                if (count($value) >= 2 && strtoupper($value[0]) !== 'IN') {
-                    $params[$key] = $value[1];
-                }
-            } else {
-                $params[$key] = $value;
-            }
-        }
-        
-        return $params;
-    }
     
     /**
      * Önbellekten veri çeker
@@ -608,7 +690,7 @@ class MariaDBClient implements DatabaseInterface {
                 
                 // eq.123 formatını parse et
                 if (strpos($value, 'eq.') === 0) {
-                    $conditions[$key] = substr($value, 3);
+                    $conditions[$key] = ['=', substr($value, 3)];
                 } elseif (strpos($value, 'gt.') === 0) {
                     $conditions[$key] = ['>', substr($value, 3)];
                 } elseif (strpos($value, 'lt.') === 0) {

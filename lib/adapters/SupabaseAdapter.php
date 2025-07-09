@@ -412,7 +412,13 @@ class SupabaseAdapter implements DatabaseInterface {
                     if ($val === null) {
                         $parts[] = $key . '=is.null';
                     } else {
-                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
+                        // Array operatörü için özel formatting
+                        if ($operator === '&&' && is_array($val)) {
+                            $formattedArray = $this->formatArrayForPostgreSQL($val);
+                            $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $formattedArray;
+                        } else {
+                            $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
+                        }
                     }
                 }
             } else {
@@ -518,5 +524,28 @@ class SupabaseAdapter implements DatabaseInterface {
         
         // Varsayılan olarak ASC
         return $parts[0] . '.asc';
+    }
+    
+    /**
+     * PHP array'ini PostgreSQL array literal formatına çevirir
+     * Örnek: ['value1', 'value2'] -> '{"value1","value2"}'
+     */
+    private function formatArrayForPostgreSQL($array) {
+        if (!is_array($array)) {
+            return $array;
+        }
+        
+        // Array elemanlarını quote'la ve virgülle ayır
+        $quotedElements = array_map(function($element) {
+            // String değerleri quote'la, diğerlerini olduğu gibi bırak
+            if (is_string($element)) {
+                // PostgreSQL array'inde çift tırnak kullanılır
+                return '"' . str_replace('"', '""', $element) . '"';
+            }
+            return $element;
+        }, $array);
+        
+        // PostgreSQL array literal formatı: {element1,element2}
+        return '{' . implode(',', $quotedElements) . '}';
     }
 }
