@@ -16,7 +16,7 @@ require_once __DIR__ . '/../config/env.php';
 class SupabaseClient {
     private $baseUrl;
     private $apiKey;
-    private $requestTimeout = 30;
+    private $requestTimeout = 120; // 2 dakikaya çıkarıldı
     private $connectTimeout = 10;
     private $useCache = true;
     private $cacheExpiry = 1; // 5 dakika
