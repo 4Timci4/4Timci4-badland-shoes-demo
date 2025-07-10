@@ -47,7 +47,6 @@ if ($_POST) {
         // Form verilerini al
         $name = trim($_POST['name'] ?? '');
         $description = trim($_POST['description'] ?? '');
-        $base_price = floatval($_POST['base_price'] ?? 0);
         $category_ids = $_POST['category_ids'] ?? []; // Çoklu kategori seçimi
         $is_featured = isset($_POST['is_featured']) ? 1 : 0;
         $features = trim($_POST['features'] ?? '');
@@ -64,10 +63,6 @@ if ($_POST) {
             $errors[] = 'Ürün açıklaması zorunludur.';
         }
         
-        if ($base_price <= 0) {
-            $errors[] = 'Geçerli bir fiyat giriniz.';
-        }
-        
         if (empty($category_ids) || !is_array($category_ids)) {
             $errors[] = 'En az bir kategori seçiniz.';
         }
@@ -78,7 +73,6 @@ if ($_POST) {
                 $product_data = [
                     'name' => $name,
                     'description' => $description,
-                    'base_price' => $base_price,
                     'is_featured' => $is_featured,
                     'features' => $features
                 ];
@@ -383,21 +377,6 @@ include 'includes/header.php';
                         </div>
                     </div>
 
-                    <!-- Base Price -->
-                    <div>
-                        <label for="base_price" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-lira-sign mr-2"></i>Fiyat (₺) *
-                        </label>
-                        <input type="number" 
-                               id="base_price" 
-                               name="base_price" 
-                               required
-                               min="0" 
-                               step="0.01"
-                               value="<?= htmlspecialchars($product['base_price'] ?? '') ?>"
-                               placeholder="0.00"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                    </div>
                 </div>
             </div>
         </div>
@@ -526,7 +505,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const nameInput = document.querySelector('#name');
     const descriptionInput = document.querySelector('#description');
-    const priceInput = document.querySelector('#base_price');
     const categorySelect = document.querySelector('#category_id');
     
     // Real-time validation
@@ -558,12 +536,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Description validation
     descriptionInput.addEventListener('blur', function() {
         validateField(this, this.value.trim().length >= 10, 'Açıklama en az 10 karakter olmalıdır.');
-    });
-    
-    // Price validation
-    priceInput.addEventListener('blur', function() {
-        const price = parseFloat(this.value);
-        validateField(this, price > 0, 'Geçerli bir fiyat giriniz.');
     });
     
     // Multi-category selection handling

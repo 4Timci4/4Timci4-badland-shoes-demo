@@ -35,7 +35,6 @@ class ProductQueryService {
             }
             
             $product = $products[0];
-            $product['price'] = $product['base_price']; // Tutarlılık için
             
             // Kategori bilgilerini ekle - MariaDB uyumlu şekilde
             $category_relations = $this->db->select('product_categories', ['product_id' => $model_id], 'category_id');
@@ -161,8 +160,8 @@ class ProductQueryService {
                 return null;
             }
             
-            $products = $this->db->select('product_models', ['id' => $model_id], 
-                'id, name, description, base_price, is_featured', ['limit' => 1]);
+            $products = $this->db->select('product_models', ['id' => $model_id],
+                'id, name, description, is_featured', ['limit' => 1]);
             
             return !empty($products) ? $products[0] : null;
             
@@ -196,7 +195,6 @@ class ProductQueryService {
             
             // Her ürün için ek bilgileri ekle
             foreach ($products as &$product) {
-                $product['price'] = $product['base_price'];
                 
                 // Ana görsel
                 $images = $this->db->select('product_images', [

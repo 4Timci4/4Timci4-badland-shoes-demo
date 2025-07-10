@@ -79,8 +79,8 @@ class ProductAdminService {
                     'offset' => $offset
                 ];
                 
-                $products = $this->db->select('product_models', $conditions, 
-                    'id, name, base_price, is_featured, created_at', $options);
+                $products = $this->db->select('product_models', $conditions,
+                    'id, name, is_featured, created_at', $options);
                 
                 // Batch olarak ilişkili verileri getir
                 $enriched_products = $this->enrichProductsForAdminBatch($products);
@@ -171,7 +171,6 @@ class ProductAdminService {
             $enriched_product = [
                 'id' => $product_id,
                 'name' => $product['name'],
-                'base_price' => $product['base_price'],
                 'is_featured' => $product['is_featured'],
                 'created_at' => $product['created_at']
             ];
@@ -227,7 +226,6 @@ class ProductAdminService {
                 'id' => $product['id'],
                 'name' => $product['name'],
                 'description' => $product['description'],
-                'base_price' => $product['base_price'],
                 'is_featured' => $product['is_featured'],
                 'created_at' => $product['created_at']
             ];
@@ -384,8 +382,8 @@ class ProductAdminService {
                 'limit' => $limit
             ];
             
-            $products = $this->db->select('product_models', [], 
-                'id, name, base_price, is_featured, created_at', $options);
+            $products = $this->db->select('product_models', [],
+                'id, name, is_featured, created_at', $options);
             
             // Kategorileri ekle - Supabase uyumlu şekilde
             foreach ($products as &$product) {

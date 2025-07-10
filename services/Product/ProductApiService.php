@@ -98,7 +98,7 @@ class ProductApiService {
 
         // Build sort order
         $sort_parts = explode('-', $sort);
-        $order_field = $sort_parts[0] === 'price' ? 'base_price' : 'created_at';
+        $order_field = 'created_at';
         $order_direction = $sort_parts[1] ?? 'desc';
         $order = $order_field . ' ' . strtoupper($order_direction);
         
@@ -167,7 +167,7 @@ class ProductApiService {
 
         // Build sort order
         $sort_parts = explode('-', $sort);
-        $order_field = $sort_parts[0] === 'price' ? 'p.base_price' : 'p.created_at';
+        $order_field = 'p.created_at';
         $order_direction = $sort_parts[1] ?? 'desc';
         $order = $order_field . ' ' . strtoupper($order_direction);
         

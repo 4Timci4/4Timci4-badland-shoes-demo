@@ -352,12 +352,10 @@ class SettingsService {
                 'business_phone' => '+90 212 123 45 67',
                 'business_email' => 'info@bandlandshoes.com',
                 'business_hours' => 'Mo-Sa 09:00-18:00',
-                'business_price_range' => '₺₺',
                 
                 // E-commerce SEO
                 'product_schema_enabled' => 'true',
                 'review_schema_enabled' => 'true',
-                'price_schema_enabled' => 'true',
                 'availability_schema_enabled' => 'true'
             ]
         ];

@@ -154,8 +154,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                             <span class="text-sm text-gray-600">Sırala:</span>
                             <select name="sort" id="sort-filter" class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
                                 <option value="created_at-desc" <?php echo ($sort_filter === 'created_at-desc') ? 'selected' : ''; ?>>Önce En Yeni</option>
-                                <option value="price-asc" <?php echo ($sort_filter === 'price-asc') ? 'selected' : ''; ?>>Fiyat: Düşükten Yükseğe</option>
-                                <option value="price-desc" <?php echo ($sort_filter === 'price-desc') ? 'selected' : ''; ?>>Fiyat: Yüksekten Düşüğe</option>
                                 <option value="name-asc" <?php echo ($sort_filter === 'name-asc') ? 'selected' : ''; ?>>İsim A-Z</option>
                             </select>
                         </div>
@@ -189,9 +187,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                                 <?php echo htmlspecialchars($product['name']); ?>
                                             </a>
                                         </h3>
-                                        <div class="text-xl font-bold text-secondary mb-3">
-                                            ₺ <?php echo number_format($product['base_price'], 2); ?>
-                                        </div>
                                         <div class="flex flex-wrap gap-1 justify-center mt-auto">
                                             <?php if (!empty($product['category_names'])): ?>
                                                 <?php foreach ($product['category_names'] as $category_name): ?>

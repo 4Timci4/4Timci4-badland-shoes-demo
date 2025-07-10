@@ -55,7 +55,6 @@ if (!empty($products)) {
         echo '        <h3 class="text-lg font-medium text-secondary mb-3 min-h-[3.5rem] flex items-center justify-center">';
         echo '            <a href="product-details.php?id=' . $product['id'] . '" class="text-inherit hover:text-primary transition-colors line-clamp-2">' . htmlspecialchars($product['name']) . '</a>';
         echo '        </h3>';
-        echo '        <div class="text-xl font-bold text-secondary mb-3">₺ ' . number_format($product['base_price'], 2) . '</div>';
         echo '        <div class="flex flex-wrap gap-1 justify-center mt-auto">';
         if (!empty($product['category_names'])) {
             foreach ($product['category_names'] as $category_name) {

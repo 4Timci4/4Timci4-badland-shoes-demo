@@ -5,9 +5,6 @@
         <p class="text-gray-600"><?php echo htmlspecialchars($product['categories'][0]['name'] ?? 'Kategori Yok'); ?></p>
     </div>
     
-    <!-- Fiyat Bilgisi -->
-    <?php include 'views/product/product-price.php'; ?>
-    
     <!-- Renk Seçimi -->
     <?php include 'views/product/product-colors.php'; ?>
     

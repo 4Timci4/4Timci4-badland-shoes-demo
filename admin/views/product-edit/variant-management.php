@@ -30,7 +30,6 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renk</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beden</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiyat</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
@@ -53,17 +52,6 @@
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <span class="text-sm text-gray-900 font-mono"><?= htmlspecialchars($variant['sku']) ?></span>
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    <input type="number"
-                                           value="<?= htmlspecialchars($variant['price']) ?>"
-                                           step="0.01"
-                                           min="0"
-                                           class="variant-price w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                           data-variant-id="<?= $variant['id'] ?>">
-                                    <span class="text-xs text-gray-500">₺</span>
-                                </div>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <input type="number"
@@ -149,15 +137,6 @@
                             </label>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Fiyat (₺)</label>
-                            <input type="number"
-                                   value="<?= htmlspecialchars($variant['price']) ?>"
-                                   step="0.01"
-                                   min="0"
-                                   class="variant-price w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                   data-variant-id="<?= $variant['id'] ?>">
-                        </div>
-                        <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Stok</label>
                             <input type="number"
                                    value="<?= htmlspecialchars($variant['stock_quantity']) ?>"
@@ -209,16 +188,6 @@
                     </select>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Fiyat (₺)</label>
-                    <input type="number" 
-                           id="new-variant-price" 
-                           value="<?= $product['base_price'] ?>"
-                           step="0.01" 
-                           min="0"
-                           placeholder="0.00"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Stok Miktarı</label>

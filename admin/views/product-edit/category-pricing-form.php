@@ -82,21 +82,6 @@
                 </div>
             </div>
 
-            <!-- Base Price -->
-            <div>
-                <label for="base_price" class="block text-sm font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-lira-sign mr-2"></i>Fiyat (₺) *
-                </label>
-                <input type="number" 
-                       id="base_price" 
-                       name="base_price" 
-                       required
-                       min="0" 
-                       step="0.01"
-                       value="<?= htmlspecialchars($product['base_price']) ?>"
-                       placeholder="0.00"
-                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-            </div>
         </div>
     </div>
 </div>

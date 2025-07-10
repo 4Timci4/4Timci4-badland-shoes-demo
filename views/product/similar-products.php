@@ -28,7 +28,6 @@
                         <h3 class="text-lg font-medium text-secondary mb-3 min-h-[3.5rem] flex items-center justify-center">
                             <a href="product-details.php?id=<?php echo $p['id']; ?>" class="text-inherit hover:text-primary transition-colors line-clamp-2"><?php echo htmlspecialchars($p['name']); ?></a>
                         </h3>
-                        <div class="text-xl font-bold text-secondary mb-3">₺ <?php echo number_format($p['base_price'], 2); ?></div>
                     </div>
                 </div>
             <?php endforeach; ?>

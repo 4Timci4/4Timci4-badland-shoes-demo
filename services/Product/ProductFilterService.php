@@ -107,7 +107,7 @@ class ProductFilterService {
     /**
      * Filtreleme parametrelerine göre ürün ID'lerini getir
      * 
-     * @param array $filters Filtreler (categories, genders, featured, price_min, price_max)
+     * @param array $filters Filtreler (categories, genders, featured)
      * @return array|null Ürün ID'leri (null = filtre yok, [] = eşleşen ürün yok)
      */
     public function getFilteredProductIds($filters) {
@@ -149,8 +149,6 @@ class ProductFilterService {
             }
             
             // 3. Öne çıkan filtresi (diğer filtrelerle birlikte database sorgusunda kullanılacak)
-            // 4. Fiyat filtresi (diğer filtrelerle birlikte database sorgusunda kullanılacak)
-            
             return $product_ids; // null = filtre yok, array = filtrelenmiş ID'ler
             
         } catch (Exception $e) {
@@ -174,42 +172,6 @@ class ProductFilterService {
         }
     }
     
-    /**
-     * Fiyat aralığındaki ürün ID'lerini getir
-     * 
-     * @param float|null $min_price Minimum fiyat
-     * @param float|null $max_price Maksimum fiyat
-     * @return array Ürün ID'leri
-     */
-    public function getProductIdsByPriceRange($min_price = null, $max_price = null) {
-        try {
-            $conditions = [];
-            
-            if ($min_price !== null) {
-                $conditions['base_price'] = ['>=', floatval($min_price)];
-            }
-            
-            if ($max_price !== null) {
-                if (isset($conditions['base_price'])) {
-                    // Hem min hem max var
-                    $conditions['base_price'] = ['BETWEEN', [floatval($min_price), floatval($max_price)]];
-                } else {
-                    $conditions['base_price'] = ['<=', floatval($max_price)];
-                }
-            }
-            
-            if (empty($conditions)) {
-                return []; // Fiyat filtresi yok
-            }
-            
-            $products = $this->db->select('product_models', $conditions, 'id');
-            return !empty($products) ? array_column($products, 'id') : [];
-            
-        } catch (Exception $e) {
-            error_log("Fiyat aralığı ürün ID getirme hatası: " . $e->getMessage());
-            return [];
-        }
-    }
     
     /**
      * İki ürün ID dizisinin kesişimini al

@@ -45,8 +45,8 @@ try {
             $variant_data = $data['data'];
             
             // Validation
-            if (empty($variant_data['model_id']) || empty($variant_data['color_id']) || 
-                empty($variant_data['size_id']) || !isset($variant_data['price'])) {
+            if (empty($variant_data['model_id']) || empty($variant_data['color_id']) ||
+                empty($variant_data['size_id'])) {
                 throw new Exception('Gerekli alanlar eksik');
             }
             
@@ -95,7 +95,6 @@ try {
                     'color_id' => $variant_data['color_id'],
                     'size_id' => $variant_data['size_id'],
                     'sku' => $sku,
-                    'price' => $variant_data['price'],
                     'stock_quantity' => $variant_data['stock_quantity'] ?? 0,
                     'is_active' => $variant_data['is_active'] ?? true,
                     'color_name' => $color_info ? $color_info['name'] : 'Bilinmeyen Renk',
@@ -129,10 +128,6 @@ try {
                 $update_data['is_active'] = $update_data['is_active'] === true || $update_data['is_active'] === 'true' || $update_data['is_active'] === 1;
             }
             
-            // Validation
-            if (isset($update_data['price']) && $update_data['price'] <= 0) {
-                throw new Exception('Fiyat 0\'dan büyük olmalıdır');
-            }
             
             if (isset($update_data['stock_quantity']) && $update_data['stock_quantity'] < 0) {
                 throw new Exception('Stok miktarı negatif olamaz');

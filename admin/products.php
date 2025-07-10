@@ -185,9 +185,6 @@ include 'includes/header.php';
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="font-semibold text-gray-900">₺<?= number_format($product['base_price'], 2) ?></span>
-                                </td>
-                                <td class="px-6 py-4">
                                     <form method="POST" class="inline-block" onsubmit="return confirm('Ürün durumunu değiştirmek istediğinizden emin misiniz?')">
                                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                         <input type="hidden" name="action" value="toggle_featured">

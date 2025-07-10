@@ -26,18 +26,17 @@ function handle_product_edit_form($product_id) {
     // Form verilerini al
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $base_price = floatval($_POST['base_price'] ?? 0);
     $category_ids = $_POST['category_ids'] ?? []; // Çoklu kategori seçimi
     $gender_ids = $_POST['gender_ids'] ?? []; // Çoklu cinsiyet seçimi
     $is_featured = isset($_POST['is_featured']) ? true : false;
     $features = trim($_POST['features'] ?? '');
     
     // Validation
-    $errors = validate_product_form_data($name, $description, $base_price, $category_ids);
+    $errors = validate_product_form_data($name, $description, $category_ids);
     
     if (empty($errors)) {
         try {
-            $success = update_product_data($product_id, $name, $description, $base_price, $is_featured, $features, $category_ids, $gender_ids);
+            $success = update_product_data($product_id, $name, $description, $is_featured, $features, $category_ids, $gender_ids);
             
             if ($success) {
                 set_flash_message('success', 'Ürün başarıyla güncellendi.');
@@ -63,7 +62,7 @@ function handle_product_edit_form($product_id) {
     return false;
 }
 
-function validate_product_form_data($name, $description, $base_price, $category_ids) {
+function validate_product_form_data($name, $description, $category_ids) {
     $errors = [];
     
     if (empty($name)) {
@@ -72,10 +71,6 @@ function validate_product_form_data($name, $description, $base_price, $category_
     
     if (empty($description)) {
         $errors[] = 'Ürün açıklaması zorunludur.';
-    }
-    
-    if ($base_price <= 0) {
-        $errors[] = 'Geçerli bir fiyat giriniz.';
     }
     
     if (empty($category_ids) || !is_array($category_ids)) {
@@ -168,11 +163,10 @@ function handle_ajax_image_actions() {
     exit;
 }
 
-function update_product_data($product_id, $name, $description, $base_price, $is_featured, $features, $category_ids, $gender_ids) {
+function update_product_data($product_id, $name, $description, $is_featured, $features, $category_ids, $gender_ids) {
     $update_data = [
         'name' => $name,
         'description' => $description,
-        'base_price' => $base_price,
         'is_featured' => $is_featured,
         'features' => $features,
         'updated_at' => date('Y-m-d H:i:s')

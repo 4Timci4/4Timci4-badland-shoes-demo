@@ -185,7 +185,6 @@ class SEOManager {
             ],
             'offers' => [
                 '@type' => 'Offer',
-                'priceCurrency' => 'TRY',
                 'availability' => 'https://schema.org/InStock',
                 'seller' => [
                     '@type' => 'Organization',

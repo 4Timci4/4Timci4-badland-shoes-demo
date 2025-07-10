@@ -196,8 +196,7 @@ include 'includes/header.php';
                                     <p class="text-gray-600 text-sm mb-2">
                                         <?= htmlspecialchars($product['categories']['name'] ?? 'Kategorisiz') ?> • Stok: Bilinmiyor
                                     </p>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-lg font-bold text-primary-600">₺<?= number_format($product['base_price'], 2) ?></span>
+                                    <div class="flex items-center justify-end">
                                         <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                                             <?php
                                             $time_diff = time() - strtotime($product['created_at']);
