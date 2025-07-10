@@ -8,6 +8,10 @@
  * =================================================================
  */
 
+// Session konfigürasyonunu dahil et
+require_once 'config/session.php';
+start_session_safely();
+
 // Required optimized services
 require_once 'services/CategoryService.php';
 require_once 'services/Product/ProductApiService.php';

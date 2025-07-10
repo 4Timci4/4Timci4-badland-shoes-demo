@@ -1,5 +1,9 @@
-<?php 
-include 'includes/header.php'; 
+<?php
+// Session konfigürasyonunu dahil et
+require_once 'config/session.php';
+start_session_safely();
+
+include 'includes/header.php';
 require_once 'services/SliderService.php';
 require_once 'services/SeasonalCollectionsService.php';
 

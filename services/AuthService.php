@@ -161,8 +161,26 @@ class AuthService {
         if (isset($_SESSION['user_session'])) {
             $this->request('logout', 'POST');
         }
-        unset($_SESSION['user_session']);
+        
+        // Session verilerini temizle
+        $_SESSION = array();
+        
+        // Session cookie'sini temizle
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        
+        // Session'ı yok et
         session_destroy();
+        
+        // Yeni bir temiz session başlat
+        session_start();
+        session_regenerate_id(true);
+        
         return ['success' => true];
     }
     

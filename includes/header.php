@@ -1,8 +1,7 @@
 <?php
-// Session'ı sadece gerekirse başlat
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Session konfigürasyonunu dahil et ve session'ı güvenli başlat
+require_once $_SERVER['DOCUMENT_ROOT'] . '/config/session.php';
+start_session_safely();
 $current_page = basename($_SERVER['PHP_SELF']);
 
 // SEO Manager'ı dahil et

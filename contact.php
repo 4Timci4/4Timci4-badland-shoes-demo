@@ -1,4 +1,8 @@
-<?php 
+<?php
+// Session konfigürasyonunu dahil et
+require_once 'config/session.php';
+start_session_safely();
+
 require_once 'config/database.php';
 require_once 'services/ContactService.php';
 require_once 'lib/SecurityManager.php';

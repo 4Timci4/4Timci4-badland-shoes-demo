@@ -5,10 +5,16 @@ require_once __DIR__ . '/../../services/Product/FavoriteService.php';
 // Favori servisini başlat
 $favorite_service = favorite_service();
 
-// Kullanıcının favorilerini getir
-$favorites_data = $favorite_service->getFavorites($user['id']);
-$favorites = $favorites_data['favorites'] ?? [];
-$total = $favorites_data['total'] ?? 0;
+try {
+    // Kullanıcının favorilerini getir
+    $favorites_data = $favorite_service->getFavorites($user['id']);
+    $favorites = $favorites_data['favorites'] ?? [];
+    $total = $favorites_data['total'] ?? 0;
+} catch (Exception $e) {
+    error_log("Favorites.php hatası: " . $e->getMessage());
+    $favorites = [];
+    $total = 0;
+}
 ?>
 
 <div class="bg-white shadow sm:rounded-lg">
@@ -129,54 +135,50 @@ $total = $favorites_data['total'] ?? 0;
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Favorilerden kaldırma işlemi
-    document.querySelectorAll('.remove-favorite').forEach(button => {
+    const removeFavoriteButtons = document.querySelectorAll('.remove-favorite');
+
+    removeFavoriteButtons.forEach(button => {
         button.addEventListener('click', function() {
             const variantId = this.dataset.variantId;
             if (!variantId) return;
-            
-            // Modal ile onay iste
+
             window.modal.confirm('Bu ürünü favorilerinizden kaldırmak istediğinizden emin misiniz?', (confirmed) => {
                 if (confirmed) {
-                const formData = new FormData();
-                formData.append('variant_id', variantId);
-                formData.append('action', 'remove');
-                
-                fetch('/api/favorites.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Ürünü listeden kaldır
-                        const productCard = this.closest('.transition-shadow');
-                        if (productCard) {
-                            productCard.remove();
+                    const formData = new FormData();
+                    formData.append('variant_id', variantId);
+                    formData.append('action', 'remove');
+
+                    fetch('/api/favorites.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const productCard = this.closest('.transition-shadow');
+                            if (productCard) {
+                                productCard.remove();
+                            }
                             
-                            // Toplam sayıyı güncelle
                             const totalElement = document.getElementById('favorites-total');
                             if (totalElement) {
-                                const currentTotal = parseInt(totalElement.textContent);
-                                if (!isNaN(currentTotal)) {
-                                    totalElement.textContent = (currentTotal - 1) + ' ürün';
-                                    
-                                    // Eğer tüm ürünler kaldırıldıysa sayfayı yenile
-                                    if (currentTotal - 1 <= 0) {
-                                        window.location.reload();
-                                    }
+                                const currentTotal = parseInt(totalElement.textContent) - 1;
+                                totalElement.textContent = currentTotal + ' ürün';
+
+                                if (currentTotal === 0) {
+                                    location.reload();
                                 }
                             }
+                        } else {
+                            window.modal.error(data.message || 'Bir hata oluştu.');
                         }
-                    } else {
-                        window.modal.error(data.message || 'Bir hata oluştu');
-                    }
-                })
-                .catch(error => {
-                    console.error('Favori kaldırma işlemi sırasında hata oluştu:', error);
-                    window.modal.error('İşlem sırasında bir hata oluştu');
-                });
-            }
+                    })
+                    .catch(error => {
+                        console.error('Hata:', error);
+                        window.modal.error('Bir hata oluştu.');
+                    });
+                }
+            });
         });
     });
 });
