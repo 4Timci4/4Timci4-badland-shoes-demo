@@ -187,6 +187,11 @@ function get_admin_menu() {
                     'active' => is_active_page('blog-add.php')
                 ],
                 [
+                    'title' => 'Favori Raporları',
+                    'url' => 'favorited-products.php',
+                    'active' => is_active_page('favorited-products.php')
+                ],
+                [
                     'title' => 'Slider Yönetimi',
                     'url' => 'sliders.php',
                     'active' => is_active_page('sliders.php') || is_active_page('slider-add.php') || is_active_page('slider-edit.php')
@@ -283,6 +288,12 @@ function get_dashboard_stats() {
         // Öne çıkan ürünler
         $featured_products = $db->count('product_models', ['is_featured' => true]);
         
+        // Favoriye alınan varyantların sayısı
+        $total_favorited_variants = $db->count('favorites');
+        
+        // Bu ay favoriye eklenen varyantlar
+        $monthly_favorited_variants = $db->count('favorites', ['created_at' => ['>=', $current_month_start]]);
+        
         return [
             'total_products' => $total_products,
             'total_categories' => $total_categories,
@@ -291,7 +302,9 @@ function get_dashboard_stats() {
             'monthly_products' => $monthly_products,
             'monthly_blogs' => $monthly_blogs,
             'pending_messages' => $pending_messages,
-            'featured_products' => $featured_products
+            'featured_products' => $featured_products,
+            'total_favorited_variants' => $total_favorited_variants,
+            'monthly_favorited_variants' => $monthly_favorited_variants
         ];
         
     } catch (Exception $e) {
@@ -339,6 +352,75 @@ function get_recent_blogs($limit = 5) {
         return $blogs;
     } catch (Exception $e) {
         error_log("Recent blogs error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Favori raporları - En çok favoriye alınan ürün varyantlarını getir
+ */
+function get_favorited_variants_summary($limit = 50) {
+    require_once __DIR__ . '/../../config/database.php';
+
+    try {
+        $db = database();
+
+        // favorites_view'den tüm verileri çek
+        $favorited_items = $db->select('favorites_view', [], '*', ['limit' => 1000]);
+
+        if (empty($favorited_items)) {
+            return [];
+        }
+
+        // Sonuçları ürün bazında grupla
+        $results = [];
+        foreach ($favorited_items as $item) {
+            $productId = $item['product_id'];
+
+            // Ürün daha önce eklenmemişse, ana yapıyı oluştur
+            if (!isset($results[$productId])) {
+                $results[$productId] = [
+                    'product_id' => $productId,
+                    'product_name' => $item['product_name'],
+                    'total_favorites' => 0,
+                    'variants' => []
+                ];
+            }
+
+            // Varyantı ve favori sayısını ekle
+            // Bu view her favori kaydı için bir satır döndürdüğünden, varyantları saymamız gerekiyor
+            $variantId = $item['variant_id'];
+            if (!isset($results[$productId]['variants'][$variantId])) {
+                $results[$productId]['variants'][$variantId] = [
+                    'variant_id' => $variantId,
+                    'color_name' => $item['color_name'],
+                    'size_name' => $item['size_value'],
+                    'color_hex' => $item['color_hex'],
+                    'favorite_count' => 0
+                ];
+            }
+            
+            $results[$productId]['variants'][$variantId]['favorite_count']++;
+            $results[$productId]['total_favorites']++;
+        }
+
+        // Toplam favori sayısına göre azalan sırada sırala
+        uasort($results, function($a, $b) {
+            return $b['total_favorites'] - $a['total_favorites'];
+        });
+
+        // Her ürün için varyantları favori sayısına göre sırala ve indeksi sıfırla
+        foreach ($results as &$product) {
+            usort($product['variants'], function($a, $b) {
+                return $b['favorite_count'] - $a['favorite_count'];
+            });
+        }
+
+        // İlk $limit ürünü döndür
+        return array_slice(array_values($results), 0, $limit);
+
+    } catch (Exception $e) {
+        error_log("Favorited variants summary error: " . $e->getMessage());
         return [];
     }
 }

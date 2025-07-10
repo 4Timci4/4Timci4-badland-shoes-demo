@@ -89,7 +89,7 @@ class ProductQueryService {
                 }
             }
             
-            return [$product];
+            return $product;
             
         } catch (Exception $e) {
             error_log("Ürün modeli getirme hatası: " . $e->getMessage());
@@ -211,6 +211,98 @@ class ProductQueryService {
             
         } catch (Exception $e) {
             error_log("Çoklu ürün getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Belirli bir varyantı ID'ye göre getir
+     *
+     * @param int $variant_id Varyant ID'si
+     * @return array|null Varyant bilgisi veya bulunamazsa boş dizi
+     */
+    public function getVariantById($variant_id) {
+        try {
+            $variant_id = intval($variant_id);
+            if ($variant_id <= 0) {
+                return [];
+            }
+            
+            // Varyant bilgilerini al
+            $variants = $this->db->select('product_variants', ['id' => $variant_id], ['*'], ['limit' => 1]);
+            
+            if (empty($variants)) {
+                return [];
+            }
+            
+            $variant = $variants[0];
+            
+            // Renk bilgilerini al
+            if (!empty($variant['color_id'])) {
+                $colors = $this->db->select('colors', ['id' => $variant['color_id']], ['name', 'hex_code'], ['limit' => 1]);
+                if (!empty($colors)) {
+                    $variant['color_name'] = $colors[0]['name'];
+                    $variant['color_hex'] = $colors[0]['hex_code'];
+                }
+            }
+            
+            // Beden bilgilerini al
+            if (!empty($variant['size_id'])) {
+                $sizes = $this->db->select('sizes', ['id' => $variant['size_id']], ['size_value'], ['limit' => 1]);
+                if (!empty($sizes)) {
+                    $variant['size_value'] = $sizes[0]['size_value'];
+                }
+            }
+            
+            return $variant;
+            
+        } catch (Exception $e) {
+            error_log("Varyant getirme hatası: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Belirli bir varyanta ve renge ait görselleri getir
+     *
+     * @param int $model_id Ürün model ID'si
+     * @param int $color_id Renk ID'si
+     * @return array Ürün görselleri
+     */
+    public function getVariantImages($model_id, $color_id) {
+        try {
+            $model_id = intval($model_id);
+            $color_id = intval($color_id);
+            
+            if ($model_id <= 0 || $color_id <= 0) {
+                return [];
+            }
+            
+            // Önce belirli renk için görselleri ara
+            $images = $this->db->select('product_images', [
+                'model_id' => $model_id,
+                'color_id' => $color_id
+            ], ['*'], ['order' => 'is_primary DESC, id ASC']);
+            
+            // Eğer renk için görsel bulunamazsa, ana ürün görsellerini getir
+            if (empty($images)) {
+                $images = $this->db->select('product_images', [
+                    'model_id' => $model_id,
+                    'is_primary' => 1
+                ], ['*'], ['limit' => 1]);
+                
+                // Birincil görsel de yoksa, herhangi bir görsel
+                if (empty($images)) {
+                    $images = $this->db->select('product_images', [
+                        'model_id' => $model_id
+                    ], ['*'], ['limit' => 1]);
+                }
+            }
+            
+            return $images;
+            
+        } catch (Exception $e) {
+            error_log("Varyant görselleri getirme hatası: " . $e->getMessage());
             return [];
         }
     }

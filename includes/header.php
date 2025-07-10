@@ -217,11 +217,10 @@ if (!empty($breadcrumbs)) {
                     <a href="/contact.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'contact.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">İletişim</a>
                 </nav>
                 <div class="flex items-center space-x-4">
-                    <a href="#" class="text-gray-600 hover:text-primary"><i class="fas fa-search"></i></a>
                     <?php if ($is_logged_in): ?>
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="text-gray-600 hover:text-primary focus:outline-none">
-                                <i class="fas fa-user-circle"></i>
+                                <i class="fas fa-user-circle text-2xl"></i>
                             </button>
                             <div x-show="open" @click.away="open = false"
                                  x-transition:enter="transition ease-out duration-100"
@@ -232,14 +231,15 @@ if (!empty($breadcrumbs)) {
                                  x-transition:leave-end="transform opacity-0 scale-95"
                                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5"
                                  style="display: none;">
-                                <a href="/profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profilim</a>
-                                <a href="/logout.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Çıkış Yap</a>
+                                <a href="/profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Profilim</a>
+                                <a href="/profile.php?tab=favorites" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Favorilerim</a>
+                                <a href="/logout.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Çıkış Yap</a>
                             </div>
                         </div>
                     <?php else: ?>
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="text-gray-600 hover:text-primary focus:outline-none">
-                                <i class="fas fa-user"></i>
+                                <i class="fas fa-user text-2xl"></i>
                             </button>
                             <div x-show="open" @click.away="open = false"
                                  x-transition:enter="transition ease-out duration-100"
@@ -255,10 +255,6 @@ if (!empty($breadcrumbs)) {
                             </div>
                         </div>
                     <?php endif; ?>
-                    <a href="#" class="text-gray-600 hover:text-primary relative">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-                    </a>
                     <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-primary">
                         <i class="fas fa-bars text-xl"></i>
                     </button>

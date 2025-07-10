@@ -39,7 +39,7 @@ class SupabaseToMariaDBTransfer {
         'social_media_links',
         
         // 2. ANA TABLOLAR (Diğer tablolar bunlara bağlı)
-        'users',                // user_addresses buna bağlı
+        'users',
         'categories',           // product_categories buna bağlı
         'product_models',       // product_categories, product_genders, product_images, product_variants buna bağlı
         'colors',               // product_images, product_variants buna bağlı
@@ -50,8 +50,7 @@ class SupabaseToMariaDBTransfer {
         'product_categories',   // product_models + categories'e bağlı
         'product_genders',      // product_models + genders'e bağlı
         'product_images',       // product_models + colors'a bağlı
-        'product_variants',     // product_models + colors + sizes'e bağlı
-        'user_addresses'        // users'a bağlı
+        'product_variants'     // product_models + colors + sizes'e bağlı
     ];
     
     // Materialized viewler
@@ -430,24 +429,6 @@ class SupabaseToMariaDBTransfer {
                     `is_active` BOOLEAN DEFAULT TRUE,
                     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                ";
-                break;
-                
-            case 'user_addresses':
-                $createSQL .= "
-                    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    `user_id` VARCHAR(36) NOT NULL,
-                    `address_title` TEXT NOT NULL,
-                    `full_address` TEXT NOT NULL,
-                    `city` TEXT NOT NULL,
-                    `province` TEXT,
-                    `postal_code` TEXT,
-                    `country` TEXT NOT NULL,
-                    `is_default_shipping` BOOLEAN DEFAULT FALSE,
-                    `is_default_billing` BOOLEAN DEFAULT FALSE,
-                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
                 ";
                 break;
                 

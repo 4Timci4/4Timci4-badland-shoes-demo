@@ -116,12 +116,17 @@ $footer_info = $contactService->getFooterInfo();
             
             isInternalLink(href) {
                 // Boş, anchor (#), external (http), mailto, tel linklerini hariç tut
-                if (!href || 
-                    href.startsWith('#') || 
-                    href.startsWith('http') || 
-                    href.startsWith('mailto:') || 
+                if (!href ||
+                    href.startsWith('#') ||
+                    href.startsWith('http') ||
+                    href.startsWith('mailto:') ||
                     href.startsWith('tel:') ||
                     href.startsWith('javascript:')) {
+                    return false;
+                }
+                
+                // Profil sayfası linklerini özel olarak hariç tut (oturum sorunlarını önlemek için)
+                if (href.includes('profile.php')) {
                     return false;
                 }
                 
@@ -261,5 +266,8 @@ $footer_info = $contactService->getFooterInfo();
     </script>
     
     <script src="/assets/js/script.js"></script>
+    
+    <!-- Modal Bileşeni -->
+    <?php include $_SERVER['DOCUMENT_ROOT'] . '/views/components/modal.php'; ?>
 </body>
 </html>

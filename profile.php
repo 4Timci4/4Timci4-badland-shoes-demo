@@ -1,4 +1,10 @@
 <?php
+// Geçici hata ayıklama
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Oturum başlat
 session_start();
 require_once 'services/AuthService.php';
 
@@ -6,11 +12,41 @@ $auth_service = auth_service();
 $error_message = '';
 $success_message = '';
 
-$user = $auth_service->getCurrentUser();
-
-if (!$user) {
-    header('Location: login.php');
+// Session kontrolü
+if (!isset($_SESSION['user_session']) || empty($_SESSION['user_session'])) {
+    // Kullanıcı ID oturumda saklanmamışsa giriş sayfasına yönlendir
+    if (isset($_GET['tab']) && $_GET['tab'] === 'favorites') {
+        // Favoriler sayfasına erişmeye çalışıyorsa özel mesaj göster
+        header('Location: login.php?reason=no_session&redirect=profile.php?tab=favorites');
+    } else {
+        header('Location: login.php?reason=no_session');
+    }
     exit();
+}
+
+// Kullanıcı verisini doğrula
+$user = $auth_service->getCurrentUser();
+if (!$user || empty($user['id'])) {
+    // Geçersiz kullanıcı - oturumu temizle ve giriş sayfasına yönlendir
+    session_unset();
+    session_destroy();
+    header('Location: login.php?reason=invalid_user');
+    exit();
+}
+
+// Son aktivite zamanını ayarla veya güncelle
+if (!isset($_SESSION['last_activity'])) {
+    $_SESSION['last_activity'] = time();
+} else {
+    // Oturum zaman aşımı kontrolü (30 dakika)
+    if (time() - $_SESSION['last_activity'] > 1800) {
+        session_unset();
+        session_destroy();
+        header('Location: login.php?reason=session_expired');
+        exit();
+    }
+    // Son aktivite zamanını güncelle
+    $_SESSION['last_activity'] = time();
 }
 
 $user_profile = $auth_service->getUserProfile($user['id']);
@@ -20,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lastName = $_POST['last_name'] ?? '';
     $phoneNumber = $_POST['phone_number'] ?? '';
     $email = $_POST['email'] ?? '';
+    $gender = $_POST['gender'] ?? null;
 
     $email_changed = ($email !== $user['email']);
 
@@ -27,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'first_name' => $firstName,
         'last_name' => $lastName,
         'phone_number' => $phoneNumber,
-        'email' => $email
+        'email' => $email,
+        'gender' => $gender
     ]);
 
     if ($result['success']) {
@@ -62,75 +100,96 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
         <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
             <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
                 <nav class="space-y-1">
-                    <a href="#" class="bg-primary text-white group rounded-md px-3 py-2 flex items-center text-sm font-medium" aria-current="page">
-                        <i class="fas fa-user-circle -ml-1 mr-3 flex-shrink-0 h-6 w-6"></i>
+<a href="?tab=profile" class="<?php echo (!isset($_GET['tab']) || $_GET['tab'] === 'profile') ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                        <i class="fas fa-user-circle -ml-1 mr-3 flex-shrink-0 text-sm"></i>
                         <span class="truncate">Üyelik Bilgilerim</span>
                     </a>
-                    <a href="#" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-                        <i class="fas fa-map-marker-alt text-gray-400 group-hover:text-gray-500 -ml-1 mr-3 flex-shrink-0 h-6 w-6"></i>
-                        <span class="truncate">Adreslerim</span>
+<a href="?tab=favorites" class="<?php echo (isset($_GET['tab']) && $_GET['tab'] === 'favorites') ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                        <i class="fas fa-heart -ml-1 mr-3 flex-shrink-0 text-sm <?php echo (isset($_GET['tab']) && $_GET['tab'] === 'favorites') ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'; ?>"></i>
+                        <span class="truncate">Favorilerim</span>
                     </a>
-                    <a href="#" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-                        <i class="fas fa-shopping-bag text-gray-400 group-hover:text-gray-500 -ml-1 mr-3 flex-shrink-0 h-6 w-6"></i>
-                        <span class="truncate">Siparişlerim</span>
-                    </a>
-                    <a href="logout.php" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-                        <i class="fas fa-sign-out-alt text-gray-400 group-hover:text-gray-500 -ml-1 mr-3 flex-shrink-0 h-6 w-6"></i>
+<a href="logout.php" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                        <i class="fas fa-sign-out-alt text-gray-400 group-hover:text-gray-500 -ml-1 mr-3 flex-shrink-0 text-sm"></i>
                         <span class="truncate">Çıkış Yap</span>
                     </a>
                 </nav>
             </aside>
 
             <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
+                <?php if (!empty($success_message)): ?>
+                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
+                        <p><?php echo $success_message; ?></p>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($error_message)): ?>
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                        <p><?php echo $error_message; ?></p>
+                    </div>
+                <?php endif; ?>
+
+                <?php
+                // Aktif sekmeyi belirle
+                $active_tab = $_GET['tab'] ?? 'profile';
+                
+                // Aktif sekmeye göre içeriği göster
+                if ($active_tab === 'favorites') {
+                    // Favoriler sekmesi
+                    include 'views/profile/favorites.php';
+                } else {
+                    // Varsayılan olarak profil sekmesi
+                ?>
                 <form action="profile.php" method="POST">
-                    <div class="shadow sm:rounded-md sm:overflow-hidden">
-                        <div class="bg-white py-6 px-4 space-y-6 sm:p-6">
-                            <div>
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">Üyelik Bilgileri</h3>
-                                <p class="mt-1 text-sm text-gray-500">Bu bilgileri dilediğiniz zaman güncelleyebilirsiniz.</p>
-                            </div>
-
-                            <?php if (!empty($success_message)): ?>
-                                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
-                                    <p><?php echo $success_message; ?></p>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($error_message)): ?>
-                                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
-                                    <p><?php echo $error_message; ?></p>
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="grid grid-cols-6 gap-6">
-                                <div class="col-span-6 sm:col-span-3">
+                    <!-- Kişisel Bilgiler Kartı -->
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Kişisel Bilgiler</h3>
+                            <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                <div class="sm:col-span-3">
                                     <label for="first_name" class="block text-sm font-medium text-gray-700">Ad</label>
                                     <input type="text" name="first_name" id="first_name" value="<?php echo htmlspecialchars($user_profile['first_name'] ?? ''); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                 </div>
-                                
-                                <div class="col-span-6 sm:col-span-3">
+                                <div class="sm:col-span-3">
                                     <label for="last_name" class="block text-sm font-medium text-gray-700">Soyad</label>
                                     <input type="text" name="last_name" id="last_name" value="<?php echo htmlspecialchars($user_profile['last_name'] ?? ''); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                 </div>
+                                <div class="sm:col-span-3">
+                                    <label for="gender" class="block text-sm font-medium text-gray-700">Cinsiyet</label>
+                                    <select id="gender" name="gender" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                        <option value="" <?php echo !isset($user_profile['gender']) ? 'selected' : ''; ?>>Seçiniz</option>
+                                        <option value="Kadın" <?php echo ($user_profile['gender'] ?? '') === 'Kadın' ? 'selected' : ''; ?>>Kadın</option>
+                                        <option value="Erkek" <?php echo ($user_profile['gender'] ?? '') === 'Erkek' ? 'selected' : ''; ?>>Erkek</option>
+                                        <option value="Belirtmek İstemiyorum" <?php echo ($user_profile['gender'] ?? '') === 'Belirtmek İstemiyorum' ? 'selected' : ''; ?>>Belirtmek İstemiyorum</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div class="col-span-6 sm:col-span-4">
+                    <!-- İletişim Bilgileri Kartı -->
+                    <div class="bg-white shadow sm:rounded-lg mt-6">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">İletişim Bilgileri</h3>
+                            <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                <div class="sm:col-span-4">
                                     <label for="email" class="block text-sm font-medium text-gray-700">E-posta Adresi</label>
                                     <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($user['email']); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                     <p class="mt-2 text-xs text-gray-500">E-posta adresinizi değiştirirseniz, yeni adresinize gönderilen linki onaylamanız gerekecektir.</p>
                                 </div>
-
-                                <div class="col-span-6 sm:col-span-4">
+                                <div class="sm:col-span-4">
                                     <label for="phone_number" class="block text-sm font-medium text-gray-700">Telefon Numarası</label>
                                     <input type="tel" name="phone_number" id="phone_number" value="<?php echo htmlspecialchars($user_profile['phone_number'] ?? ''); ?>" class="mt-1 block w-full">
                                 </div>
                             </div>
                         </div>
-                        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-                            <button type="submit" class="bg-primary border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                                Bilgileri Güncelle
-                            </button>
-                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6">
+                        <button type="submit" class="bg-primary border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            Bilgileri Güncelle
+                        </button>
                     </div>
                 </form>
+                <?php } ?>
             </div>
         </div>
     </div>
@@ -144,8 +203,15 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Aktif sekmeyi kontrol et - sadece profil sekmesinde telefon giriş alanı var
+            const activeTab = new URLSearchParams(window.location.search).get('tab');
+            if (activeTab === 'favorites') return; // Favoriler sekmesinde bu kodu çalıştırma
+            
             const phoneInputField = document.querySelector("#phone_number");
             const nameInputField = document.querySelector("#first_name");
+            
+            // Elementlerin var olduğunu kontrol et
+            if (!phoneInputField || !nameInputField) return;
 
             const inputClasses = nameInputField.className;
             phoneInputField.className = inputClasses;
@@ -163,9 +229,11 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
             });
 
             const form = phoneInputField.closest("form");
-            form.addEventListener("submit", () => {
-                phoneInputField.value = phoneInput.getNumber();
-            });
+            if (form) {
+                form.addEventListener("submit", () => {
+                    phoneInputField.value = phoneInput.getNumber();
+                });
+            }
         });
     </script>
 </body>

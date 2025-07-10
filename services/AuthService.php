@@ -228,6 +228,9 @@ class AuthService {
         if (isset($data['last_name'])) $publicUsersUpdateData['last_name'] = $data['last_name'];
         if (isset($data['phone_number'])) $publicUsersUpdateData['phone_number'] = $data['phone_number'];
         if (isset($data['email'])) $publicUsersUpdateData['email'] = $data['email'];
+        if (array_key_exists('gender', $data)) {
+            $publicUsersUpdateData['gender'] = $data['gender'];
+        }
 
         $profileUpdateResponse = $this->dbRequest('users?id=eq.' . urlencode($userId), 'PATCH', $publicUsersUpdateData);
 

@@ -101,6 +101,26 @@ include 'includes/header.php';
                 </div>
             </div>
         </div>
+        
+        <!-- Favorited Variants Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-heart text-purple-600 text-xl"></i>
+                </div>
+                <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
+                    +<?= isset($stats['monthly_favorited_variants']) ? $stats['monthly_favorited_variants'] : 0 ?>
+                </span>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-gray-900 mb-1"><?= number_format(isset($stats['total_favorited_variants']) ? $stats['total_favorited_variants'] : 0) ?></h3>
+                <p class="text-gray-600 font-medium">Favoriye Alınan Varyantlar</p>
+                <div class="flex items-center mt-3 text-purple-600 text-sm">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span class="font-semibold">Bu Ay</span>
+                </div>
+            </div>
+        </div>
 
     </div>
 
