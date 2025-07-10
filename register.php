@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Telefon Numarası</label>
-                        <input id="phone" name="phone" type="tel" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm">
+                        <input id="phone" name="phone" type="tel" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -125,26 +125,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/intlTelInput.min.js"></script>
     <style>
-        .iti { width: 100%; }
+       .iti {
+           width: 100%;
+       }
+       .iti__flag-container {
+           z-index: 10;
+       }
+       /*
+        * `intl-tel-input` kütüphanesinin ülke kodu (`+90`) için oluşturduğu
+        * `.iti__selected-dial-code` elementinin yazı tipi boyutunu,
+        * projedeki diğer input alanlarında kullanılan `sm:text-sm` Tailwind sınıfının
+        * davranışıyla eşleştirmek için bu CSS kuralları eklenmiştir.
+        *
+        * Mobil (varsayılan): 1rem (16px)
+        * 640px ve üzeri ekranlar: 0.875rem (14px)
+       */
+       .iti__selected-dial-code {
+           font-size: 1rem;
+           line-height: 1.5rem;
+       }
+       @media (min-width: 640px) {
+           .iti__selected-dial-code {
+               font-size: 0.875rem;
+               line-height: 1.25rem;
+           }
+       }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const phoneInputField = document.querySelector("#phone");
-            const nameInputField = document.querySelector("#first-name"); // Referans olarak ilk input'u alalım
+            
+            // Sadece form göründüğünde ve ilgili element mevcut olduğunda script'i çalıştır
+            if (phoneInputField) {
+                const nameInputField = document.querySelector("#first-name");
 
-            const inputClasses = nameInputField.className;
-            // phoneInputField.className += ' ' + inputClasses; // Bu satır artık gerekli değil, çünkü tüm inputlar aynı sınıfa sahip
+                const phoneInput = window.intlTelInput(phoneInputField, {
+                    initialCountry: "tr",
+                    separateDialCode: true,
+                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js",
+                });
 
-            const phoneInput = window.intlTelInput(phoneInputField, {
-                initialCountry: "tr",
-                separateDialCode: true,
-                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js",
-            });
-
-            const form = phoneInputField.closest("form");
-            form.addEventListener("submit", () => {
-                phoneInputField.value = phoneInput.getNumber();
-            });
+                const form = phoneInputField.closest("form");
+                if (form) {
+                    form.addEventListener("submit", () => {
+                        phoneInputField.value = phoneInput.getNumber();
+                    });
+                }
+            }
         });
     </script>
 </body>

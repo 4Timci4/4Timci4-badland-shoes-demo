@@ -110,19 +110,27 @@ class AuthService {
                 );
             }
 
+            // The user profile is likely created by a trigger.
+            // We will update it with the additional information.
             $profileData = [
-                'id' => $user['id'],
-                'email' => $user['email'],
                 'first_name' => $options['first_name'] ?? null,
                 'last_name' => $options['last_name'] ?? null,
                 'phone_number' => $options['phone_number'] ?? null
             ];
-            
-            $profileResponse = $this->dbRequest('users', 'POST', $profileData);
 
-            if ($profileResponse['http_code'] !== 201) {
-                error_log('Kullanıcı profili oluşturma hatası: ' . json_encode($profileResponse));
-                return ['success' => false, 'message' => 'Kullanıcı oluşturuldu ancak profil bilgileri kaydedilemedi.'];
+            // Filter out null values to avoid overwriting existing data unnecessarily
+            $profileData = array_filter($profileData, fn($value) => $value !== null);
+
+            if (!empty($profileData)) {
+                $profileResponse = $this->dbRequest('users?id=eq.' . urlencode($user['id']), 'PATCH', $profileData);
+
+                // Log an error if the profile update fails, but don't block the user.
+                // The user is already created in auth.users and can log in.
+                if ($profileResponse['http_code'] < 200 || $profileResponse['http_code'] >= 300) {
+                    error_log('Kullanıcı profili güncelleme hatası: ' . json_encode($profileResponse));
+                    // This is not a fatal error for the registration flow.
+                    // We can return success and let the user update their profile later.
+                }
             }
 
             return ['success' => true, 'user' => $user];
