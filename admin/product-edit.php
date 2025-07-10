@@ -111,8 +111,7 @@ include 'includes/footer.php';
 <script>
     // Pass PHP variables to JavaScript
     const VENDOR_DATA = {
-        productId: <?= json_encode($product_id) ?>,
-        productBasePrice: <?= json_encode($product['base_price']) ?>
+        productId: <?= json_encode($product_id) ?>
     };
 </script>
 <script src="assets/js/product-edit.js"></script>

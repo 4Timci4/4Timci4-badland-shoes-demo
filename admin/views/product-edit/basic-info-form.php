@@ -15,7 +15,7 @@
                    id="name" 
                    name="name" 
                    required
-                   value="<?= htmlspecialchars($product['name']) ?>"
+                   value="<?= htmlspecialchars($product['name'] ?? '') ?>"
                    placeholder="Örn: Nike Air Max 270"
                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
         </div>
@@ -30,7 +30,7 @@
                       required
                       rows="4"
                       placeholder="Ürününüzün detaylı açıklamasını yazın..."
-                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"><?= htmlspecialchars($product['description']) ?></textarea>
+                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
         </div>
 
         <!-- Features -->

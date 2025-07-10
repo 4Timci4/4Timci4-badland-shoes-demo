@@ -66,7 +66,6 @@ class ProductManagementService {
                 
                 // OTOMATIK CACHE INVALIDATION - Ürün silindikten sonra
                 $this->invalidateProductCaches($product_id);
-                $this->refreshMaterializedViews();
                 
                 return $result !== false;
                 
@@ -175,7 +174,6 @@ class ProductManagementService {
                     $this->db->commit();
                 }
                 
-                $this->refreshMaterializedViews();
                 return $product_id;
                 
             } catch (Exception $e) {
@@ -255,7 +253,6 @@ class ProductManagementService {
                     $this->db->commit();
                 }
                 
-                $this->refreshMaterializedViews();
                 return $result !== false;
                 
             } catch (Exception $e) {
@@ -456,8 +453,6 @@ class ProductManagementService {
             
             $result = $this->db->insert('product_variants', $insert_data);
             
-            $this->refreshMaterializedViews();
-            
             // Insert sonucu array ise ID'yi çıkar, değilse direkt döndür
             if (is_array($result)) {
                 return isset($result['id']) ? $result['id'] : (isset($result[0]['id']) ? $result[0]['id'] : false);
@@ -505,10 +500,6 @@ class ProductManagementService {
             
             $result = $this->db->update('product_variants', $update_data, ['id' => intval($variant_id)]);
             
-            if ($result) {
-                $this->refreshMaterializedViews();
-            }
-            
             return $result !== false;
             
         } catch (Exception $e) {
@@ -526,9 +517,6 @@ class ProductManagementService {
     public function deleteProductVariant($variant_id) {
         try {
             $result = $this->db->delete('product_variants', ['id' => intval($variant_id)]);
-            if ($result) {
-                $this->refreshMaterializedViews();
-            }
             return $result !== false;
         } catch (Exception $e) {
             error_log("Ürün varyantı silme hatası: " . $e->getMessage());
@@ -575,32 +563,6 @@ class ProductManagementService {
      */
     public function clearAllProductCaches() {
         $this->invalidateProductCaches();
-    }
-
-    /**
-     * Materyalize görünümleri yeniler
-     */
-    public function refreshMaterializedViews() {
-        try {
-            $this->db->executeRawSql('REFRESH MATERIALIZED VIEW CONCURRENTLY product_api_summary;');
-            $this->db->executeRawSql('REFRESH MATERIALIZED VIEW CONCURRENTLY product_details_view;');
-            $this->db->executeRawSql('REFRESH MATERIALIZED VIEW CONCURRENTLY category_product_counts;');
-            $this->db->executeRawSql('REFRESH MATERIALIZED VIEW CONCURRENTLY gender_product_counts;');
-            return true;
-        } catch (Exception $e) {
-            error_log("Materyalize görünüm yenileme hatası: " . $e->getMessage());
-            // CONCURRENTLY desteklenmiyorsa normal yenilemeyi dene
-            try {
-                $this->db->executeRawSql('REFRESH MATERIALIZED VIEW product_api_summary;');
-                $this->db->executeRawSql('REFRESH MATERIALIZED VIEW product_details_view;');
-                $this->db->executeRawSql('REFRESH MATERIALIZED VIEW category_product_counts;');
-                $this->db->executeRawSql('REFRESH MATERIALIZED VIEW gender_product_counts;');
-                return true;
-            } catch (Exception $e2) {
-                error_log("Materyalize görünüm normal yenileme hatası: " . $e2->getMessage());
-                return false;
-            }
-        }
     }
 }
 

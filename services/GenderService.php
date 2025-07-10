@@ -7,7 +7,6 @@
 
 // Gerekli dosyaları dahil et
 require_once __DIR__ . '/../lib/DatabaseFactory.php';
-require_once __DIR__ . '/Product/ProductManagementService.php';
 
 /**
  * Cinsiyet servisi
@@ -16,14 +15,12 @@ require_once __DIR__ . '/Product/ProductManagementService.php';
  */
 class GenderService {
     private $db;
-    private $productManagementService;
     
     /**
      * GenderService sınıfını başlatır
      */
     public function __construct() {
         $this->db = database();
-        $this->productManagementService = new ProductManagementService();
     }
     
     /**
@@ -159,9 +156,6 @@ class GenderService {
     public function createGender($data) {
         try {
             $result = $this->db->insert('genders', $data, ['returning' => true]);
-            if ($result) {
-                $this->productManagementService->refreshMaterializedViews();
-            }
             return !empty($result);
         } catch (Exception $e) {
             error_log("GenderService::createGender - Exception: " . $e->getMessage());
@@ -179,9 +173,6 @@ class GenderService {
     public function updateGender($gender_id, $data) {
         try {
             $result = $this->db->update('genders', $data, ['id' => intval($gender_id)]);
-            if ($result) {
-                $this->productManagementService->refreshMaterializedViews();
-            }
             return !empty($result);
         } catch (Exception $e) {
             error_log("Cinsiyet güncelleme hatası: " . $e->getMessage());
@@ -205,9 +196,6 @@ class GenderService {
             }
             
             $result = $this->db->delete('genders', ['id' => intval($gender_id)]);
-            if ($result) {
-                $this->productManagementService->refreshMaterializedViews();
-            }
             return !empty($result);
         } catch (Exception $e) {
             error_log("Cinsiyet silme hatası: " . $e->getMessage());

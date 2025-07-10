@@ -110,7 +110,7 @@ class VariantService {
                 ], 'id', ['limit' => 1]);
                 
                 if (!empty($existing)) {
-                    return "Bu model, renk ve beden kombinasyonu zaten mevcut";
+                    throw new Exception("Bu model, renk ve beden kombinasyonu zaten mevcut");
                 }
             }
             
@@ -119,18 +119,29 @@ class VariantService {
                 $data['sku'] = $this->generateSKU($data['model_id'], $data['color_id'], $data['size_id']);
             }
             
-            $result = $this->db->insert('product_variants', $data);
-            return $result !== false;
+            // Veriyi ekle ve yeni ID'yi geri al
+            $new_variant_array = $this->db->insert('product_variants', $data, ['returning' => 'representation']);
+
+            if ($new_variant_array && !empty($new_variant_array)) {
+                $new_variant_id = $new_variant_array[0]['id'] ?? null;
+                if ($new_variant_id) {
+                    // Yeni eklenen varyantın tüm bilgilerini getir
+                    return $this->getVariantById($new_variant_id);
+                }
+            }
+            
+            return false;
+
         } catch (Exception $e) {
             $error_message = $e->getMessage();
             
             // Duplicate key hatası için özel mesaj
             if (strpos($error_message, 'duplicate key') !== false || strpos($error_message, '23505') !== false) {
-                return "Bu model, renk ve beden kombinasyonu zaten mevcut";
+                throw new Exception("Bu model, renk ve beden kombinasyonu zaten mevcut");
             }
             
             error_log("Varyant oluşturma hatası: " . $error_message);
-            return false;
+            throw $e; // Hataları yeniden fırlat
         }
     }
     
@@ -231,14 +242,33 @@ class VariantService {
      */
     public function getVariantById($variant_id) {
         try {
-            $variants = $this->db->selectWithJoins('product_variants', [
-                ['type' => 'LEFT', 'table' => 'colors', 'condition' => 'product_variants.color_id = colors.id'],
-                ['type' => 'LEFT', 'table' => 'sizes', 'condition' => 'product_variants.size_id = sizes.id']
-            ], ['product_variants.id' => intval($variant_id)], 
-            'product_variants.*, colors.name as color_name, colors.hex_code as color_hex, sizes.size_value, sizes.size_type',
-            ['limit' => 1]);
+            // PostgREST'in "embedding" özelliğini kullanarak doğru select sorgusu oluştur
+            $select_query = '*,colors(name,hex_code),sizes(size_value,size_type)';
             
-            return !empty($variants) ? $variants[0] : null;
+            $variants = $this->db->select(
+                'product_variants',
+                ['id' => intval($variant_id)],
+                $select_query,
+                ['limit' => 1]
+            );
+            
+            if (!empty($variants)) {
+                $variant = $variants[0];
+                // Gömülü verileri ana nesneye taşı
+                if (isset($variant['colors'])) {
+                    $variant['color_name'] = $variant['colors']['name'];
+                    $variant['color_hex'] = $variant['colors']['hex_code'];
+                    unset($variant['colors']);
+                }
+                if (isset($variant['sizes'])) {
+                    $variant['size_value'] = $variant['sizes']['size_value'];
+                    $variant['size_type'] = $variant['sizes']['size_type'];
+                    unset($variant['sizes']);
+                }
+                return $variant;
+            }
+
+            return null;
         } catch (Exception $e) {
             error_log("Varyant getirme hatası: " . $e->getMessage());
             return null;
@@ -306,8 +336,8 @@ class VariantService {
      */
     public function getProductSizes($model_id) {
         try {
-            $variants = $this->db->select('product_variants', 
-                ['model_id' => intval($model_id), 'is_active' => 1], 
+            $variants = $this->db->select('product_variants',
+                ['model_id' => intval($model_id), 'is_active' => 1],
                 'size_id'
             );
             
@@ -324,6 +354,21 @@ class VariantService {
             error_log("Ürün bedenleri getirme hatası: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Yeni varyant eklemek için bir alias metodu.
+     * createVariant metodunu çağırır.
+     */
+    public function addVariant($model_id, $color_id, $size_id, $stock_quantity, $is_active) {
+        $data = [
+            'model_id' => $model_id,
+            'color_id' => $color_id,
+            'size_id' => $size_id,
+            'stock_quantity' => $stock_quantity,
+            'is_active' => $is_active
+        ];
+        return $this->createVariant($data);
     }
 }
 

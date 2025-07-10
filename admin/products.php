@@ -237,9 +237,19 @@ include 'includes/header.php';
                             <?php endif; ?>
 
                             <?php
-                            $start_page = max(1, $page - 2);
-                            $end_page = min($total_pages, $page + 2);
-                            
+                            $num_links = 4; // Gösterilecek toplam link sayısı (mevcut sayfa hariç)
+                            $start_page = max(1, $page - floor($num_links / 2));
+                            $end_page = min($total_pages, $page + ceil($num_links / 2));
+
+                            // Kenar durumları için ayarlama yap
+                            if ($end_page - $start_page < $num_links) {
+                                if ($start_page === 1) {
+                                    $end_page = min($total_pages, $start_page + $num_links);
+                                } else if ($end_page === $total_pages) {
+                                    $start_page = max(1, $end_page - $num_links);
+                                }
+                            }
+
                             for ($i = $start_page; $i <= $end_page; $i++):
                                 $is_current = ($i == $page);
                             ?>

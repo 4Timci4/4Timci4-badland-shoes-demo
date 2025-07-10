@@ -13,7 +13,7 @@
                        id="is_featured" 
                        name="is_featured" 
                        value="1"
-                       <?= $product['is_featured'] ? 'checked' : '' ?>
+                       <?= ($product['is_featured'] ?? false) ? 'checked' : '' ?>
                        class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2">
             </div>
             <div class="text-sm">

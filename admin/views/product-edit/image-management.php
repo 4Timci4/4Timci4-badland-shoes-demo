@@ -18,24 +18,37 @@
     <input type="hidden" id="selected-color-id" name="color_id" value="">
     
     <div class="p-6 space-y-6">
-        <?php if (!empty($productImagesByColor)): ?>
+        <?php
+        // Ürünün tüm renk varyantlarını alalım
+        $product_colors = [];
+        if (!empty($variants)) {
+            foreach ($variants as $variant) {
+                if (!empty($variant['color_id']) && !isset($product_colors[$variant['color_id']])) {
+                    $product_colors[$variant['color_id']] = [
+                        'id' => $variant['color_id'],
+                        'name' => $variant['color_name'] ?? 'Bilinmeyen Renk'
+                    ];
+                }
+            }
+        }
+        // Eğer hiç renkli varyant yoksa, genel bir sekme ekleyelim
+        if (empty($product_colors)) {
+             $product_colors['default'] = ['id' => 'default', 'name' => 'Genel'];
+        }
+        ?>
+
+        <?php if (!empty($product_colors)): ?>
             <!-- Color Tabs -->
             <div class="border-b border-gray-200">
                 <nav class="flex space-x-6 overflow-x-auto pb-2" id="colorTabs">
                     <?php $tab_index = 0; ?>
-                    <?php foreach ($productImagesByColor as $color_id => $images): ?>
+                    <?php foreach ($product_colors as $color_data): ?>
                         <?php
-                        $color_name = 'Genel';
-                        if ($color_id !== 'default') {
-                            foreach ($all_colors as $color) {
-                                if ($color['id'] == $color_id) {
-                                    $color_name = $color['name'];
-                                    break;
-                                }
-                            }
-                        }
+                        $color_id = $color_data['id'];
+                        $color_name = $color_data['name'];
+                        $images = $productImagesByColor[$color_id] ?? [];
                         ?>
-                        <button type="button" class="color-tab-btn py-3 px-4 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap <?= $tab_index === 0 ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?>" 
+                        <button type="button" class="color-tab-btn py-3 px-4 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap <?= $tab_index === 0 ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?>"
                                 onclick="switchColorTab('<?= $color_id ?>', this)"
                                 data-color="<?= $color_id ?>">
                             <?= htmlspecialchars($color_name) ?>
@@ -51,25 +64,21 @@
             <!-- Tab Contents -->
             <div id="colorTabsContent">
                 <?php $tab_index = 0; ?>
-                <?php foreach ($productImagesByColor as $color_id => $images): ?>
+                <?php foreach ($product_colors as $color_data): ?>
                     <?php
-                    $color_name = 'Genel';
-                    if ($color_id !== 'default') {
-                        foreach ($all_colors as $color) {
-                            if ($color['id'] == $color_id) {
-                                $color_name = $color['name'];
-                                break;
-                            }
-                        }
-                    }
+                    $color_id = $color_data['id'];
+                    $color_name = $color_data['name'];
+                    $images = $productImagesByColor[$color_id] ?? [];
                     
                     // Sort images by sort_order
-                    usort($images, function($a, $b) {
-                        return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
-                    });
+                    if (!empty($images)) {
+                        usort($images, function($a, $b) {
+                            return ($a['sort_order'] ?? 999) - ($b['sort_order'] ?? 999);
+                        });
+                    }
                     ?>
-                    <div class="color-tab-content <?= $tab_index === 0 ? 'block' : 'hidden' ?>" 
-                         id="color-<?= $color_id ?>" 
+                    <div class="color-tab-content <?= $tab_index === 0 ? 'block' : 'hidden' ?>"
+                         id="color-<?= $color_id ?>"
                          data-color="<?= $color_id ?>">
                         
                         <div class="mb-4 flex justify-between items-center">
@@ -81,8 +90,8 @@
                             </button>
                             
                             <?php if (count($images) > 1): ?>
-                                <button type="button" 
-                                        id="save-order-btn-<?= $color_id ?>" 
+                                <button type="button"
+                                        id="save-order-btn-<?= $color_id ?>"
                                         class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition-colors"
                                         onclick="saveImageOrder('<?= $color_id ?>')">
                                     <i class="fas fa-save mr-2"></i>
@@ -93,97 +102,99 @@
                         
                         <!-- Image Grid -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="images-<?= $color_id ?>">
-                            <?php $image_index = 0; ?>
-                            <?php foreach ($images as $image): ?>
-                                <?php $image_index++; ?>
-                                <div class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200" 
-                                     data-image-id="<?= $image['id'] ?>">
-                                    <div class="relative">
-                                        <img src="<?= htmlspecialchars($image['image_url']) ?>" 
-                                             class="w-full h-48 object-cover rounded-t-xl"
-                                             alt="<?= htmlspecialchars($image['alt_text'] ?? '') ?>">
-                                        
-                                        <!-- Primary Badge -->
-                                        <?php if ($image['is_primary']): ?>
-                                            <div class="absolute top-3 left-3">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                                    <i class="fas fa-star mr-1"></i> Ana Görsel
-                                                </span>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <!-- Action Buttons -->
-                                        <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                            <div class="flex flex-col space-y-1">
-                                                <?php
-                                                    $image_url = $image['image_url'] ?? '';
-                                                    $original_url = str_replace('/optimized/', '/original/', $image_url);
-                                                    $original_url = preg_replace('/_optimized(\..+?)$/', '$1', $original_url);
-                                                ?>
-                                                <button type="button" 
-                                                        class="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                                        onclick="viewImage('<?= htmlspecialchars($original_url) ?>')"
-                                                        title="Büyük Görüntüle">
-                                                    <i class="fas fa-search-plus text-sm"></i>
-                                                </button>
-                                                <button type="button" 
-                                                        class="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
-                                                        onclick="downloadImage('<?= htmlspecialchars($original_url) ?>')"
-                                                        title="İndir">
-                                                    <i class="fas fa-download text-sm"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Card Body -->
-                                    <div class="p-4">
-                                        <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
-                                            <span>Sıra: <span class="image-order"><?= $image_index ?></span></span>
+                            <?php if (!empty($images)): ?>
+                                <?php $image_index = 0; ?>
+                                <?php foreach ($images as $image): ?>
+                                    <?php $image_index++; ?>
+                                    <div class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200"
+                                         data-image-id="<?= $image['id'] ?>">
+                                        <div class="relative">
+                                            <img src="<?= htmlspecialchars($image['image_url']) ?>"
+                                                 class="w-full h-48 object-cover rounded-t-xl"
+                                                 alt="<?= htmlspecialchars($image['alt_text'] ?? '') ?>">
                                             
-                                            <?php if (count($images) > 1): ?>
-                                                <div class="flex space-x-1">
-                                                    <button type="button" 
-                                                            class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md up-button <?= $image_index > 1 ? '' : 'opacity-50 cursor-not-allowed' ?>"
-                                                            onclick="moveImage(this, 'up')"
-                                                            title="Yukarı Taşı"
-                                                            <?= $image_index > 1 ? '' : 'disabled' ?>>
-                                                        <i class="fas fa-chevron-up text-xs"></i>
-                                                    </button>
-                                                    
-                                                    <button type="button" 
-                                                            class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md down-button <?= $image_index < count($images) ? '' : 'opacity-50 cursor-not-allowed' ?>"
-                                                            onclick="moveImage(this, 'down')"
-                                                            title="Aşağı Taşı"
-                                                            <?= $image_index < count($images) ? '' : 'disabled' ?>>
-                                                        <i class="fas fa-chevron-down text-xs"></i>
-                                                    </button>
+                                            <!-- Primary Badge -->
+                                            <?php if ($image['is_primary']): ?>
+                                                <div class="absolute top-3 left-3">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                                        <i class="fas fa-star mr-1"></i> Ana Görsel
+                                                    </span>
                                                 </div>
                                             <?php endif; ?>
+                                            
+                                            <!-- Action Buttons -->
+                                            <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                <div class="flex flex-col space-y-1">
+                                                    <?php
+                                                        $image_url = $image['image_url'] ?? '';
+                                                        $original_url = str_replace('/optimized/', '/original/', $image_url);
+                                                        $original_url = preg_replace('/_optimized(\..+?)$/', '$1', $original_url);
+                                                    ?>
+                                                    <button type="button"
+                                                            class="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                            onclick="viewImage('<?= htmlspecialchars($original_url) ?>')"
+                                                            title="Büyük Görüntüle">
+                                                        <i class="fas fa-search-plus text-sm"></i>
+                                                    </button>
+                                                    <button type="button"
+                                                            class="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                                                            onclick="downloadImage('<?= htmlspecialchars($original_url) ?>')"
+                                                            title="İndir">
+                                                        <i class="fas fa-download text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                         
-                                        <!-- Action Buttons -->
-                                        <div class="flex space-x-2">
-                                            <?php if (!$image['is_primary']): ?>
-                                                <button type="button" 
-                                                        onclick="setPrimaryImage(<?= $image['id'] ?>)" 
-                                                        class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors text-sm font-medium"
-                                                        title="Ana Görsel Yap">
-                                                    <i class="fas fa-star mr-1"></i>
-                                                    Ana Yap
-                                                </button>
-                                            <?php endif; ?>
+                                        <!-- Card Body -->
+                                        <div class="p-4">
+                                            <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+                                                <span>Sıra: <span class="image-order"><?= $image_index ?></span></span>
+                                                
+                                                <?php if (count($images) > 1): ?>
+                                                    <div class="flex space-x-1">
+                                                        <button type="button"
+                                                                class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md up-button <?= $image_index > 1 ? '' : 'opacity-50 cursor-not-allowed' ?>"
+                                                                onclick="moveImage(this, 'up')"
+                                                                title="Yukarı Taşı"
+                                                                <?= $image_index > 1 ? '' : 'disabled' ?>>
+                                                            <i class="fas fa-chevron-up text-xs"></i>
+                                                        </button>
+                                                        
+                                                        <button type="button"
+                                                                class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md down-button <?= $image_index < count($images) ? '' : 'opacity-50 cursor-not-allowed' ?>"
+                                                                onclick="moveImage(this, 'down')"
+                                                                title="Aşağı Taşı"
+                                                                <?= $image_index < count($images) ? '' : 'disabled' ?>>
+                                                            <i class="fas fa-chevron-down text-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                             
-                                            <button type="button" 
-                                                    onclick="deleteImage(<?= $image['id'] ?>, this)" 
-                                                    class="inline-flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
-                                                    title="Sil">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <!-- Action Buttons -->
+                                            <div class="flex space-x-2">
+                                                <?php if (!$image['is_primary']): ?>
+                                                    <button type="button"
+                                                            onclick="setPrimaryImage(<?= $image['id'] ?>)"
+                                                            class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors text-sm font-medium"
+                                                            title="Ana Görsel Yap">
+                                                        <i class="fas fa-star mr-1"></i>
+                                                        Ana Yap
+                                                    </button>
+                                                <?php endif; ?>
+                                                
+                                                <button type="button"
+                                                        onclick="deleteImage(<?= $image['id'] ?>, this)"
+                                                        class="inline-flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                                                        title="Sil">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                         
                         <?php if (count($images) > 1): ?>

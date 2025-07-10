@@ -157,6 +157,28 @@ function handle_ajax_image_actions() {
                 $response = ['success' => $success];
             }
             break;
+            
+        case 'add_variant':
+            require_once __DIR__ . '/../../services/VariantService.php';
+            $variantService = new VariantService();
+            
+            $color_id = intval($_POST['color_id'] ?? 0);
+            $size_id = intval($_POST['size_id'] ?? 0);
+            $stock = intval($_POST['stock'] ?? 0);
+            $is_active = filter_var($_POST['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            try {
+                $newVariant = $variantService->addVariant($product_id, $color_id, $size_id, $stock, $is_active);
+                if ($newVariant) {
+                    $response = ['success' => true, 'variant' => $newVariant];
+                } else {
+                    $response = ['success' => false, 'error' => 'Varyant eklenemedi.'];
+                }
+            } catch (Exception $e) {
+                error_log("Variant add exception: " . $e->getMessage());
+                $response = ['success' => false, 'error' => 'Sunucu hatası: ' . $e->getMessage()];
+            }
+            break;
     }
     
     echo json_encode($response);

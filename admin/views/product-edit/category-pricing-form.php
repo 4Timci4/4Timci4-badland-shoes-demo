@@ -1,3 +1,8 @@
+<?php
+// "Add" modunda bu değişkenler tanımsız olabileceğinden, boş bir dizi olarak başlat
+$selected_categories = $selected_categories ?? [];
+$selected_genders = $selected_genders ?? [];
+?>
 <!-- Category and Pricing Card -->
 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
     <div class="p-6 border-b border-gray-100">
@@ -15,7 +20,7 @@
                 </label>
                 <p class="text-xs text-gray-500 mb-4">Ürününüzün tipini seçin (örn: Sneaker, Bot, Sandalet, vb.)</p>
                 
-                <div class="space-y-6">
+                <div class="space-y-6" id="category-selection-container">
                     <div class="border border-gray-200 rounded-xl p-4">
                         <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
                             <i class="fas fa-box text-blue-500 mr-2"></i>
@@ -28,7 +33,7 @@
                                     <input type="checkbox" 
                                            name="category_ids[]" 
                                            value="<?= htmlspecialchars($category['id']) ?>"
-                                           <?= in_array($category['id'], $selected_categories) ? 'checked' : '' ?>
+                                           <?= in_array($category['id'], $selected_categories ?? []) ? 'checked' : '' ?>
                                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
                                     <span class="ml-2 text-sm font-medium text-gray-700">
                                         <?= htmlspecialchars($category['name']) ?>
@@ -53,7 +58,7 @@
                 </label>
                 <p class="text-xs text-gray-500 mb-4">Ürününüzün hitap ettiği cinsiyetleri seçin (örn: Erkek, Kadın, Çocuk, Unisex)</p>
                 
-                <div class="border border-gray-200 rounded-xl p-4">
+                <div class="border border-gray-200 rounded-xl p-4" id="gender-selection-container">
                     <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
                         <i class="fas fa-venus-mars text-purple-500 mr-2"></i>
                         Cinsiyetler
@@ -65,7 +70,7 @@
                                 <input type="checkbox" 
                                        name="gender_ids[]" 
                                        value="<?= htmlspecialchars($gender['id']) ?>"
-                                       <?= in_array($gender['id'], $selected_genders) ? 'checked' : '' ?>
+                                       <?= in_array($gender['id'], $selected_genders ?? []) ? 'checked' : '' ?>
                                        class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2">
                                 <span class="ml-2 text-sm font-medium text-gray-700">
                                     <?= htmlspecialchars($gender['name']) ?>

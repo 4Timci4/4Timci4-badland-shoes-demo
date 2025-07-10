@@ -9,16 +9,13 @@
  */
 
 require_once __DIR__ . '/../lib/DatabaseFactory.php';
-require_once __DIR__ . '/Product/ProductManagementService.php';
 
 class CategoryService {
     private $db;
-    private $productManagementService;
     private $performance_metrics;
     
     public function __construct() {
         $this->db = database();
-        $this->productManagementService = new ProductManagementService();
         $this->performance_metrics = [
             'execution_time_ms' => 0,
             'queries_executed' => 0,
@@ -64,27 +61,15 @@ class CategoryService {
     }
 
     public function createCategory($data) {
-        $result = $this->db->insert('categories', $data);
-        if ($result) {
-            $this->productManagementService->refreshMaterializedViews();
-        }
-        return $result;
+        return $this->db->insert('categories', $data);
     }
 
     public function updateCategory($id, $data) {
-        $result = $this->db->update('categories', $data, ['id' => $id]);
-        if ($result) {
-            $this->productManagementService->refreshMaterializedViews();
-        }
-        return $result;
+        return $this->db->update('categories', $data, ['id' => $id]);
     }
 
     public function deleteCategory($id) {
-        $result = $this->db->delete('categories', ['id' => $id]);
-        if ($result) {
-            $this->productManagementService->refreshMaterializedViews();
-        }
-        return $result;
+        return $this->db->delete('categories', ['id' => $id]);
     }
 }
 
