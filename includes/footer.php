@@ -104,6 +104,11 @@ $footer_info = $contactService->getFooterInfo();
                 internalLinks.forEach(link => {
                     const href = link.getAttribute('href');
                     
+                    // data-no-transition attributeini kontrol et
+                    if (link.hasAttribute('data-no-transition')) {
+                        return; // Bu link için transition yapma
+                    }
+                    
                     // İç link kontrolü (external linkler hariç)
                     if (this.isInternalLink(href)) {
                         link.addEventListener('click', (e) => {
@@ -125,8 +130,8 @@ $footer_info = $contactService->getFooterInfo();
                     return false;
                 }
                 
-                // Profil sayfası linklerini özel olarak hariç tut (oturum sorunlarını önlemek için)
-                if (href.includes('profile.php')) {
+                // Profil sayfası ve logout linklerini özel olarak hariç tut (oturum sorunlarını önlemek için)
+                if (href.includes('profile.php') || href.includes('logout.php')) {
                     return false;
                 }
                 

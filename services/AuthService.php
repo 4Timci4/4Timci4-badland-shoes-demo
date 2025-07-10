@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/env.php';
 require_once __DIR__ . '/../lib/DatabaseFactory.php';
+require_once __DIR__ . '/../config/session.php';
 
 class AuthService {
     private $authUrl;
@@ -151,7 +152,10 @@ class AuthService {
         ]);
 
         if ($response['http_code'] === 200 && isset($response['body']['access_token'])) {
+            // Basit session güncelleme
             $_SESSION['user_session'] = $response['body'];
+            $_SESSION['login_time'] = time();
+            
             return ['success' => true, 'session' => $response['body']];
         }
         return ['success' => false, 'message' => 'E-posta veya şifre hatalı.'];
@@ -162,24 +166,11 @@ class AuthService {
             $this->request('logout', 'POST');
         }
         
-        // Session verilerini temizle
-        $_SESSION = array();
+        // Basit session temizleme
+        destroy_session_completely();
         
-        // Session cookie'sini temizle
-        if (ini_get("session.use_cookies")) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
-            );
-        }
-        
-        // Session'ı yok et
-        session_destroy();
-        
-        // Yeni bir temiz session başlat
-        session_start();
-        session_regenerate_id(true);
+        // Yeni temiz session başlat
+        start_session_safely();
         
         return ['success' => true];
     }
@@ -189,7 +180,27 @@ class AuthService {
     }
 
     public function isLoggedIn() {
-        return isset($_SESSION['user_session']);
+        // Simple session check like Express.js examples
+        return isset($_SESSION['user_session']) && isset($_SESSION['user_session']['user']);
+    }
+    
+    /**
+     * Simple session validation - Express.js pattern
+     */
+    public function validateUserSession() {
+        if (!$this->isLoggedIn()) {
+            return ['valid' => false, 'reason' => 'No active session'];
+        }
+        
+        // Basic session health check
+        if (!isset($_SESSION['user_session']['access_token'])) {
+            return ['valid' => false, 'reason' => 'Missing access token'];
+        }
+        
+        return [
+            'valid' => true,
+            'user' => $this->getCurrentUser()
+        ];
     }
 
     public function sendPasswordResetEmail($email) {

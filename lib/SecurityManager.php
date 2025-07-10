@@ -59,11 +59,9 @@ class SecurityManager {
                 $_SESSION['created_at'] = time();
             }
             
-            // Session timeout kontrolü (24 saat)
-            if (isset($_SESSION['created_at']) && (time() - $_SESSION['created_at'] > 86400)) {
-                $this->destroySession();
-                $this->startSecureSession();
-            }
+            // Session timeout kontrolü devre dışı - ana uygulamanın session management'ı bu işi hallediyor
+            // SecurityManager sadece CSRF, validation ve rate limiting için kullanılıyor
+            // Session lifecycle ana config/session.php ile yönetiliyor
         }
     }
     

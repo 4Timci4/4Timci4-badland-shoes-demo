@@ -1,8 +1,8 @@
 <?php
-// Geçici hata ayıklama
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+/**
+ * User Profile Management Page
+ * Adobe Commerce/Magento session management patterns applied
+ */
 
 // Session konfigürasyonunu dahil et ve oturum başlat
 require_once 'config/session.php';
@@ -13,36 +13,16 @@ $auth_service = auth_service();
 $error_message = '';
 $success_message = '';
 
-// Session kontrolü
-if (!isset($_SESSION['user_session']) || empty($_SESSION['user_session'])) {
-    // Kullanıcı ID oturumda saklanmamışsa giriş sayfasına yönlendir
+// Simple session check like Express.js examples
+if (!$auth_service->isLoggedIn()) {
     header('Location: login.php?reason=no_session');
     exit();
 }
 
-// Kullanıcı verisini doğrula
 $user = $auth_service->getCurrentUser();
 if (!$user || empty($user['id'])) {
-    // Geçersiz kullanıcı - oturumu temizle ve giriş sayfasına yönlendir
-    session_unset();
-    session_destroy();
     header('Location: login.php?reason=invalid_user');
     exit();
-}
-
-// Son aktivite zamanını ayarla veya güncelle
-if (!isset($_SESSION['last_activity'])) {
-    $_SESSION['last_activity'] = time();
-} else {
-    // Oturum zaman aşımı kontrolü (30 dakika)
-    if (time() - $_SESSION['last_activity'] > 1800) {
-        session_unset();
-        session_destroy();
-        header('Location: login.php?reason=session_expired');
-        exit();
-    }
-    // Son aktivite zamanını güncelle
-    $_SESSION['last_activity'] = time();
 }
 
 $user_profile = $auth_service->getUserProfile($user['id']);
@@ -96,15 +76,15 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
         <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
             <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
                 <nav class="space-y-1">
-<a href="?tab=profile" class="<?php echo (!isset($_GET['tab']) || $_GET['tab'] === 'profile') ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+<button data-tab="profile" class="profile-tab <?php echo (!isset($_GET['tab']) || $_GET['tab'] === 'profile') ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium w-full text-left">
                         <i class="fas fa-user-circle -ml-1 mr-3 flex-shrink-0 text-sm"></i>
                         <span class="truncate">Üyelik Bilgilerim</span>
-                    </a>
-<a href="?tab=favorites" class="<?php echo (isset($_GET['tab']) && $_GET['tab'] === 'favorites') ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    </button>
+<button data-tab="favorites" class="profile-tab <?php echo (isset($_GET['tab']) && $_GET['tab'] === 'favorites') ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium w-full text-left">
                         <i class="fas fa-heart -ml-1 mr-3 flex-shrink-0 text-sm <?php echo (isset($_GET['tab']) && $_GET['tab'] === 'favorites') ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'; ?>"></i>
                         <span class="truncate">Favorilerim</span>
-                    </a>
-<a href="logout.php" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    </button>
+<a href="logout.php" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium" data-no-transition="true">
                         <i class="fas fa-sign-out-alt text-gray-400 group-hover:text-gray-500 -ml-1 mr-3 flex-shrink-0 text-sm"></i>
                         <span class="truncate">Çıkış Yap</span>
                     </a>
@@ -112,28 +92,40 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
             </aside>
 
             <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
-                <?php if (!empty($success_message)): ?>
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
-                        <p><?php echo $success_message; ?></p>
-                    </div>
-                <?php endif; ?>
-                <?php if (!empty($error_message)): ?>
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
-                        <p><?php echo $error_message; ?></p>
-                    </div>
-                <?php endif; ?>
+                <!-- Mesaj alanı -->
+                <div id="message-container">
+                    <?php if (!empty($success_message)): ?>
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
+                            <p><?php echo $success_message; ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($error_message)): ?>
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                            <p><?php echo $error_message; ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
 
-                <?php
-                // Aktif sekmeyi belirle
-                $active_tab = $_GET['tab'] ?? 'profile';
-                
-                // Aktif sekmeye göre içeriği göster
-                if ($active_tab === 'favorites') {
-                    include 'views/profile/favorites.php';
-                } else {
-                    include 'views/profile/profile-form.php';
-                }
-                ?>
+                <!-- Loading indicator -->
+                <div id="loading-indicator" class="hidden text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-primary text-2xl"></i>
+                    <p class="text-gray-600 mt-2">Yükleniyor...</p>
+                </div>
+
+                <!-- Tab içeriği -->
+                <div id="tab-content">
+                    <?php
+                    // Aktif sekmeyi belirle
+                    $active_tab = $_GET['tab'] ?? 'profile';
+                    
+                    // Aktif sekmeye göre içeriği göster
+                    if ($active_tab === 'favorites') {
+                        include 'views/profile/favorites.php';
+                    } else {
+                        include 'views/profile/profile-form.php';
+                    }
+                    ?>
+                </div>
             </div>
         </div>
     </div>
@@ -146,21 +138,110 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
         .iti__selected-dial-code { font-size: 0.9em; }
     </style>
     <script>
+        // AJAX Tab Sistemi
+        let currentTab = '<?php echo $active_tab; ?>';
+        let phoneInput = null;
+
         document.addEventListener('DOMContentLoaded', function () {
-            // Aktif sekmeyi kontrol et - sadece profil sekmesinde telefon giriş alanı var
-            const activeTab = new URLSearchParams(window.location.search).get('tab');
-            if (activeTab === 'favorites') return; // Favoriler sekmesinde bu kodu çalıştırma
+            initTabSystem();
+            initPhoneInput();
+        });
+
+        function initTabSystem() {
+            const tabButtons = document.querySelectorAll('.profile-tab');
             
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    if (targetTab !== currentTab) {
+                        switchTab(targetTab);
+                    }
+                });
+            });
+        }
+
+        function switchTab(tab) {
+            // Loading göster
+            showLoading();
+            
+            // Tab butonlarını güncelle
+            updateTabButtons(tab);
+            
+            // URL'yi güncelle (sayfa yenilenmeden)
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', tab);
+            history.pushState({tab: tab}, '', newUrl);
+            
+            // AJAX ile içeriği getir
+            fetch(`/api/profile-tabs.php?tab=${tab}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        document.getElementById('tab-content').innerHTML = data.content;
+                        currentTab = tab;
+                        
+                        // Telefon input'unu yeniden başlat (sadece profile sekmesinde)
+                        if (tab === 'profile') {
+                            setTimeout(initPhoneInput, 100);
+                        }
+                        
+                        // Mesajları temizle
+                        document.getElementById('message-container').innerHTML = '';
+                    } else {
+                        showError('İçerik yüklenirken bir hata oluştu.');
+                        
+                        // Eğer session expired ise redirect
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        }
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Bir hata oluştu. Lütfen tekrar deneyin.');
+                    console.error('Tab switch error:', error);
+                });
+        }
+
+        function updateTabButtons(activeTab) {
+            const tabButtons = document.querySelectorAll('.profile-tab');
+            
+            tabButtons.forEach(button => {
+                const tab = button.getAttribute('data-tab');
+                const isActive = tab === activeTab;
+                
+                // Class'ları güncelle
+                if (isActive) {
+                    button.className = button.className
+                        .replace('text-gray-600 hover:bg-gray-100 hover:text-gray-900', 'bg-primary text-white')
+                        .replace('text-gray-400 group-hover:text-gray-500', 'text-white');
+                } else {
+                    button.className = button.className
+                        .replace('bg-primary text-white', 'text-gray-600 hover:bg-gray-100 hover:text-gray-900')
+                        .replace('text-white', 'text-gray-400 group-hover:text-gray-500');
+                }
+            });
+        }
+
+        function initPhoneInput() {
             const phoneInputField = document.querySelector("#phone_number");
             const nameInputField = document.querySelector("#first_name");
             
             // Elementlerin var olduğunu kontrol et
             if (!phoneInputField || !nameInputField) return;
 
+            // Önceki phone input instance'ını temizle
+            if (phoneInput) {
+                phoneInput.destroy();
+                phoneInput = null;
+            }
+
             const inputClasses = nameInputField.className;
             phoneInputField.className = inputClasses;
 
-            const phoneInput = window.intlTelInput(phoneInputField, {
+            phoneInput = window.intlTelInput(phoneInputField, {
                 initialCountry: "auto",
                 geoIpLookup: (callback) => {
                     fetch("https://ipapi.co/json")
@@ -177,6 +258,33 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
                 form.addEventListener("submit", () => {
                     phoneInputField.value = phoneInput.getNumber();
                 });
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading-indicator').classList.remove('hidden');
+            document.getElementById('tab-content').style.opacity = '0.5';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-indicator').classList.add('hidden');
+            document.getElementById('tab-content').style.opacity = '1';
+        }
+
+        function showError(message) {
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.innerHTML = `
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // Browser back/forward button desteği
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.tab) {
+                currentTab = '';
+                switchTab(event.state.tab);
             }
         });
     </script>
