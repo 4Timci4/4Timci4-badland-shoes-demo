@@ -126,7 +126,8 @@ class SupabaseAdapter implements DatabaseInterface {
      */
     public function executeRawSql($sql, $params = []) {
         try {
-            return $this->client->executeRawSql($sql, $params);
+            $response = $this->client->executeRawSql($sql, $params);
+            return $response['body'] ?? [];
         } catch (Exception $e) {
             $this->lastError = $e->getMessage();
             error_log("SupabaseAdapter::executeRawSql - " . $e->getMessage());
@@ -415,7 +416,7 @@ class SupabaseAdapter implements DatabaseInterface {
                         // Array operatörü için özel formatting
                         if ($operator === '&&' && is_array($val)) {
                             $formattedArray = $this->formatArrayForPostgreSQL($val);
-                            $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $formattedArray;
+                            $parts[] = $key . '=ov.' . $formattedArray; // 'ov' (overlap) operatörünü kullan
                         } else {
                             $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
                         }

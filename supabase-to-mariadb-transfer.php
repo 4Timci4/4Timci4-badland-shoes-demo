@@ -40,7 +40,7 @@ class SupabaseToMariaDBTransfer {
         
         // 2. ANA TABLOLAR (Diğer tablolar bunlara bağlı)
         'users',                // user_addresses buna bağlı
-        'categories',           // Self-referencing (parent_id) + product_categories buna bağlı
+        'categories',           // product_categories buna bağlı
         'product_models',       // product_categories, product_genders, product_images, product_variants buna bağlı
         'colors',               // product_images, product_variants buna bağlı
         'sizes',                // product_variants buna bağlı
@@ -240,9 +240,7 @@ class SupabaseToMariaDBTransfer {
                     `slug` VARCHAR(255) NOT NULL UNIQUE,
                     `description` TEXT,
                     `category_type` VARCHAR(50) DEFAULT 'product_type',
-                    `parent_id` INT NULL,
-                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (`parent_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ";
                 break;
                 
@@ -558,13 +556,12 @@ class SupabaseToMariaDBTransfer {
                     c.id,
                     c.name,
                     c.slug,
-                    c.parent_id,
                     c.category_type,
                     COUNT(pc.product_id) AS product_count
                 FROM categories c
                 LEFT JOIN product_categories pc ON c.id = pc.category_id
                 LEFT JOIN product_models pm ON pc.product_id = pm.id
-                GROUP BY c.id, c.name, c.slug, c.parent_id, c.category_type
+                GROUP BY c.id, c.name, c.slug, c.category_type
                 ORDER BY c.name
             ",
             

@@ -102,7 +102,7 @@ class ProductApiService {
         $order_direction = $sort_parts[1] ?? 'desc';
         $order = $order_field . ' ' . strtoupper($order_direction);
         
-        // Get total count
+        // Get total count using the adapter's count method for reliability
         $total_count = $this->db->count('product_api_summary', $conditions);
         $this->performance_metrics['queries_executed']++;
 
