@@ -62,14 +62,14 @@ if ($_POST) {
                 ];
                 
                 try {
-                    $response = supabase()->request('blogs', 'POST', $blog_data);
+                    $insert_response = database()->insert('blogs', $blog_data);
                     
-                    if ($response && !empty($response['body'])) {
+                    if ($insert_response) {
                         set_flash_message('success', 'Blog yazısı başarıyla eklendi.');
                         header('Location: blogs.php');
                         exit;
                     } else {
-                        throw new Exception('Supabase response boş döndü');
+                        throw new Exception('Blog ekleme işlemi başarısız oldu.');
                     }
                 } catch (Exception $e) {
                     error_log("Blog add error: " . $e->getMessage());

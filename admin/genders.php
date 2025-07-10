@@ -103,9 +103,7 @@ function getGendersWithProductCounts() {
         
         foreach ($genders as &$gender) {
             // Her cinsiyet için ürün sayısını hesapla
-            $products_response = supabase()->request('product_genders?select=product_id&gender_id=eq.' . $gender['id']);
-            $products = $products_response['body'] ?? [];
-            $gender['product_count'] = count($products);
+            $gender['product_count'] = database()->count('product_genders', ['gender_id' => $gender['id']]);
         }
         
         return $genders;

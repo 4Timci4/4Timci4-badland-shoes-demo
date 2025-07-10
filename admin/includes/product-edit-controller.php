@@ -178,37 +178,48 @@ function update_product_data($product_id, $name, $description, $base_price, $is_
         'updated_at' => date('Y-m-d H:i:s')
     ];
     
-    // Supabase UPDATE işlemi
-    $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $update_data);
+    $db = database();
     
-    if ($response && !empty($response['body'])) {
-        // Mevcut kategori ilişkilerini sil
-        $delete_response = supabase()->request('product_categories?product_id=eq.' . $product_id, 'DELETE');
+    // Veritabanı işlemini başlat
+    $db->beginTransaction();
+    
+    try {
+        // 1. Ürün ana bilgilerini güncelle
+        $db->update('product_models', $update_data, ['id' => $product_id]);
         
-        // Yeni kategori ilişkilerini ekle
+        // 2. Mevcut kategori ilişkilerini sil
+        $db->delete('product_categories', ['product_id' => $product_id]);
+        
+        // 3. Yeni kategori ilişkilerini ekle
         foreach ($category_ids as $category_id) {
             $category_data = [
                 'product_id' => $product_id,
                 'category_id' => intval($category_id)
             ];
-            supabase()->request('product_categories', 'POST', $category_data);
+            $db->insert('product_categories', $category_data);
         }
         
-        // Mevcut cinsiyet ilişkilerini sil
-        $delete_gender_response = supabase()->request('product_genders?product_id=eq.' . $product_id, 'DELETE');
+        // 4. Mevcut cinsiyet ilişkilerini sil
+        $db->delete('product_genders', ['product_id' => $product_id]);
         
-        // Yeni cinsiyet ilişkilerini ekle
+        // 5. Yeni cinsiyet ilişkilerini ekle
         foreach ($gender_ids as $gender_id) {
             $gender_data = [
                 'product_id' => $product_id,
                 'gender_id' => intval($gender_id)
             ];
-            supabase()->request('product_genders', 'POST', $gender_data);
+            $db->insert('product_genders', $gender_data);
         }
         
+        // Her şey yolundaysa işlemi onayla
+        $db->commit();
         return true;
+        
+    } catch (Exception $e) {
+        // Hata durumunda işlemi geri al
+        $db->rollback();
+        error_log("Product update transaction failed: " . $e->getMessage());
+        return false;
     }
-    
-    return false;
 }
 ?>

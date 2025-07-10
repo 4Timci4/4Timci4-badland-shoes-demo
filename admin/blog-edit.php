@@ -21,8 +21,7 @@ $blog_id = intval($_GET['id']);
 
 // Blog bilgilerini getir
 try {
-    $blog_response = supabase()->request("blogs?id=eq.$blog_id");
-    $blog_data = $blog_response['body'] ?? [];
+    $blog_data = database()->select('blogs', ['id' => $blog_id]);
     
     if (empty($blog_data)) {
         set_flash_message('error', 'Blog yazısı bulunamadı.');
@@ -117,10 +116,10 @@ if ($_POST) {
                         'image_url' => $image_url
                     ];
                     
-                    // Supabase UPDATE işlemi
-                    $response = supabase()->request("blogs?id=eq.$blog_id", 'PATCH', $update_data);
+                    // Veritabanı UPDATE işlemi
+                    $update_response = database()->update('blogs', $update_data, ['id' => $blog_id]);
                     
-                    if ($response && !empty($response['body'])) {
+                    if ($update_response) {
                         set_flash_message('success', 'Blog yazısı başarıyla güncellendi.');
                         
                         // Devam et mi yoksa listeye dön mü?
@@ -131,7 +130,7 @@ if ($_POST) {
                         }
                         exit;
                     } else {
-                        throw new Exception('Supabase güncelleme işlemi başarısız');
+                        throw new Exception('Blog güncelleme işlemi başarısız veya veri değişmedi.');
                     }
                     
                 } catch (Exception $e) {

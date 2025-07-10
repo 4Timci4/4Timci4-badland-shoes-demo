@@ -32,8 +32,8 @@ if ($_POST) {
                 
                 if ($blog_id > 0) {
                     try {
-                        $response = supabase()->request('blogs?id=eq.' . $blog_id, 'DELETE');
-                        if (!empty($response)) {
+                        $delete_response = database()->delete('blogs', ['id' => $blog_id]);
+                        if ($delete_response) {
                             set_flash_message('success', 'Blog yazısı başarıyla silindi.');
                         } else {
                             set_flash_message('error', 'Blog yazısı silinirken bir hata oluştu.');
@@ -52,10 +52,8 @@ if ($_POST) {
                 
                 if ($blog_id > 0) {
                     try {
-                        $response = supabase()->request('blogs?id=eq.' . $blog_id, 'PATCH', [
-                            'status' => $new_status
-                        ]);
-                        if (!empty($response)) {
+                        $update_response = database()->update('blogs', ['status' => $new_status], ['id' => $blog_id]);
+                        if ($update_response) {
                             $status_text = $new_status === 'published' ? 'yayınlandı' : 'taslağa alındı';
                             set_flash_message('success', 'Blog yazısı ' . $status_text . '.');
                         } else {

@@ -86,27 +86,28 @@ if ($_POST) {
                 if ($edit_mode) {
                     // Güncelleme işlemi
                     try {
+                        $db = database();
                         // 1. Ürün bilgilerini güncelle
-                        $response = supabase()->request('product_models?id=eq.' . $product_id, 'PATCH', $product_data);
-                        if ($response && !empty($response['body'])) {
-                            
+                        $update_response = $db->update('product_models', $product_data, ['id' => $product_id]);
+
+                        if ($update_response) {
                             // 2. Mevcut kategori ilişkilerini sil
-                            $delete_response = supabase()->request('product_categories?product_id=eq.' . $product_id, 'DELETE');
-                            
+                            $db->delete('product_categories', ['product_id' => $product_id]);
+
                             // 3. Yeni kategori ilişkilerini ekle
                             foreach ($category_ids as $category_id) {
                                 $category_data = [
                                     'product_id' => $product_id,
                                     'category_id' => intval($category_id)
                                 ];
-                                supabase()->request('product_categories', 'POST', $category_data);
+                                $db->insert('product_categories', $category_data);
                             }
-                            
+
                             set_flash_message('success', 'Ürün başarıyla güncellendi.');
                             header('Location: products.php');
                             exit;
                         } else {
-                            throw new Exception('Ürün güncelleme başarısız');
+                            throw new Exception('Ürün güncelleme başarısız veya veri değişmedi.');
                         }
                     } catch (Exception $e) {
                         error_log("Product update error: " . $e->getMessage());
@@ -115,11 +116,13 @@ if ($_POST) {
                 } else {
                     // Yeni ürün ekleme
                     try {
-                        // 1. Önce ürünü ekle
-                        $response = supabase()->request('product_models', 'POST', $product_data);
-                        if ($response && !empty($response['body'])) {
+                        $db = database();
+                        // 1. Önce ürünü ekle ve ID'sini geri al
+                        $new_product_array = $db->insert('product_models', $product_data, ['returning' => 'representation']);
+                        
+                        if ($new_product_array && !empty($new_product_array)) {
                             // 2. Yeni ürünün ID'sini al
-                            $new_product = $response['body'][0] ?? null;
+                            $new_product = $new_product_array[0] ?? null;
                             $new_product_id = $new_product['id'] ?? null;
                             
                             if ($new_product_id) {
@@ -129,7 +132,7 @@ if ($_POST) {
                                         'product_id' => $new_product_id,
                                         'category_id' => intval($category_id)
                                     ];
-                                    supabase()->request('product_categories', 'POST', $category_data);
+                                    $db->insert('product_categories', $category_data);
                                 }
                                 
                                 // 4. Cinsiyet ilişkilerini ekle
@@ -138,7 +141,7 @@ if ($_POST) {
                                         'product_id' => $new_product_id,
                                         'gender_id' => intval($gender_id)
                                     ];
-                                    supabase()->request('product_genders', 'POST', $gender_data);
+                                    $db->insert('product_genders', $gender_data);
                                 }
                                 
                                 set_flash_message('success', 'Ürün başarıyla eklendi! Şimdi renk/beden varyantlarını ekleyebilirsiniz.');
@@ -292,8 +295,7 @@ include 'includes/header.php';
                         $selected_categories = [];
                         if ($edit_mode && $product_id) {
                             try {
-                                $response = supabase()->request('product_categories?select=category_id&product_id=eq.' . $product_id);
-                                $category_relations = $response['body'] ?? [];
+                                $category_relations = database()->select('product_categories', ['product_id' => $product_id], 'category_id');
                                 $selected_categories = array_column($category_relations, 'category_id');
                             } catch (Exception $e) {
                                 error_log("Error fetching product categories: " . $e->getMessage());
@@ -344,8 +346,7 @@ include 'includes/header.php';
                         $selected_genders = [];
                         if ($edit_mode && $product_id) {
                             try {
-                                $response = supabase()->request('product_genders?select=gender_id&product_id=eq.' . $product_id);
-                                $gender_relations = $response['body'] ?? [];
+                                $gender_relations = database()->select('product_genders', ['product_id' => $product_id], 'gender_id');
                                 $selected_genders = array_column($gender_relations, 'gender_id');
                             } catch (Exception $e) {
                                 error_log("Error fetching product genders: " . $e->getMessage());
