@@ -98,15 +98,16 @@ class AuthService {
             'data'     => (object)$userData
         ]);
 
-        if ($response['http_code'] === 200 && isset($response['body']['id'])) {
-            $user = $response['body'];
+        if ($response['http_code'] === 200 && isset($response['body']['user']['id'])) {
+            $session = $response['body'];
+            $user = $session['user'];
             
-            if (isset($user['access_token']) && !empty($options['phone_number'])) {
+            if (isset($session['access_token']) && !empty($options['phone_number'])) {
                 $this->request(
                     'user',
                     'PUT',
                     ['phone' => $options['phone_number']],
-                    ['Authorization: Bearer ' . $user['access_token']]
+                    ['Authorization: Bearer ' . $session['access_token']]
                 );
             }
 
@@ -115,7 +116,8 @@ class AuthService {
             $profileData = [
                 'first_name' => $options['first_name'] ?? null,
                 'last_name' => $options['last_name'] ?? null,
-                'phone_number' => $options['phone_number'] ?? null
+                'phone_number' => $options['phone_number'] ?? null,
+                'gender' => !empty($options['gender']) ? $options['gender'] : null
             ];
 
             // Filter out null values to avoid overwriting existing data unnecessarily

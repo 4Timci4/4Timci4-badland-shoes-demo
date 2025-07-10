@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = $_POST['first_name'] ?? '';
     $lastName = $_POST['last_name'] ?? '';
     $email = $_POST['email'] ?? '';
+    $gender = $_POST['gender'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
@@ -20,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $auth_service->registerUser($email, $password, [
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'phone_number' => $phone
+            'phone_number' => $phone,
+            'gender' => $gender
         ]);
         if ($result['success']) {
             $success_message = 'Hesabınız başarıyla oluşturuldu! Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın.';
@@ -87,6 +89,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="email-address" class="block text-sm font-medium text-gray-700 mb-1">E-posta Adresi</label>
                         <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="ornek@mail.com">
                     </div>
+
+                   <div>
+                       <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Cinsiyet</label>
+                       <select id="gender" name="gender" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                           <option value="" disabled selected>Cinsiyet Seçiniz</option>
+                           <option value="Kadın">Kadın</option>
+                           <option value="Erkek">Erkek</option>
+                           <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+                       </select>
+                   </div>
                     
                     <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Telefon Numarası</label>

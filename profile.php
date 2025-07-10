@@ -21,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phoneNumber = $_POST['phone_number'] ?? '';
     $email = $_POST['email'] ?? '';
 
+    $email_changed = ($email !== $user['email']);
+
     $result = $auth_service->updateUserProfile($user['id'], [
         'first_name' => $firstName,
         'last_name' => $lastName,
@@ -29,7 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     if ($result['success']) {
-        $success_message = 'Profiliniz başarıyla güncellendi. E-posta değişikliği için lütfen yeni e-posta adresinize gelen doğrulama linkine tıklayın.';
+        if ($email_changed) {
+            $success_message = 'Profiliniz başarıyla güncellendi. E-posta değişikliği için lütfen yeni e-posta adresinize gelen doğrulama linkine tıklayın.';
+        } else {
+            $success_message = 'Profiliniz başarıyla güncellendi.';
+        }
         $user_profile = $auth_service->getUserProfile($user['id']);
     } else {
         $error_message = $result['message'];
