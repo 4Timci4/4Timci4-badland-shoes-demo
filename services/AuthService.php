@@ -14,7 +14,7 @@ class AuthService {
         $this->db = database();
     }
 
-    private function request($endpoint, $method = 'POST', $data = [], $headers = []) {
+    private function request($endpoint, $method = 'POST', $data = [], $headers = []): array {
         $url = $this->authUrl . '/' . ltrim($endpoint, '/');
         
         $defaultHeaders = [

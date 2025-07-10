@@ -64,6 +64,11 @@ $footer_info = $contactService->getFooterInfo();
             }
             
             init() {
+                // Page transitions devre dışı mı kontrol et
+                if (document.body.hasAttribute('data-disable-page-transitions')) {
+                    return; // Page transition sistemini başlatma
+                }
+                
                 // Sayfa yüklendiğinde fade-in efekti
                 this.fadeInPage();
                 
@@ -104,9 +109,14 @@ $footer_info = $contactService->getFooterInfo();
                 internalLinks.forEach(link => {
                     const href = link.getAttribute('href');
                     
-                    // data-no-transition attributeini kontrol et
+                    // ÖNCE data-no-transition attributeini kontrol et (en yüksek öncelik)
                     if (link.hasAttribute('data-no-transition')) {
                         return; // Bu link için transition yapma
+                    }
+                    
+                    // Logout ve profile linklerini kesinlikle hariç tut
+                    if (href && (href.includes('logout.php') || href.includes('profile.php'))) {
+                        return; // Bu linkler için transition yapma
                     }
                     
                     // İç link kontrolü (external linkler hariç)
@@ -130,8 +140,10 @@ $footer_info = $contactService->getFooterInfo();
                     return false;
                 }
                 
-                // Profil sayfası ve logout linklerini özel olarak hariç tut (oturum sorunlarını önlemek için)
-                if (href.includes('profile.php') || href.includes('logout.php')) {
+                // Profil sayfası ve logout linklerini KESİNLİKLE hariç tut (session koruması)
+                if (href.includes('profile.php') ||
+                    href.includes('logout.php') ||
+                    href.includes('login.php')) {
                     return false;
                 }
                 

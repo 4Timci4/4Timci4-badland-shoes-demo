@@ -40,15 +40,26 @@ try {
     ob_start();
     
     if ($tab === 'favorites') {
-        // Favorites tab içeriği
+        // Favorites tab için $user değişkeninin varlığını doğrula
+        if (!isset($user) || !is_array($user) || empty($user['id'])) {
+            throw new Exception('User data not available for favorites');
+        }
         include '../views/profile/favorites.php';
     } else {
         // Profile tab içeriği
         $user_profile = $auth_service->getUserProfile($user['id']);
+        if (!$user_profile) {
+            throw new Exception('User profile not found');
+        }
         include '../views/profile/profile-form.php';
     }
     
     $content = ob_get_clean();
+    
+    // Boş content kontrolü
+    if (empty($content)) {
+        throw new Exception('Empty content generated for tab: ' . $tab);
+    }
     
     echo json_encode([
         'success' => true,
@@ -57,8 +68,17 @@ try {
     ]);
     
 } catch (Exception $e) {
-    error_log("Profile tabs API error: " . $e->getMessage());
+    // Buffer temizle
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    error_log("Profile tabs API error: " . $e->getMessage() . " | Tab: " . $tab . " | User ID: " . ($user['id'] ?? 'not set'));
     http_response_code(500);
-    echo json_encode(['error' => 'Internal server error']);
+    echo json_encode([
+        'error' => 'İçerik yüklenirken bir hata oluştu',
+        'debug' => $e->getMessage(),
+        'tab' => $tab
+    ]);
 }
 ?>

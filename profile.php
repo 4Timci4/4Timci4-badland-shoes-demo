@@ -69,7 +69,7 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100" data-disable-page-transitions="true">
     <?php include 'includes/header.php'; ?>
 
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -136,6 +136,11 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
     <style>
         .iti { width: 100%; }
         .iti__selected-dial-code { font-size: 0.9em; }
+        
+        /* Profile sayfası için page transitions devre dışı olduğu için body'yi görünür yap */
+        body {
+            opacity: 1 !important;
+        }
     </style>
     <script>
         // AJAX Tab Sistemi
@@ -173,7 +178,9 @@ $display_name = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile[
             history.pushState({tab: tab}, '', newUrl);
             
             // AJAX ile içeriği getir
-            fetch(`/api/profile-tabs.php?tab=${tab}`)
+            fetch(`/api/profile-tabs.php?tab=${tab}`, {
+                credentials: 'same-origin'
+            })
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
