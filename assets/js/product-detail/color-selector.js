@@ -74,21 +74,53 @@ export function initializeColorSelector(state, productColors, imageManager, vari
     
     // Renk seçimi için event listener'lar ekle
     document.querySelectorAll('.color-option').forEach(button => {
-        // Hover olduğunda önizleme göster
+        // Hover olduğunda önizleme göster ve bedenleri güncelle
         button.addEventListener('mouseenter', function() {
             const colorId = parseInt(this.dataset.colorId);
+            
+            // Görsel önizlemesi göster
             const firstImage = imageManager.previewColorImages(colorId);
             if (firstImage) {
                 imageManager.changeMainImage(firstImage, null, true); // true parametresi önizleme modunu belirtir
             }
+            
+            // Mevcut seçili rengi geçici olarak sakla
+            const previousSelectedColor = state.selectedColor;
+            
+            // Geçici olarak hover yapılan rengi seçili olarak ayarla (beden görünümünü güncellemek için)
+            state.selectedColor = colorId;
+            
+            // Bu renk için mevcut bedenleri göster
+            const sizesWithAvailability = variantManager.getAllSizesWithAvailability(colorId, window.productSizesData);
+            
+            // Beden butonlarını güncelle
+            document.querySelectorAll('.size-option').forEach(button => {
+                const sizeId = parseInt(button.dataset.size);
+                const sizeInfo = sizesWithAvailability.find(s => s.id === sizeId);
+                
+                if (sizeInfo && sizeInfo.isAvailable) {
+                    button.classList.remove('line-through', 'opacity-50', 'unavailable');
+                    button.disabled = false;
+                } else {
+                    button.classList.add('line-through', 'opacity-50', 'unavailable');
+                    button.disabled = true;
+                }
+            });
+            
+            // Seçili rengi eski değerine geri döndür
+            state.selectedColor = previousSelectedColor;
         });
         
-        // Hover'dan çıkıldığında seçili rengin görsellerini göster
+        // Hover'dan çıkıldığında seçili rengin görsellerini ve bedenlerini göster
         button.addEventListener('mouseleave', function() {
             if (state.selectedColor) {
+                // Görselleri güncelle
                 if (typeof updateImagesForColor === 'function') {
                     updateImagesForColor(state.selectedColor);
                 }
+                
+                // Bedenleri güncelle
+                updateAllSizeButtons();
             }
         });
         
