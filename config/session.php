@@ -132,16 +132,24 @@ class SessionConfig {
     }
     
     /**
-     * Concurrent session kontrolü
+     * Concurrent session kontrolü - Performans için optimize edildi
      */
     public static function checkConcurrentSession($userId, $db) {
         if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
             return true;
         }
         
+        // Son kontrol zamanını kontrol et - her 5 dakikada bir kontrol yap
+        if (isset($_SESSION['last_concurrent_check']) && (time() - $_SESSION['last_concurrent_check'] < 300)) {
+            return true; // 5 dakika geçmediyse tekrar kontrol etme
+        }
+        
         // Aktif session'ı veritabanından kontrol et
         $currentSessionId = session_id();
         $userSessions = $db->select('user_sessions', ['user_id' => $userId], '*');
+        
+        // Son kontrol zamanını güncelle
+        $_SESSION['last_concurrent_check'] = time();
         
         foreach ($userSessions as $session) {
             if ($session['session_id'] !== $currentSessionId) {
@@ -178,14 +186,22 @@ class SessionConfig {
     }
     
     /**
-     * Session activity'sini güncelle
+     * Session activity'sini güncelle - Performans için optimize edildi
      */
     public static function updateSessionActivity($userId, $db) {
+        // Son güncelleme zamanını kontrol et - her 5 dakikada bir güncelle
+        if (isset($_SESSION['last_activity_update']) && (time() - $_SESSION['last_activity_update'] < 300)) {
+            return; // 5 dakika geçmediyse güncelleme yapma
+        }
+        
         $sessionId = session_id();
-        $db->update('user_sessions', 
-            ['last_activity' => date('Y-m-d H:i:s')], 
+        $db->update('user_sessions',
+            ['last_activity' => date('Y-m-d H:i:s')],
             ['user_id' => $userId, 'session_id' => $sessionId]
         );
+        
+        // Son güncelleme zamanını kaydet
+        $_SESSION['last_activity_update'] = time();
     }
     
     /**
