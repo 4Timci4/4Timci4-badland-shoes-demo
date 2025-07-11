@@ -4,7 +4,7 @@
     <div class="flex flex-wrap" style="max-width: 320px;">
         <?php foreach($available_sizes as $size):
         ?>
-            <button class="size-option w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:border-brand hover:bg-brand hover:text-secondary transition-all font-medium m-1"
+            <button class="size-option w-12 h-12 flex items-center justify-center border border-gray-300 rounded-lg hover:border-brand hover:bg-brand hover:text-secondary transition-all font-medium m-1"
                     data-size="<?php echo $size['id']; ?>"
                     data-size-value="<?php echo $size['size_value']; ?>">
                 <?php echo $size['size_value']; ?>

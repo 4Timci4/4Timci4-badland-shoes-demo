@@ -14,53 +14,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageCache = new Map();
     let preloadComplete = false;
     
-    // Tüm renk görsellerini arka planda yükle
+    // Varyant verilerini indeksle (O(1) erişim için)
+    const variantMap = new Map();
+    const variantsByColor = new Map();
+    const variantsBySize = new Map();
+    
+    // Varyant verilerini indeksle
+    function indexVariantData() {
+        productVariants.forEach(variant => {
+            // Renk ve beden kombinasyonu için benzersiz anahtar
+            const key = `${variant.color_id}-${variant.size_id}`;
+            variantMap.set(key, variant);
+            
+            // Renge göre varyantları grupla
+            if (!variantsByColor.has(variant.color_id)) {
+                variantsByColor.set(variant.color_id, []);
+            }
+            variantsByColor.get(variant.color_id).push(variant);
+            
+            // Bedene göre varyantları grupla
+            if (!variantsBySize.has(variant.size_id)) {
+                variantsBySize.set(variant.size_id, []);
+            }
+            variantsBySize.get(variant.size_id).push(variant);
+        });
+    }
+    
+    // Varyant verilerini indeksle
+    indexVariantData();
+    
+    // Tüm renk görsellerini arka planda yükle - optimize edilmiş
     function preloadColorImages() {
         const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
         const preloadPromises = [];
         
+        // Önce seçili rengin görsellerini yükle
+        if (selectedColor && colorImageData[selectedColor]) {
+            const selectedColorImages = colorImageData[selectedColor];
+            preloadSelectedColorImages(selectedColorImages, preloadPromises);
+        }
+        
+        // Sonra diğer renklerin görsellerini yükle
         Object.keys(colorImageData).forEach(colorId => {
-            colorImageData[colorId].forEach(image => {
-                // Ana görsel
-                const imgPromise = new Promise((resolve) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        imageCache.set(image.image_url, img);
-                        resolve();
-                    };
-                    img.onerror = () => resolve(); // Hata durumunda da devam et
-                    img.src = image.image_url;
-                });
-                preloadPromises.push(imgPromise);
-                
-                // WebP varsa onu da yükle
-                if (image.webp_url) {
-                    const webpPromise = new Promise((resolve) => {
-                        const webpImg = new Image();
-                        webpImg.onload = () => {
-                            imageCache.set(image.webp_url, webpImg);
-                            resolve();
-                        };
-                        webpImg.onerror = () => resolve();
-                        webpImg.src = image.webp_url;
-                    });
-                    preloadPromises.push(webpPromise);
-                }
-                
-                // Thumbnail varsa
-                if (image.thumbnail_url) {
-                    const thumbPromise = new Promise((resolve) => {
-                        const thumbImg = new Image();
-                        thumbImg.onload = () => {
-                            imageCache.set(image.thumbnail_url, thumbImg);
-                            resolve();
-                        };
-                        thumbImg.onerror = () => resolve();
-                        thumbImg.src = image.thumbnail_url;
-                    });
-                    preloadPromises.push(thumbPromise);
-                }
-            });
+            if (colorId != selectedColor) {
+                const images = colorImageData[colorId];
+                preloadColorImagesWithLowPriority(images, preloadPromises);
+            }
         });
         
         Promise.all(preloadPromises).then(() => {
@@ -69,8 +68,89 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Preloading'i başlat
-    setTimeout(preloadColorImages, 100);
+    // Seçili rengin görsellerini yüksek öncelikle yükle
+    function preloadSelectedColorImages(images, promises) {
+        images.forEach(image => {
+            // Ana görsel
+            const imgPromise = new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    imageCache.set(image.image_url, img);
+                    resolve();
+                };
+                img.onerror = () => resolve(); // Hata durumunda da devam et
+                img.src = image.image_url;
+                img.importance = "high"; // Tarayıcıya yüksek öncelik bildir
+            });
+            promises.push(imgPromise);
+            
+            // WebP varsa onu da yükle
+            if (image.webp_url) {
+                const webpPromise = new Promise((resolve) => {
+                    const webpImg = new Image();
+                    webpImg.onload = () => {
+                        imageCache.set(image.webp_url, webpImg);
+                        resolve();
+                    };
+                    webpImg.onerror = () => resolve();
+                    webpImg.src = image.webp_url;
+                    webpImg.importance = "high";
+                });
+                promises.push(webpPromise);
+            }
+            
+            // Thumbnail varsa
+            if (image.thumbnail_url) {
+                const thumbPromise = new Promise((resolve) => {
+                    const thumbImg = new Image();
+                    thumbImg.onload = () => {
+                        imageCache.set(image.thumbnail_url, thumbImg);
+                        resolve();
+                    };
+                    thumbImg.onerror = () => resolve();
+                    thumbImg.src = image.thumbnail_url;
+                    thumbImg.importance = "high";
+                });
+                promises.push(thumbPromise);
+            }
+        });
+    }
+    
+    // Diğer renklerin görsellerini düşük öncelikle yükle
+    function preloadColorImagesWithLowPriority(images, promises) {
+        images.forEach(image => {
+            // Ana görsel
+            const imgPromise = new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    imageCache.set(image.image_url, img);
+                    resolve();
+                };
+                img.onerror = () => resolve();
+                img.src = image.image_url;
+                img.importance = "low"; // Tarayıcıya düşük öncelik bildir
+            });
+            promises.push(imgPromise);
+            
+            // WebP varsa onu da yükle
+            if (image.webp_url) {
+                const webpPromise = new Promise((resolve) => {
+                    const webpImg = new Image();
+                    webpImg.onload = () => {
+                        imageCache.set(image.webp_url, webpImg);
+                        resolve();
+                    };
+                    webpImg.onerror = () => resolve();
+                    webpImg.src = image.webp_url;
+                    webpImg.importance = "low";
+                });
+                promises.push(webpPromise);
+            }
+        });
+    }
+    
+    // Preloading'i hemen başlat (gecikme olmadan)
+    preloadColorImages();
     
     // Sayfa yüklendiğinde ilk rengi seç
     if (productColors.length > 0) {
@@ -84,15 +164,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Varyant bul
+    function findVariant(colorId, sizeId) {
+        const key = `${colorId}-${sizeId}`;
+        return variantMap.get(key);
+    }
+    
     // Stok olmayan bedenlerin üstünü çiz
     function updateSizeButtonsBasedOnStock() {
         if (!selectedColor) return;
         
         document.querySelectorAll('.size-option').forEach(button => {
             const sizeId = parseInt(button.dataset.size);
-            const variant = productVariants.find(v => 
-                v.color_id === selectedColor && v.size_id === sizeId
-            );
+            const variant = findVariant(selectedColor, sizeId);
             
             if (!variant || variant.stock_quantity <= 0) {
                 button.classList.add('line-through', 'opacity-50');
@@ -104,8 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Ana resim değiştirme - Fade transition ile
-    window.changeMainImage = function(imageData, thumbnail) {
+    // Ana resim değiştirme - Geliştirilmiş geçiş efekti ile
+    window.changeMainImage = function(imageData, thumbnail, isPreview = false) {
         const mainImage = document.getElementById('main-product-image');
         const mainPicture = document.getElementById('main-product-picture');
         if (!mainImage) return;
@@ -124,6 +208,13 @@ document.addEventListener('DOMContentLoaded', function() {
             webpUrl = imageData.webp_url;
         }
         
+        // Önizleme modu için farklı geçiş efekti
+        if (isPreview) {
+            mainImage.classList.add('preview-mode');
+        } else {
+            mainImage.classList.remove('preview-mode');
+        }
+        
         // Fade out efekti
         mainImage.style.opacity = '0';
         
@@ -135,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl);
                 mainImage.style.opacity = '1';
-            }, 100);
+            }, 50); // Daha hızlı geçiş için süreyi azalttık
         } else {
             // Yeni resmi yükle
             const newImage = new Image();
@@ -151,8 +242,8 @@ document.addEventListener('DOMContentLoaded', function() {
             newImage.src = imageUrl;
         }
         
-        // Thumbnail border'larını güncelle (sadece thumbnail varsa)
-        if (thumbnail) {
+        // Thumbnail border'larını güncelle (sadece thumbnail varsa ve önizleme modu değilse)
+        if (thumbnail && !isPreview) {
             document.querySelectorAll('.thumbnail, .thumbnail-item').forEach(thumb => {
                 thumb.classList.remove('border-primary', 'border-blue-500', 'border-opacity-100');
                 thumb.classList.add('border-transparent');
@@ -183,8 +274,22 @@ document.addEventListener('DOMContentLoaded', function() {
         mainImage.alt = altText;
     }
     
-    // Renk seçimi - Soft geçiş ile
+    // 2. Renk seçimi için hover önizlemesi
     document.querySelectorAll('.color-option').forEach(button => {
+        // Hover olduğunda önizleme göster
+        button.addEventListener('mouseenter', function() {
+            const colorId = parseInt(this.dataset.colorId);
+            previewColorImages(colorId);
+        });
+        
+        // Hover'dan çıkıldığında seçili rengin görsellerini göster
+        button.addEventListener('mouseleave', function() {
+            if (selectedColor) {
+                updateImagesForColor(selectedColor);
+            }
+        });
+        
+        // Tıklandığında rengi seç
         button.addEventListener('click', function(e) {
             e.preventDefault(); // Link davranışını engelle
             
@@ -201,6 +306,15 @@ document.addEventListener('DOMContentLoaded', function() {
             selectColor(colorId, colorName);
         });
     });
+    
+    // Renk önizlemesi için görsel güncelleme
+    function previewColorImages(colorId) {
+        const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
+        if (colorImageData[colorId] && colorImageData[colorId].length > 0) {
+            const firstImage = colorImageData[colorId][0];
+            changeMainImage(firstImage, null, true); // true parametresi önizleme modunu belirtir
+        }
+    }
     
     // Renk seçme fonksiyonu
     function selectColor(colorId, colorName) {
@@ -298,26 +412,115 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100); // Kısa bir gecikme ile çalıştır
     }
     
-    // Beden seçimi
+    // 4. Renk-beden grid'i
+    function createColorSizeGrid() {
+        const gridContainer = document.getElementById('color-size-grid');
+        if (!gridContainer) return;
+        
+        let gridHTML = '<div class="grid grid-cols-4 gap-2 mt-4">';
+        
+        productColors.forEach(color => {
+            const availableSizes = getAvailableSizesForColor(color.id);
+            
+            availableSizes.forEach(size => {
+                const variant = findVariant(color.id, size.id);
+                const isInStock = variant && variant.stock_quantity > 0;
+                const isSelected = selectedColor === color.id && selectedSize === size.id;
+                
+                gridHTML += `
+                    <div
+                        class="variant-grid-item p-2 border rounded-md text-center cursor-pointer ${isInStock ? '' : 'opacity-50'} ${isSelected ? 'border-primary bg-primary/10' : 'border-gray-300'}"
+                        data-color-id="${color.id}"
+                        data-size-id="${size.id}"
+                        data-color-name="${color.name}"
+                        data-size-value="${size.size_value}"
+                        ${isInStock ? '' : 'disabled'}
+                    >
+                        <div class="w-4 h-4 rounded-full mx-auto mb-1" style="background-color: ${color.hex_code}"></div>
+                        <span class="text-xs font-medium">${size.size_value}</span>
+                    </div>
+                `;
+            });
+        });
+        
+        gridHTML += '</div>';
+        gridContainer.innerHTML = gridHTML;
+        
+        // Grid item'lara event listener ekle
+        document.querySelectorAll('.variant-grid-item:not([disabled])').forEach(item => {
+            item.addEventListener('click', function() {
+                const colorId = parseInt(this.dataset.colorId);
+                const sizeId = parseInt(this.dataset.sizeId);
+                const colorName = this.dataset.colorName;
+                const sizeValue = this.dataset.sizeValue;
+                
+                // Önce rengi seç (eğer farklıysa)
+                if (colorId !== selectedColor) {
+                    selectColor(colorId, colorName);
+                }
+                
+                // Sonra bedeni seç
+                selectSize(sizeId, sizeValue);
+            });
+        });
+    }
+    
+    // Renk-beden grid'ini güncelle
+    function updateColorSizeGrid() {
+        createColorSizeGrid();
+    }
+    
+    // Belirli bir renk için mevcut bedenleri getir
+    function getAvailableSizesForColor(colorId) {
+        const variants = variantsByColor.get(colorId) || [];
+        const sizeIds = [...new Set(variants.map(v => v.size_id))];
+        
+        const sizes = [];
+        sizeIds.forEach(sizeId => {
+            const sizeInfo = productSizesData.find(s => s.id === sizeId);
+            if (sizeInfo) sizes.push(sizeInfo);
+        });
+        
+        return sizes.sort((a, b) => a.size_value.localeCompare(b.size_value, undefined, {numeric: true}));
+    }
+    
+    // Beden seçimi - optimize edilmiş
+    function selectSize(sizeId, sizeValue) {
+        // Önceki seçimi temizle
+        document.querySelectorAll('.size-option').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+            btn.classList.add('border-gray-300');
+        });
+        
+        // Yeni seçimi işaretle
+        const selectedButton = document.querySelector(`.size-option[data-size="${sizeId}"]`);
+        if (selectedButton) {
+            selectedButton.classList.remove('border-gray-300');
+            selectedButton.classList.add('bg-primary', 'text-white', 'border-primary');
+        }
+        
+        selectedSize = sizeId;
+        document.getElementById('selected-size').textContent = sizeValue;
+        
+        updateStockStatus();
+        updateSelectedVariant(); // Favori durumunu güncelle
+        updateColorSizeGrid(); // Grid'i güncelle
+    }
+    
+    // Beden seçimi event listener'ları
     document.querySelectorAll('.size-option').forEach(button => {
         button.addEventListener('click', function() {
-            // Önceki seçimi temizle
-            document.querySelectorAll('.size-option').forEach(btn => {
-                btn.classList.remove('bg-primary', 'text-white', 'border-primary');
-                btn.classList.add('border-gray-300');
-            });
+            if (this.disabled) return;
             
-            // Yeni seçimi işaretle
-            this.classList.remove('border-gray-300');
-            this.classList.add('bg-primary', 'text-white', 'border-primary');
+            const sizeId = parseInt(this.dataset.size);
+            const sizeValue = this.dataset.sizeValue;
             
-            selectedSize = parseInt(this.dataset.size);
-            document.getElementById('selected-size').textContent = this.dataset.sizeValue;
-            
-            updateStockStatus();
-            updateSelectedVariant(); // Favori durumunu güncelle
+            selectSize(sizeId, sizeValue);
         });
     });
+    
+    // Renk-beden grid'ini oluştur
+    createColorSizeGrid();
     
     // Stok durumunu güncelle
     function updateStockStatus() {

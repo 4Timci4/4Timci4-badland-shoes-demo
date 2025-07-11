@@ -51,6 +51,15 @@ class CategoryService {
             return [];
         }
     }
+
+    /**
+     * Alias for the optimized method to maintain compatibility.
+     * This ensures that older parts of the code calling the original method name still work.
+     */
+    public function getCategoriesWithProductCounts($include_empty = true) {
+        // Simply call the new, optimized method.
+        return $this->getCategoriesWithProductCountsOptimized($include_empty);
+    }
     
     
     /**

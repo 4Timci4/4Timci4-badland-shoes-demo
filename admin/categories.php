@@ -10,6 +10,7 @@ check_admin_auth();
 // Veritabanı bağlantısı
 require_once '../config/database.php';
 require_once '../services/CategoryService.php';
+require_once '../lib/helpers.php';
 
 // Sayfa bilgileri
 $page_title = 'Kategori Yönetimi';
@@ -29,18 +30,16 @@ if ($_POST) {
                 switch ($action) {
             case 'add':
                 $name = trim($_POST['name'] ?? '');
-                $description = trim($_POST['description'] ?? '');
                 $category_type = $_POST['category_type'] ?? 'product_type';
                 
                 if (empty($name)) {
                     set_flash_message('error', 'Kategori adı zorunludur.');
                 } else {
-                    $slug = category_service()->generateSlug($name);
+                    $slug = generate_slug($name);
                     
                     $category_data = [
                         'name' => $name,
                         'slug' => $slug,
-                        'description' => $description,
                         'category_type' => $category_type
                     ];
                     
@@ -55,16 +54,14 @@ if ($_POST) {
             case 'edit':
                 $category_id = intval($_POST['category_id'] ?? 0);
                 $name = trim($_POST['name'] ?? '');
-                $description = trim($_POST['description'] ?? '');
                 // Not: Kategori tipi düzenlemede değiştirilemez (veri tutarlılığı için)
                 
                 if ($category_id > 0 && !empty($name)) {
-                    $slug = category_service()->generateSlug($name);
+                    $slug = generate_slug($name);
                     
                     $category_data = [
                         'name' => $name,
-                        'slug' => $slug,
-                        'description' => $description
+                        'slug' => $slug
                         // category_type düzenlemede değiştirilmez
                     ];
                     
@@ -168,7 +165,7 @@ include 'includes/header.php';
                     <input type="hidden" name="category_id" value="<?= $edit_category['id'] ?>">
                 <?php endif; ?>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <!-- Category Name -->
                     <div>
                         <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
@@ -180,19 +177,6 @@ include 'includes/header.php';
                                required
                                value="<?= htmlspecialchars($edit_category['name'] ?? '') ?>"
                                placeholder="Örn: Spor Ayakkabıları"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                    </div>
-
-                    <!-- Description -->
-                    <div>
-                        <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-align-left mr-2"></i>Açıklama
-                        </label>
-                        <input type="text" 
-                               id="description" 
-                               name="description" 
-                               value="<?= htmlspecialchars($edit_category['description'] ?? '') ?>"
-                               placeholder="Kategori açıklaması (opsiyonel)"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                     </div>
 
@@ -238,7 +222,6 @@ include 'includes/header.php';
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Slug</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Açıklama</th>
                             <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Ürün Sayısı</th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">İşlemler</th>
                         </tr>
@@ -261,11 +244,6 @@ include 'includes/header.php';
                                     <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
                                         <?= htmlspecialchars($category['slug']) ?>
                                     </code>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="text-gray-600 text-sm">
-                                        <?= htmlspecialchars($category['description'] ?: 'Açıklama yok') ?>
-                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
