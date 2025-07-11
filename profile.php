@@ -24,8 +24,7 @@ $user = $currentUser; // favorites.php için backward compatibility
 $error_message = '';
 $success_message = '';
 
-// Aktif tab kontrolü
-$active_tab = $_GET['tab'] ?? 'profile';
+// Profil bilgilerini al
 $user_profile = $authService->getUserProfile($currentUser['id']);
 
 // Profil güncelleme işlemi
@@ -66,15 +65,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             <!-- Sidebar -->
             <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
                 <nav class="space-y-1">
-                    <a href="profile.php?tab=profile" class="tab-link <?php echo $active_tab === 'profile' ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    <a href="profile.php" class="bg-gray-50 text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
                         <i class="fas fa-user text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Profil Bilgileri</span>
                     </a>
-                    <a href="profile.php?tab=favorites" class="tab-link <?php echo $active_tab === 'favorites' ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    <a href="favorites.php" class="text-gray-600 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
                         <i class="fas fa-heart text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Favorilerim</span>
                     </a>
-                    <a href="logout.php" class="text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium" data-no-transition>
+                    <a href="logout.php" class="text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
                         <i class="fas fa-sign-out-alt text-red-400 group-hover:text-red-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Çıkış Yap</span>
                     </a>
@@ -119,74 +118,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </div>
                 <?php endif; ?>
 
-                <div id="profile-content">
-                    <?php
-                    define('IS_PROFILE_PAGE', true);
+                <!-- Profil Formu -->
+                <form action="profile.php" method="POST">
+                    <!-- Kişisel Bilgiler Kartı -->
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Kişisel Bilgiler</h3>
+                            <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                <div class="sm:col-span-3">
+                                    <label for="first_name" class="block text-sm font-medium text-gray-700">Ad</label>
+                                    <input type="text" name="first_name" id="first_name" value="<?php echo htmlspecialchars($user_profile['first_name'] ?? ''); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-3">
+                                    <label for="last_name" class="block text-sm font-medium text-gray-700">Soyad</label>
+                                    <input type="text" name="last_name" id="last_name" value="<?php echo htmlspecialchars($user_profile['last_name'] ?? ''); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-3">
+                                    <label for="gender" class="block text-sm font-medium text-gray-700">Cinsiyet</label>
+                                    <select id="gender" name="gender" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                        <option value="" <?php echo !isset($user_profile['gender']) ? 'selected' : ''; ?>>Seçiniz</option>
+                                        <option value="Kadın" <?php echo ($user_profile['gender'] ?? '') === 'Kadın' ? 'selected' : ''; ?>>Kadın</option>
+                                        <option value="Erkek" <?php echo ($user_profile['gender'] ?? '') === 'Erkek' ? 'selected' : ''; ?>>Erkek</option>
+                                        <option value="Belirtmek İstemiyorum" <?php echo ($user_profile['gender'] ?? '') === 'Belirtmek İstemiyorum' ? 'selected' : ''; ?>>Belirtmek İstemiyorum</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                    if ($active_tab === 'profile') {
-                        if (file_exists('views/profile/profile-form.php')) {
-                            include 'views/profile/profile-form.php';
-                        } else {
-                            echo '<p>Profil formu yüklenemedi.</p>';
-                        }
-                    } elseif ($active_tab === 'favorites') {
-                        if (file_exists('views/profile/favorites.php')) {
-                            include 'views/profile/favorites.php';
-                        } else {
-                            echo '<p>Favoriler yüklenemedi.</p>';
-                        }
-                    }
-                    ?>
-                </div>
+                    <!-- İletişim Bilgileri Kartı -->
+                    <div class="bg-white shadow sm:rounded-lg mt-6">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">İletişim Bilgileri</h3>
+                            <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                <div class="sm:col-span-4">
+                                    <label for="email" class="block text-sm font-medium text-gray-700">E-posta Adresi</label>
+                                    <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($currentUser['email']); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <p class="mt-2 text-xs text-gray-500">E-posta adresinizi değiştirirseniz, yeni adresinize gönderilen linki onaylamanız gerekecektir.</p>
+                                </div>
+                                <div class="sm:col-span-4">
+                                    <label for="phone_number" class="block text-sm font-medium text-gray-700">Telefon Numarası</label>
+                                    <input type="tel" name="phone_number" id="phone_number" value="<?php echo htmlspecialchars($user_profile['phone_number'] ?? ''); ?>" class="mt-1 block w-full">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6">
+                        <button type="submit" name="update_profile" value="1" class="bg-primary border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            Bilgileri Güncelle
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <?php include 'includes/footer.php'; ?>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabLinks = document.querySelectorAll('.tab-link');
-            const profileContent = document.getElementById('profile-content');
-
-            tabLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const url = this.href;
-                    const tab = new URL(url).searchParams.get('tab');
-
-                    // Update active class
-                    tabLinks.forEach(l => l.classList.remove('bg-gray-50', 'text-gray-900'));
-                    this.classList.add('bg-gray-50', 'text-gray-900');
-
-                    // Fetch new content
-                    fetch(`/api/profile-tabs.php?tab=${tab}`)
-                        .then(response => response.text())
-                        .then(html => {
-                            profileContent.style.opacity = 0;
-                            setTimeout(() => {
-                                profileContent.innerHTML = html;
-                                profileContent.style.opacity = 1;
-                            }, 300);
-                        });
-
-                    // Update browser history
-                    window.history.pushState({tab: tab}, '', url);
-                });
-            });
-
-            // Handle back/forward browser buttons
-            window.addEventListener('popstate', function(e) {
-                if (e.state && e.state.tab) {
-                    const tab = e.state.tab;
-                    const link = document.querySelector(`.tab-link[href*="tab=${tab}"]`);
-                    if (link) {
-                        link.click();
-                    }
-                }
-            });
-        });
-    </script>
+    <!-- CSS transition için stil -->
+    <style>
+        .tab-content {
+            transition: opacity 0.3s ease;
+        }
+    </style>
 </body>
 </html>
 <?php

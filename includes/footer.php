@@ -142,14 +142,17 @@ $footer_info = $contactService->getFooterInfo();
                     return false;
                 }
                 
-                // Profil sayfası, about, blog, contact, products ve logout linklerini KESİNLİKLE hariç tut (session koruması)
+                // Profil sayfası, about, blog, contact, products, index ve logout linklerini KESİNLİKLE hariç tut (session koruması)
                 if (href.includes('profile.php') ||
                     href.includes('logout.php') ||
                     href.includes('login.php') ||
                     href.includes('about.php') ||
                     href.includes('blog.php') ||
                     href.includes('contact.php') ||
-                    href.includes('products.php')) {
+                    href.includes('products.php') ||
+                    href.includes('index.php') ||
+                    href === '/' ||
+                    href === '/index.php') {
                     return false;
                 }
                 
