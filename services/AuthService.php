@@ -44,12 +44,8 @@ class AuthService {
             // Şifre hash'leme
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             
-            // Kullanıcı ID'si oluştur (UUID benzeri)
-            $userId = $this->generateUserId();
-            
             // Kullanıcı verilerini hazırla
             $userData = [
-                'id' => $userId,
                 'email' => $email,
                 'password_hash' => $passwordHash,
                 'first_name' => $options['first_name'] ?? null,
@@ -340,7 +336,4 @@ class AuthService {
      * 
      * @return string Kullanıcı ID'si
      */
-    private function generateUserId() {
-        return bin2hex(random_bytes(16));
-    }
 }

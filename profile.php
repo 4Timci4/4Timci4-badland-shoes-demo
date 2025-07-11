@@ -16,8 +16,12 @@ if (!$authService->isLoggedIn()) {
 
 // Kullanıcı bilgilerini al
 $currentUser = $authService->getCurrentUser();
+$user = $currentUser; // favorites.php için backward compatibility
 $error_message = '';
 $success_message = '';
+
+// Aktif tab kontrolü
+$active_tab = $_GET['tab'] ?? 'profile';
 
 // Profil güncelleme işlemi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
