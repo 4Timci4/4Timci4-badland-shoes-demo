@@ -1,8 +1,8 @@
 <?php
 // Bu dosya, AJAX istekleri için yalnızca ürün listesi, sayfalama ve ürün sayısı HTML'ini döndürür.
 
-// Gerekli servisleri ve ayarları dahil et
-require_once '../config/database.php'; // Ensure adapter is loaded
+// API bootstrap dosyasını dahil et (session kontrolü, yetkilendirme vb.)
+require_once __DIR__ . '/api_bootstrap.php';
 require_once '../services/CategoryService.php';
 require_once '../services/Product/ProductApiService.php';
 require_once '../services/GenderService.php';

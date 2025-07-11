@@ -8,6 +8,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $seo = seo();
 $authService = new AuthService();
 
+// Session güvenlik kontrollerini yap
+$authService->checkSessionSecurity();
+
 // Check for remember me cookie if not logged in
 if (!$authService->isLoggedIn()) {
     $authService->loginWithRememberMeCookie();

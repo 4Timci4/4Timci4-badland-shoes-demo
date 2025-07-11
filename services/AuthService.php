@@ -16,29 +16,47 @@ class AuthService {
     
     public function __construct() {
         $this->db = database();
-        $this->startSession();
+        // Session başlatıldığından emin ol
+        if (session_status() === PHP_SESSION_NONE) {
+            SessionConfig::init();
+        }
         $this->favoriteService = new FavoriteService($this->db);
     }
     
     /**
-     * Session başlatma - SessionConfig kullanarak
+     * Session güvenlik kontrollerini yap
+     *
+     * @return bool Kontroller başarılı mı?
      */
-    private function startSession() {
-        // SessionConfig otomatik olarak session'ı başlatır ve güvenlik kontrollerini yapar
-        // Timeout kontrolü
-        if (!SessionConfig::checkTimeout(1800)) { // 30 dakika
-            $this->logout();
-            return false;
+    public function checkSessionSecurity() {
+        // Session başlatılmamışsa başlat
+        if (session_status() === PHP_SESSION_NONE) {
+            SessionConfig::init();
+            return true;
         }
         
-        // Concurrent session kontrolü (eğer kullanıcı giriş yapmışsa)
+        // Kullanıcı giriş yapmışsa ek kontroller yap
         if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']) {
-            if (!SessionConfig::checkConcurrentSession($_SESSION['user_id'], $this->db)) {
+            // Kullanıcı ID'si var mı kontrol et
+            if (!isset($_SESSION['user_id'])) {
+                $this->logout(false, 'invalid_session');
                 return false;
             }
             
-            // Session activity'sini güncelle
-            SessionConfig::updateSessionActivity($_SESSION['user_id'], $this->db);
+            // Son aktivite zamanı kontrolü
+            if (isset($_SESSION['user_last_activity'])) {
+                $inactiveTime = time() - $_SESSION['user_last_activity'];
+                if ($inactiveTime > 1800) { // 30 dakika
+                    $this->logout(false, 'timeout');
+                    return false;
+                }
+            }
+            
+            // Session activity'sini güncelle (veritabanında - 5 dakikada bir)
+            if (!isset($_SESSION['last_activity_update']) || (time() - $_SESSION['last_activity_update'] > 300)) {
+                SessionConfig::updateSessionActivity($_SESSION['user_id'], $this->db);
+                $_SESSION['last_activity_update'] = time();
+            }
         }
         
         return true;
@@ -133,9 +151,11 @@ class AuthService {
     /**
      * Kullanıcı çıkışı
      *
+     * @param bool $isUserLogout Kullanıcı bilinçli olarak çıkış yapıyorsa true
+     * @param string $reason Çıkış nedeni ('user', 'timeout', 'security', vb.)
      * @return array Başarı durumu
      */
-    public function logout() {
+    public function logout($isUserLogout = true, $reason = 'user') {
         $userId = $_SESSION['user_id'] ?? null;
         
         // Remember me token temizle
@@ -151,8 +171,13 @@ class AuthService {
                 SessionConfig::clearUserSession($userId, $this->db);
             }
             
-            // Session'ı güvenli şekilde yok et
-            SessionConfig::destroySession();
+            // Session'ı güvenli şekilde yok et - bilinçli kullanıcı çıkışı mı belirt
+            SessionConfig::destroySession($isUserLogout);
+            
+            // Log kaydı - çıkış nedeni
+            if ($reason !== 'user') {
+                error_log("User logout reason: " . $reason);
+            }
             
             return ['success' => true, 'message' => 'Çıkış yapıldı.'];
             
@@ -204,12 +229,27 @@ class AuthService {
     
     /**
      * Kullanıcı giriş kontrolü
-     * 
+     *
      * @return bool Giriş yapılmış mı?
      */
     public function isLoggedIn() {
-        $this->startSession();
-        return isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true;
+        // Session güvenlik kontrollerini yap
+        $this->checkSessionSecurity();
+        
+        // Session başlatılmamışsa false döndür
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return false;
+        }
+        
+        // Basit kontrol - session değişkeni var mı?
+        if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
+            return false;
+        }
+        
+        // Session aktivitesini güncelle (her sayfa yüklendiğinde)
+        $_SESSION['user_last_activity'] = time();
+        
+        return true;
     }
     
     /**

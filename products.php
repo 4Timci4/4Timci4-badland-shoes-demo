@@ -8,7 +8,9 @@
  * =================================================================
  */
 
-// Session kaldırıldı - Session yönetimi devre dışı
+// Session yönetimini etkinleştir
+require_once 'services/AuthService.php';
+$authService = new AuthService();
 
 // Required optimized services
 require_once 'services/CategoryService.php';

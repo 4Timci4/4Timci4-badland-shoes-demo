@@ -1,34 +1,21 @@
 <?php
 /**
  * Favoriler API
- * 
+ *
  * Bu dosya, favori ekleme/kaldırma işlemleri için AJAX isteklerini işler.
  * Yeni session sistemi ile entegre edilmiştir.
  */
 
-header('Content-Type: application/json');
-
-require_once __DIR__ . '/../services/AuthService.php';
+// API bootstrap dosyasını dahil et (session kontrolü, yetkilendirme vb.)
+require_once __DIR__ . '/api_bootstrap.php';
 require_once __DIR__ . '/../services/Product/FavoriteService.php';
 
 try {
-    // Session servisini başlat
-    $authService = new AuthService();
+    // API için yetki kontrolü
+    api_require_login();
     
-    // Kullanıcı giriş kontrolü
-    if (!$authService->isLoggedIn()) {
-        http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Favorilere eklemek için giriş yapmalısınız',
-            'redirect' => 'login.php'
-        ]);
-        exit;
-    }
-    
-    // Kullanıcı bilgilerini al
-    $currentUser = $authService->getCurrentUser();
-    $userId = $currentUser['id'];
+    // Kullanıcı bilgilerini al (api_bootstrap.php'den gelen $current_user değişkeni)
+    $userId = $current_user['id'];
     
     // Kullanıcının veritabanında var olduğunu kontrol et
     try {

@@ -11,7 +11,8 @@ ob_start();
 require_once 'services/AuthService.php';
 $authService = new AuthService();
 
-// Giriş kontrolü
+// Session güvenlik kontrollerini yap ve giriş kontrolü
+$authService->checkSessionSecurity();
 if (!$authService->isLoggedIn()) {
     header('Location: login.php');
     exit;
@@ -73,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                         <i class="fas fa-heart text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Favorilerim</span>
                     </a>
-                    <a href="logout.php" class="text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    <a href="logout.php" class="text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium" data-no-transition>
                         <i class="fas fa-sign-out-alt text-red-400 group-hover:text-red-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Çıkış Yap</span>
                     </a>

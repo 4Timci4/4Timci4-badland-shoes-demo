@@ -1,8 +1,9 @@
 <?php
-// Session kaldırıldı - Session yönetimi devre dışı
+// Session yönetimini etkinleştir
+require_once 'services/AuthService.php';
+$authService = new AuthService();
 
 require_once 'services/AboutService.php';
-
 $aboutService = new AboutService();
 $content = $aboutService->getAboutPageContent();
 

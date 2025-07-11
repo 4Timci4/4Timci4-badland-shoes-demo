@@ -93,8 +93,10 @@ class SessionConfig {
     
     /**
      * Session'ı güvenli şekilde yok et
+     *
+     * @param bool $isUserLogout Kullanıcı bilinçli olarak çıkış yapıyorsa true
      */
-    public static function destroySession() {
+    public static function destroySession($isUserLogout = false) {
         // Session verilerini temizle
         $_SESSION = [];
         
@@ -110,24 +112,43 @@ class SessionConfig {
         // Session'ı yok et
         session_destroy();
         
-        // Log kayıt
-        error_log("Session destroyed due to security validation failure");
+        // Log kayıt - Kullanıcı çıkışı mı yoksa güvenlik hatası mı?
+        if ($isUserLogout) {
+            error_log("Session destroyed by user logout request");
+        } else {
+            error_log("Session destroyed due to security validation failure");
+        }
     }
     
     /**
-     * Session timeout kontrolü
+     * Session timeout kontrolü - Performans için optimize edildi
      */
     public static function checkTimeout($timeout = 1800) {
-        if (isset($_SESSION['user_last_activity'])) {
-            $inactiveTime = time() - $_SESSION['user_last_activity'];
-            
-            if ($inactiveTime > $timeout) {
-                self::destroySession();
-                return false;
-            }
+        // Session başlatılmamışsa true döndür
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return true;
         }
         
-        $_SESSION['user_last_activity'] = time();
+        // İlk kez çağrılıyorsa, son aktivite zamanını ayarla
+        if (!isset($_SESSION['user_last_activity'])) {
+            $_SESSION['user_last_activity'] = time();
+            return true;
+        }
+        
+        // Son aktivite zamanını kontrol et
+        $inactiveTime = time() - $_SESSION['user_last_activity'];
+        
+        // Timeout süresini aştıysa session'ı sonlandır
+        if ($inactiveTime > $timeout) {
+            self::destroySession();
+            return false;
+        }
+        
+        // Son aktivite zamanını 5 dakikada bir güncelle (performans için)
+        if ($inactiveTime > 300) { // 5 dakika
+            $_SESSION['user_last_activity'] = time();
+        }
+        
         return true;
     }
     

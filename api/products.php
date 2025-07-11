@@ -1,15 +1,13 @@
 <?php
 /**
  * Ürün API
- * 
+ *
  * Bu dosya, ürün listesi için AJAX isteklerini işler.
  * Filtreleme, sıralama ve sayfalama desteği sunar.
  */
 
-header('Content-Type: application/json');
-
-// Veritabanı bağlantısı ve optimize edilmiş servisleri dahil et
-require_once __DIR__ . '/../config/database.php';
+// API bootstrap dosyasını dahil et (session kontrolü, yetkilendirme vb.)
+require_once __DIR__ . '/api_bootstrap.php';
 require_once __DIR__ . '/../services/Product/ProductApiService.php';
 
 try {

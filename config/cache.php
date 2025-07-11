@@ -12,13 +12,18 @@ class CacheConfig {
     
     /**
      * Veriyi önbellekten getir, yoksa veritabanından çek ve önbelleğe al
-     * 
+     *
      * @param string $key Önbellek anahtarı
      * @param callable $dataCallback Veri yoksa çalıştırılacak fonksiyon
      * @param int $timeout Özel önbellek süresi (saniye)
      * @return mixed Önbellekteki veri
      */
     public static function get($key, $dataCallback, $timeout = null) {
+        // Session başlatılmamışsa callback fonksiyonunu doğrudan çalıştır
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return $dataCallback();
+        }
+        
         // Önbellek anahtarını oluştur
         $cacheKey = 'cache_' . md5($key);
         
@@ -38,12 +43,17 @@ class CacheConfig {
     
     /**
      * Veriyi önbelleğe al
-     * 
+     *
      * @param string $key Önbellek anahtarı
      * @param mixed $data Önbelleğe alınacak veri
      * @param int $timeout Özel önbellek süresi (saniye)
      */
     public static function set($key, $data, $timeout = null) {
+        // Session başlatılmamışsa işlem yapma
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+        
         $cacheKey = 'cache_' . md5($key);
         $expireTime = time() + ($timeout ?: self::$cacheTimeout);
         
@@ -55,10 +65,15 @@ class CacheConfig {
     
     /**
      * Önbellekteki veriyi temizle
-     * 
+     *
      * @param string $key Önbellek anahtarı (null ise tüm önbelleği temizle)
      */
     public static function clear($key = null) {
+        // Session başlatılmamışsa veya $_SESSION tanımlı değilse işlem yapma
+        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION) || !is_array($_SESSION)) {
+            return;
+        }
+        
         if ($key === null) {
             // Tüm önbelleği temizle
             foreach ($_SESSION as $sessionKey => $value) {
@@ -77,12 +92,17 @@ class CacheConfig {
     
     /**
      * Önbellekte geçerli veri var mı kontrol et
-     * 
+     *
      * @param string $cacheKey Önbellek anahtarı
      * @param int $timeout Özel önbellek süresi (saniye)
      * @return bool Geçerli veri varsa true
      */
     private static function hasValidCache($cacheKey, $timeout = null) {
+        // Session başlatılmamışsa false döndür
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return false;
+        }
+        
         if (!isset($_SESSION[$cacheKey]) || !isset($_SESSION[$cacheKey]['expire'])) {
             return false;
         }
@@ -119,7 +139,7 @@ class CacheConfig {
     
     /**
      * Önbellek istatistiklerini getir
-     * 
+     *
      * @return array Önbellek istatistikleri
      */
     public static function getStats() {
@@ -129,6 +149,11 @@ class CacheConfig {
             'expired' => 0,
             'items' => []
         ];
+        
+        // Session başlatılmamışsa veya $_SESSION tanımlı değilse boş istatistik döndür
+        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION) || !is_array($_SESSION)) {
+            return $stats;
+        }
         
         $currentTime = time();
         

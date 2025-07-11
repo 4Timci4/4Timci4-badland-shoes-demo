@@ -2,21 +2,15 @@
 // Start output buffering
 ob_start();
 
-require_once '../services/AuthService.php';
-$authService = new AuthService();
+// API bootstrap dosyasını dahil et (session kontrolü, yetkilendirme vb.)
+require_once __DIR__ . '/api_bootstrap.php';
 
 // Giriş kontrolü
-if (!$authService->isLoggedIn()) {
-    // HTMX istekleri için 401 Unauthorized hatası döndür
-    header('HTTP/1.1 401 Unauthorized');
-    echo '<p>Bu içeriği görüntülemek için giriş yapmalısınız.</p>';
-    exit;
-}
+api_require_login();
 
-// Kullanıcı bilgilerini al
-$currentUser = $authService->getCurrentUser();
-$user = $currentUser;
-$user_profile = $authService->getUserProfile($currentUser['id']);
+// Kullanıcı bilgilerini al (api_bootstrap.php'den gelen $current_user değişkeni)
+$user = $current_user;
+$user_profile = $authService->getUserProfile($current_user['id']);
 
 // Aktif tab kontrolü
 $active_tab = $_GET['tab'] ?? 'profile';

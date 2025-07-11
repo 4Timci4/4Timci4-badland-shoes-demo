@@ -1,12 +1,13 @@
 <?php
 /**
  * Materialized View Refresh Endpoint
- * 
+ *
  * This script is called by a Supabase database webhook to refresh materialized views asynchronously.
  * It is protected by a secret key to prevent unauthorized access.
  */
 
-require_once __DIR__ . '/../config/env.php';
+// API bootstrap dosyasını dahil et (session kontrolü, yetkilendirme vb.)
+require_once __DIR__ . '/api_bootstrap.php';
 require_once __DIR__ . '/../services/Product/ProductManagementService.php';
 
 // Get the secret key from the request header

@@ -1,5 +1,7 @@
 <?php
-// Session kaldırıldı - Session yönetimi devre dışı
+// Session yönetimini etkinleştir
+require_once 'services/AuthService.php';
+$authService = new AuthService();
 
 include 'includes/header.php';
 require_once 'services/SliderService.php';
