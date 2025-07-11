@@ -152,7 +152,9 @@ class AuthService {
         ]);
 
         if ($response['http_code'] === 200 && isset($response['body']['access_token'])) {
-            // Basit session güncelleme
+            // Regenerate session ID to prevent session fixation attacks.
+            session_regenerate_id(true);
+            
             $_SESSION['user_session'] = $response['body'];
             $_SESSION['login_time'] = time();
             
@@ -180,8 +182,24 @@ class AuthService {
     }
 
     public function isLoggedIn() {
-        // Simple session check like Express.js examples
-        return isset($_SESSION['user_session']) && isset($_SESSION['user_session']['user']);
+        // Session durumunu kontrol et
+        if (!validate_session()) {
+            return false;
+        }
+        
+        // Session verilerini kontrol et
+        if (!isset($_SESSION['user_session']) || !isset($_SESSION['user_session']['user'])) {
+            error_log("Session verileri eksik - user_session: " . (isset($_SESSION['user_session']) ? 'var' : 'yok'));
+            return false;
+        }
+        
+        // Access token varlığını kontrol et
+        if (!isset($_SESSION['user_session']['access_token']) || empty($_SESSION['user_session']['access_token'])) {
+            error_log("Access token eksik veya boş");
+            return false;
+        }
+        
+        return true;
     }
     
     /**
@@ -189,17 +207,25 @@ class AuthService {
      */
     public function validateUserSession() {
         if (!$this->isLoggedIn()) {
+            error_log("Session validation failed: Not logged in");
             return ['valid' => false, 'reason' => 'No active session'];
         }
         
         // Basic session health check
         if (!isset($_SESSION['user_session']['access_token'])) {
+            error_log("Session validation failed: Missing access token");
             return ['valid' => false, 'reason' => 'Missing access token'];
+        }
+        
+        $user = $this->getCurrentUser();
+        if (!$user || !isset($user['id'])) {
+            error_log("Session validation failed: Invalid user data");
+            return ['valid' => false, 'reason' => 'Invalid user data'];
         }
         
         return [
             'valid' => true,
-            'user' => $this->getCurrentUser()
+            'user' => $user
         ];
     }
 

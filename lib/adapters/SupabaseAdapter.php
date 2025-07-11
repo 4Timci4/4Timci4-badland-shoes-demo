@@ -43,21 +43,29 @@ class SupabaseAdapter implements DatabaseInterface {
     public function insert($table, $data, $options = []) {
         try {
             $headers = [];
-            
-            // Returning seçeneği
+            $prefer = [];
+            $query = $table;
+
             if (isset($options['returning'])) {
-                $headers['Prefer'] = 'return=representation';
-                $response = $this->client->request($table, 'POST', $data, $headers);
-                
-                if (isset($response['body'])) {
-                    return $response['body'];
-                }
-                return is_array($response) ? $response : [];
+                $prefer[] = 'return=' . $options['returning'];
+            }
+            if (isset($options['on_conflict'])) {
+                $query .= '?on_conflict=' . $options['on_conflict'];
+                $prefer[] = 'resolution=merge-duplicates';
+            }
+
+            if (!empty($prefer)) {
+                $headers['Prefer'] = implode(',', $prefer);
+            }
+
+            $response = $this->client->request($query, 'POST', $data, $headers);
+
+            if (isset($response['body'])) {
+                return $response['body'];
             }
             
-            $response = $this->client->request($table, 'POST', $data, $headers);
-            // Başarılı ekleme işlemi
             return ['affected_rows' => 1];
+
         } catch (Exception $e) {
             $this->lastError = $e->getMessage();
             error_log("SupabaseAdapter::insert - " . $e->getMessage());
@@ -323,57 +331,48 @@ class SupabaseAdapter implements DatabaseInterface {
         $queryParts = [];
         
         // Sütunları ayarla
-        if ($columns !== '*') {
+        $selectString = '';
+        if ($columns !== '*' && !empty($columns)) {
             if (is_array($columns)) {
-                $queryParts['select'] = implode(',', $columns);
+                $selectString = 'select=' . urlencode(implode(',', $columns));
             } else {
-                $queryParts['select'] = $columns;
+                $selectString = 'select=' . urlencode($columns);
             }
         }
-        
-        // Options'dan select override
         if (isset($options['select'])) {
-            $queryParts['select'] = $options['select'];
+            $selectString = 'select=' . urlencode($options['select']);
         }
-        
+        if ($selectString) {
+            $queryParts[] = $selectString;
+        }
+
         // Koşulları ekle
         if (!empty($conditions)) {
             $conditionString = $this->buildConditions($conditions);
             if ($conditionString) {
-                $queryParts = array_merge($queryParts, $this->parseConditions($conditionString));
+                $queryParts[] = $conditionString;
             }
         }
         
         // Limit ve offset
         if (isset($options['limit'])) {
-            $queryParts['limit'] = $options['limit'];
+            $queryParts[] = 'limit=' . $options['limit'];
         }
         if (isset($options['offset'])) {
-            $queryParts['offset'] = $options['offset'];
+            $queryParts[] = 'offset=' . $options['offset'];
         }
         
         // Sıralama
         if (isset($options['order'])) {
-            $queryParts['order'] = $this->convertOrderBy($options['order']);
+            $queryParts[] = 'order=' . $this->convertOrderBy($options['order']);
         }
         
-        // Query string oluştur - order parametresi için özel işlem
         $query = $table;
         if (!empty($queryParts)) {
-            $queryString = [];
-            
-            foreach ($queryParts as $key => $value) {
-                if ($key === 'order') {
-                    // Order parametresini encode etme, nokta karakterleri korunmalı
-                    $queryString[] = $key . '=' . $value;
-                } else {
-                    $queryString[] = $key . '=' . urlencode($value);
-                }
-            }
-            
-            $query .= '?' . implode('&', $queryString);
+            $query .= '?' . implode('&', $queryParts);
         }
         
+        error_log("SupabaseAdapter built query: " . $query);
         return $query;
     }
     
@@ -413,13 +412,7 @@ class SupabaseAdapter implements DatabaseInterface {
                     if ($val === null) {
                         $parts[] = $key . '=is.null';
                     } else {
-                        // Array operatörü için özel formatting
-                        if ($operator === '&&' && is_array($val)) {
-                            $formattedArray = $this->formatArrayForPostgreSQL($val);
-                            $parts[] = $key . '=ov.' . $formattedArray; // 'ov' (overlap) operatörünü kullan
-                        } else {
-                            $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
-                        }
+                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
                     }
                 }
             } else {
@@ -430,7 +423,7 @@ class SupabaseAdapter implements DatabaseInterface {
                 } elseif (is_bool($value)) {
                     $parts[] = $key . '=eq.' . ($value ? 'true' : 'false');
                 } else {
-                    $parts[] = $key . '=eq.' . $value;
+                    $parts[] = $key . '=eq.' . urlencode($value);
                 }
             }
         }

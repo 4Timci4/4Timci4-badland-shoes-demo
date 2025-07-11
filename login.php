@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $auth_service->loginUser($email, $password);
 
     if ($result['success']) {
+        session_write_close();
         header('Location: profile.php');
         exit();
     } else {

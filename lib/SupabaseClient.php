@@ -85,21 +85,13 @@ class SupabaseClient {
             'apikey: ' . $this->apiKey,
             'Authorization: Bearer ' . $this->apiKey,
             'Content-Type: application/json',
-            'Prefer: return=representation'
         ];
 
         // Gelen özel başlıkları varsayılanlarla birleştir
-        $finalHeaders = array_merge($defaultHeaders, $headers);
-        // Prefer başlığını özel olarak ele al
+        $finalHeaders = $defaultHeaders;
         if (isset($headers['Prefer'])) {
-            foreach ($finalHeaders as $key => $value) {
-                if (strpos($value, 'Prefer:') === 0) {
-                    unset($finalHeaders[$key]);
-                }
-            }
             $finalHeaders[] = 'Prefer: ' . $headers['Prefer'];
         }
-        $finalHeaders = array_values(array_unique($finalHeaders));
 
 
         $ch = curl_init();

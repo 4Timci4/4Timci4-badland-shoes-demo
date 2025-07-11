@@ -1,12 +1,12 @@
 <?php
 // Session konfigürasyonunu dahil et ve session'ı güvenli başlat
-require_once $_SERVER['DOCUMENT_ROOT'] . '/config/session.php';
+require_once __DIR__ . '/../config/session.php';
 start_session_safely();
 $current_page = basename($_SERVER['PHP_SELF']);
 
 // SEO Manager'ı dahil et
-require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/SEOManager.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/services/AuthService.php';
+require_once __DIR__ . '/../lib/SEOManager.php';
+require_once __DIR__ . '/../services/AuthService.php';
 $seo = seo();
 $auth_service = auth_service();
 $is_logged_in = $auth_service->isLoggedIn();
