@@ -40,8 +40,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     
     if ($result['success']) {
         $success_message = $result['message'];
+        // Session ID'sini güvenli bir şekilde yenile
+        SessionConfig::regenerateSession();
         // Güncellenmiş kullanıcı bilgilerini al
         $currentUser = $authService->getCurrentUser();
+        // Güncellenmiş profil bilgilerini al
+        $user_profile = $authService->getUserProfile($currentUser['id']);
     } else {
         $error_message = $result['message'];
     }
@@ -50,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    <!-- Page transitions devre dışı bırak -->
+    <meta name="page-transitions" content="disabled">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profil Sayfası - Bandland Shoes</title>
@@ -57,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 loaded" data-disable-page-transitions="true">
     <?php include 'includes/header.php'; ?>
 
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
