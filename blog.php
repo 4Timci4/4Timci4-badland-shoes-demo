@@ -1,7 +1,5 @@
 <?php
-// Session konfigürasyonunu dahil et
-require_once 'config/session.php';
-start_session_safely();
+// Session kaldırıldı - Session yönetimi devre dışı
 
 include 'includes/header.php';
 ?>

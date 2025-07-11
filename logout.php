@@ -1,11 +1,8 @@
 <?php
-// Session konfigürasyonunu dahil et
-require_once 'config/session.php';
-start_session_safely();
 require_once 'services/AuthService.php';
+$authService = new AuthService();
 
-$auth_service = auth_service();
-$auth_service->logoutUser();
+$authService->logout();
 
-header('Location: index.php');
+header('Location: login.php');
 exit();

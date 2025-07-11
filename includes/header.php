@@ -1,15 +1,13 @@
 <?php
-// Session konfigürasyonunu dahil et ve session'ı güvenli başlat
-require_once __DIR__ . '/../config/session.php';
-start_session_safely();
-$current_page = basename($_SERVER['PHP_SELF']);
+// Session kaldırıldı - Session yönetimi devre dışı
 
-// SEO Manager'ı dahil et
 require_once __DIR__ . '/../lib/SEOManager.php';
 require_once __DIR__ . '/../services/AuthService.php';
+
+$current_page = basename($_SERVER['PHP_SELF']);
 $seo = seo();
-$auth_service = auth_service();
-$is_logged_in = $auth_service->isLoggedIn();
+$authService = new AuthService();
+$is_logged_in = $authService->isLoggedIn(); // Her zaman false döner (Session kaldırıldı)
 
 // Sayfa bazlı SEO ayarları
 switch($current_page) {
@@ -221,6 +219,7 @@ if (!empty($breadcrumbs)) {
                 </nav>
                 <div class="flex items-center space-x-4">
                     <?php if ($is_logged_in): ?>
+                        <!-- Session kaldırıldı - Bu blok asla çalışmaz -->
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="text-gray-600 hover:text-primary focus:outline-none">
                                 <i class="fas fa-user-circle text-2xl"></i>

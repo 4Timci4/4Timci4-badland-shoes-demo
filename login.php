@@ -1,22 +1,17 @@
 <?php
-// Session konfigürasyonunu dahil et ve session'ı başlat
-require_once 'config/session.php';
-start_session_safely();
 require_once 'services/AuthService.php';
+$authService = new AuthService();
 
-$auth_service = auth_service();
 $error_message = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
-    $result = $auth_service->loginUser($email, $password);
+    $result = $authService->login($email, $password);
 
     if ($result['success']) {
-        session_write_close();
-        header('Location: profile.php');
-        exit();
+        // Session kaldırıldı, login başarılı mesajı göster
+        $success_message = 'Giriş başarılı! Ancak session kaldırıldığı için profil sayfasına yönlendirilmeyecek.';
     } else {
         $error_message = $result['message'];
     }
@@ -52,6 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if (!empty($error_message)): ?>
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                     <span class="block sm:inline"><?php echo $error_message; ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($success_message)): ?>
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><?php echo $success_message; ?></span>
                 </div>
             <?php endif; ?>
 

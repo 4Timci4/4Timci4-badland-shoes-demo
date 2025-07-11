@@ -2,19 +2,12 @@
 /**
  * Güvenlik Yöneticisi
  * 
- * CSRF koruması, input validation, rate limiting ve session yönetimi
+ * Input validation, file upload validation ve password hashing
+ * Session yönetimi kaldırıldı - CSRF ve rate limiting devre dışı
  */
 
 class SecurityManager {
     private static $instance = null;
-    private $session_started = false;
-    
-    // CSRF token timeout (saniye)
-    private const CSRF_TOKEN_LIFETIME = 3600; // 1 saat
-    
-    // Rate limiting ayarları
-    private const RATE_LIMIT_MAX_REQUESTS = 100;
-    private const RATE_LIMIT_TIME_WINDOW = 3600; // 1 saat
     
     /**
      * Singleton pattern
@@ -27,105 +20,30 @@ class SecurityManager {
     }
     
     /**
-     * Constructor - Session'ı başlat
+     * Constructor - Session devre dışı
      */
     private function __construct() {
-        $this->startSecureSession();
+        // Session kaldırıldı - SecurityManager artık session kullanmıyor
     }
     
     /**
-     * Güvenli session başlatma
-     */
-    private function startSecureSession() {
-        if (!$this->session_started && session_status() === PHP_SESSION_NONE) {
-            // Güvenli session ayarları
-            ini_set('session.cookie_httponly', 1);
-            ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? 1 : 0);
-            ini_set('session.cookie_samesite', 'Strict');
-            ini_set('session.use_strict_mode', 1);
-            ini_set('session.cookie_lifetime', 0); // Browser kapanana kadar
-            
-            // Session hijacking koruması
-            ini_set('session.entropy_length', 32);
-            ini_set('session.entropy_file', '/dev/urandom');
-            
-            session_start();
-            $this->session_started = true;
-            
-            // Session fixation koruması
-            if (!isset($_SESSION['initiated'])) {
-                session_regenerate_id(true);
-                $_SESSION['initiated'] = true;
-                $_SESSION['created_at'] = time();
-            }
-            
-            // Session timeout kontrolü devre dışı - ana uygulamanın session management'ı bu işi hallediyor
-            // SecurityManager sadece CSRF, validation ve rate limiting için kullanılıyor
-            // Session lifecycle ana config/session.php ile yönetiliyor
-        }
-    }
-    
-    /**
-     * CSRF token oluştur
+     * CSRF token oluştur - DEVRE DIŞI
      */
     public function generateCSRFToken($form_name = 'default') {
-        $token = bin2hex(random_bytes(32));
-        $_SESSION['csrf_tokens'][$form_name] = [
-            'token' => $token,
-            'timestamp' => time()
-        ];
-        
-        // Eski tokenları temizle
-        $this->cleanExpiredCSRFTokens();
-        
-        return $token;
+        // Session kaldırıldı - CSRF token devre dışı
+        return 'csrf_disabled';
     }
     
     /**
-     * CSRF token doğrula
+     * CSRF token doğrula - DEVRE DIŞI
      */
     public function verifyCSRFToken($token, $form_name = 'default') {
-        if (!isset($_SESSION['csrf_tokens'][$form_name])) {
-            return false;
-        }
-        
-        $stored_token = $_SESSION['csrf_tokens'][$form_name];
-        
-        // Token süresi dolmuş mu?
-        if (time() - $stored_token['timestamp'] > self::CSRF_TOKEN_LIFETIME) {
-            unset($_SESSION['csrf_tokens'][$form_name]);
-            return false;
-        }
-        
-        // Token eşleşiyor mu?
-        if (!hash_equals($stored_token['token'], $token)) {
-            return false;
-        }
-        
-        // Tek kullanımlık token - kullanıldıktan sonra sil
-        unset($_SESSION['csrf_tokens'][$form_name]);
-        
-        return true;
+        // Session kaldırıldı - CSRF token devre dışı
+        return true; // Her zaman geçer
     }
     
     /**
-     * Süresi dolmuş CSRF tokenları temizle
-     */
-    private function cleanExpiredCSRFTokens() {
-        if (!isset($_SESSION['csrf_tokens'])) {
-            return;
-        }
-        
-        $current_time = time();
-        foreach ($_SESSION['csrf_tokens'] as $form_name => $token_data) {
-            if ($current_time - $token_data['timestamp'] > self::CSRF_TOKEN_LIFETIME) {
-                unset($_SESSION['csrf_tokens'][$form_name]);
-            }
-        }
-    }
-    
-    /**
-     * CSRF token HTML input elementi oluştur
+     * CSRF token HTML input elementi oluştur - DEVRE DIŞI
      */
     public function getCSRFTokenHTML($form_name = 'default') {
         $token = $this->generateCSRFToken($form_name);
@@ -238,42 +156,11 @@ class SecurityManager {
     }
     
     /**
-     * Rate limiting - IP bazlı istek sınırlaması
+     * Rate limiting - DEVRE DIŞI
      */
     public function checkRateLimit($identifier = null, $max_requests = null, $time_window = null) {
-        $identifier = $identifier ?: $this->getClientIP();
-        $max_requests = $max_requests ?: self::RATE_LIMIT_MAX_REQUESTS;
-        $time_window = $time_window ?: self::RATE_LIMIT_TIME_WINDOW;
-        
-        $key = 'rate_limit_' . hash('sha256', $identifier);
-        
-        if (!isset($_SESSION[$key])) {
-            $_SESSION[$key] = [
-                'requests' => 1,
-                'reset_time' => time() + $time_window
-            ];
-            return true;
-        }
-        
-        $rate_data = $_SESSION[$key];
-        
-        // Zaman penceresi dolmuş mu?
-        if (time() >= $rate_data['reset_time']) {
-            $_SESSION[$key] = [
-                'requests' => 1,
-                'reset_time' => time() + $time_window
-            ];
-            return true;
-        }
-        
-        // İstek sayısı sınırı aşıldı mı?
-        if ($rate_data['requests'] >= $max_requests) {
-            return false;
-        }
-        
-        // İstek sayısını artır
-        $_SESSION[$key]['requests']++;
-        return true;
+        // Session kaldırıldı - Rate limiting devre dışı
+        return true; // Her zaman geçer
     }
     
     /**
@@ -404,21 +291,11 @@ class SecurityManager {
     }
     
     /**
-     * Session'ı güvenli şekilde yok et
+     * Session'ı güvenli şekilde yok et - DEVRE DIŞI
      */
     public function destroySession() {
-        $_SESSION = [];
-        
-        if (ini_get("session.use_cookies")) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
-            );
-        }
-        
-        session_destroy();
-        $this->session_started = false;
+        // Session kaldırıldı - İşlem yapılmıyor
+        return true;
     }
     
     /**

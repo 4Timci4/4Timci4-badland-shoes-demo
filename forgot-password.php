@@ -1,18 +1,15 @@
 <?php
-session_start();
 require_once 'services/AuthService.php';
 
-$auth_service = auth_service();
+$auth_service = new AuthService();
 $error_message = '';
 $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
-    $result = $auth_service->sendPasswordResetEmail($email);
     
-    // Güvenlik nedeniyle, e-posta mevcut olmasa bile her zaman başarı mesajı gösterilir.
-    // Gerçek hata loglanabilir ama kullanıcıya yansıtılmaz.
-    $success_message = 'E-posta adresiniz sistemimizde kayıtlıysa, şifre sıfırlama talimatlarını içeren bir e-posta gönderildi.';
+    // Session kaldırıldı, şifre sıfırlama fonksiyonu çalışmayacak
+    $error_message = 'Şifre sıfırlama özelliği session yönetimi kaldırıldığı için çalışmamaktadır.';
 }
 ?>
 <!DOCTYPE html>
@@ -39,32 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
             </div>
 
-            <?php if (!empty($error_message)): ?>
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline"><?php echo $error_message; ?></span>
-                </div>
-            <?php endif; ?>
-            <?php if (!empty($success_message)): ?>
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline"><?php echo $success_message; ?></span>
-                </div>
-            <?php else: ?>
-                <form class="mt-8 space-y-6" action="forgot-password.php" method="POST">
-                    <div class="rounded-md shadow-sm">
-                        <div>
-                            <label for="email-address" class="sr-only">E-posta adresi</label>
-                            <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="E-posta adresi">
-                        </div>
-                    </div>
-
-                    <div>
-                        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark">
-                            Sıfırlama Linki Gönder
-                        </button>
-                    </div>
-                </form>
-            <?php endif; ?>
-             <div class="text-sm text-center">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">Session yönetimi kaldırıldığı için şifre sıfırlama özelliği çalışmamaktadır.</span>
+                <p class="mt-2">
+                    <a href="login.php" class="text-red-800 underline">Giriş sayfasına dönün</a>
+                </p>
+            </div>
+            
+            <div class="text-sm text-center">
                 <a href="login.php" class="font-medium text-primary hover:text-primary-dark">
                     Giriş ekranına geri dön
                 </a>

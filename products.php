@@ -8,9 +8,7 @@
  * =================================================================
  */
 
-// Session konfigürasyonunu dahil et
-require_once 'config/session.php';
-start_session_safely();
+// Session kaldırıldı - Session yönetimi devre dışı
 
 // Required optimized services
 require_once 'services/CategoryService.php';

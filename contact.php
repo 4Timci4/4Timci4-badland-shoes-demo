@@ -1,7 +1,5 @@
 <?php
-// Session konfigürasyonunu dahil et
-require_once 'config/session.php';
-start_session_safely();
+// Session kaldırıldı - Session yönetimi devre dışı
 
 require_once 'config/database.php';
 require_once 'services/ContactService.php';

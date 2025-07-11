@@ -1,8 +1,7 @@
 <?php
-session_start();
 require_once 'services/AuthService.php';
 
-$auth_service = auth_service();
+$auth_service = new AuthService();
 $error_message = '';
 $success_message = '';
 
@@ -13,12 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($password !== $password_confirm) {
         $error_message = 'Şifreler uyuşmuyor.';
     } else {
-        $result = $auth_service->updateUserPassword($password);
-        if ($result['success']) {
-            $success_message = 'Şifreniz başarıyla güncellendi. Şimdi giriş yapabilirsiniz.';
-        } else {
-            $error_message = 'Şifre güncellenirken bir hata oluştu: ' . $result['message'];
-        }
+        // Session kaldırıldı, şifre güncelleme fonksiyonu çalışmayacak
+        $error_message = 'Şifre sıfırlama özelliği session yönetimi kaldırıldığı için çalışmamaktadır.';
     }
 }
 ?>
@@ -43,35 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </h2>
             </div>
 
-            <?php if (!empty($error_message)): ?>
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline"><?php echo $error_message; ?></span>
-                </div>
-            <?php endif; ?>
-            <?php if (!empty($success_message)): ?>
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                    <p><?php echo $success_message; ?></p>
-                    <a href="login.php" class="font-bold text-green-800 hover:underline">Giriş yapmak için buraya tıklayın.</a>
-                </div>
-            <?php else: ?>
-                <form class="mt-8 space-y-6" action="reset-password.php" method="POST">
-                    <div class="rounded-md shadow-sm -space-y-px">
-                        <div>
-                            <label for="password" class="sr-only">Yeni Şifre</label>
-                            <input id="password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Yeni Şifre">
-                        </div>
-                        <div>
-                            <label for="password-confirm" class="sr-only">Yeni Şifre Tekrar</label>
-                            <input id="password-confirm" name="password_confirm" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Yeni Şifre Tekrar">
-                        </div>
-                    </div>
-                    <div>
-                        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark">
-                            Şifreyi Güncelle
-                        </button>
-                    </div>
-                </form>
-            <?php endif; ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">Session yönetimi kaldırıldığı için şifre sıfırlama özelliği çalışmamaktadır.</span>
+                <p class="mt-2">
+                    <a href="login.php" class="text-red-800 underline">Giriş sayfasına dönün</a>
+                </p>
+            </div>
         </div>
     </div>
 

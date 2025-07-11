@@ -1,10 +1,8 @@
 <?php
-// Session konfigürasyonunu dahil et
-require_once 'config/session.php';
-start_session_safely();
-require_once 'services/AuthService.php';
+// Session kaldırıldı - Session yönetimi devre dışı
 
-$auth_service = auth_service();
+require_once 'services/AuthService.php';
+$authService = new AuthService();
 $error_message = '';
 $success_message = '';
 
@@ -20,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($password !== $password_confirm) {
         $error_message = 'Şifreler uyuşmuyor.';
     } else {
-        $result = $auth_service->registerUser($email, $password, [
+        $result = $authService->register($email, $password, [
             'first_name' => $firstName,
             'last_name' => $lastName,
             'phone_number' => $phone,
