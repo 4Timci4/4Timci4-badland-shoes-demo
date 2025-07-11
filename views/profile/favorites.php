@@ -1,11 +1,15 @@
 <?php
+// Direct access protection
+if (!defined('IS_PROFILE_PAGE')) {
+    die('Bu sayfaya doğrudan erişim yasaktır.');
+}
+
 // Favori servisi ve ürün sorgulama servisini yükle
 require_once __DIR__ . '/../../services/Product/FavoriteService.php';
 
 // Favori servisini başlat
-$favorite_service = favorite_service();
-
 try {
+    $favorite_service = new FavoriteService();
     // Kullanıcının favorilerini getir
     $favorites_data = $favorite_service->getFavorites($user['id']);
     $favorites = $favorites_data['favorites'] ?? [];
@@ -142,43 +146,41 @@ document.addEventListener('DOMContentLoaded', function() {
             const variantId = this.dataset.variantId;
             if (!variantId) return;
 
-            window.modal.confirm('Bu ürünü favorilerinizden kaldırmak istediğinizden emin misiniz?', (confirmed) => {
-                if (confirmed) {
-                    const formData = new FormData();
-                    formData.append('variant_id', variantId);
-                    formData.append('action', 'remove');
+            if (confirm('Bu ürünü favorilerinizden kaldırmak istediğinizden emin misiniz?')) {
+                const formData = new FormData();
+                formData.append('variant_id', variantId);
+                formData.append('action', 'remove');
 
-                    fetch('/api/favorites.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const productCard = this.closest('.transition-shadow');
-                            if (productCard) {
-                                productCard.remove();
-                            }
-                            
-                            const totalElement = document.getElementById('favorites-total');
-                            if (totalElement) {
-                                const currentTotal = parseInt(totalElement.textContent) - 1;
-                                totalElement.textContent = currentTotal + ' ürün';
-
-                                if (currentTotal === 0) {
-                                    location.reload();
-                                }
-                            }
-                        } else {
-                            window.modal.error(data.message || 'Bir hata oluştu.');
+                fetch('/api/favorites.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const productCard = this.closest('.transition-shadow');
+                        if (productCard) {
+                            productCard.remove();
                         }
-                    })
-                    .catch(error => {
-                        console.error('Hata:', error);
-                        window.modal.error('Bir hata oluştu.');
-                    });
-                }
-            });
+                        
+                        const totalElement = document.getElementById('favorites-total');
+                        if (totalElement) {
+                            const currentTotal = parseInt(totalElement.textContent) - 1;
+                            totalElement.textContent = currentTotal + ' ürün';
+
+                            if (currentTotal === 0) {
+                                location.reload();
+                            }
+                        }
+                    } else {
+                        alert(data.message || 'Bir hata oluştu.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    alert('Bir hata oluştu.');
+                });
+            }
         });
     });
 });

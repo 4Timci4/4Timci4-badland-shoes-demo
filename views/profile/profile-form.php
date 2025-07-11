@@ -1,3 +1,9 @@
+<?php
+// Direct access protection
+if (!defined('IS_PROFILE_PAGE')) {
+    die('Bu sayfaya doğrudan erişim yasaktır.');
+}
+?>
 <form action="profile.php" method="POST">
     <!-- Kişisel Bilgiler Kartı -->
     <div class="bg-white shadow sm:rounded-lg">

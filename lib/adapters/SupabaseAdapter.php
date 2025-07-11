@@ -406,13 +406,26 @@ class SupabaseAdapter implements DatabaseInterface {
                 
                 if ($operator === 'IN' || $operator === 'NOT IN') {
                     if (is_array($val)) {
-                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.(' . implode(',', $val) . ')';
+                        // Quote string values for the IN clause
+                        $quoted_vals = array_map(function($item) {
+                            if (is_string($item)) {
+                                return '"' . trim($item, '"') . '"';
+                            }
+                            return $item;
+                        }, $val);
+                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.(' . implode(',', $quoted_vals) . ')';
                     }
-                } else {
+                } elseif ($this->convertOperator($operator) === 'ov') {
+                    if (is_array($val)) {
+                        $formatted_val = $this->formatArrayForPostgreSQL($val);
+                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $formatted_val;
+                    }
+                }
+                else {
                     if ($val === null) {
                         $parts[] = $key . '=is.null';
                     } else {
-                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . $val;
+                        $parts[] = $key . '=' . $this->convertOperator($operator) . '.' . urlencode($val);
                     }
                 }
             } else {
