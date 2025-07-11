@@ -10,7 +10,7 @@ if (isset($_SERVER['HTTP_REFERER'])) {
     $referer = $_SERVER['HTTP_REFERER'];
     
     // Eğer referer profile.php ise ve POST değilse, otomatik yönlendirme olabilir
-    if (strpos($referer, 'profile.php') !== false && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if (strpos($referer, 'user/profile.php') !== false && $_SERVER['REQUEST_METHOD'] !== 'POST') {
         $isDirectRequest = false;
     }
 }

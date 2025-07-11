@@ -8,13 +8,13 @@
 // Start output buffering to prevent session errors
 ob_start();
 
-require_once 'services/AuthService.php';
+require_once '../services/AuthService.php';
 $authService = new AuthService();
 
 // Session güvenlik kontrollerini yap ve giriş kontrolü
 $authService->checkSessionSecurity();
 if (!$authService->isLoggedIn()) {
-    header('Location: login.php');
+    header('Location: ../login.php');
     exit;
 }
 
@@ -23,7 +23,7 @@ $currentUser = $authService->getCurrentUser();
 $user = $currentUser; // FavoriteService için backward compatibility
 
 // Favori servisi ve ürün sorgulama servisini yükle
-require_once 'services/Product/FavoriteService.php';
+require_once '../services/Product/FavoriteService.php';
 
 // Favori servisini başlat
 try {
@@ -44,32 +44,21 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Favorilerim - Bandland Shoes</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-    <?php include 'includes/header.php'; ?>
+    <?php include '../includes/header.php'; ?>
 
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
-            <!-- Sidebar -->
-            <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
-                <nav class="space-y-1">
-                    <a href="profile.php" class="text-gray-600 hover:text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-                        <i class="fas fa-user text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
-                        <span class="truncate">Profil Bilgileri</span>
-                    </a>
-                    <a href="favorites.php" class="bg-gray-50 text-gray-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-                        <i class="fas fa-heart text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
-                        <span class="truncate">Favorilerim</span>
-                    </a>
-                    <a href="logout.php" class="text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-                        <i class="fas fa-sign-out-alt text-red-400 group-hover:text-red-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
-                        <span class="truncate">Çıkış Yap</span>
-                    </a>
-                </nav>
-            </aside>
+            <div class="lg:grid lg:grid-cols-12 lg:gap-x-3">
+            <?php
+            // Aktif sayfayı belirle
+            $active_page = 'favorites';
+            // Ortak sidebar'ı dahil et
+            include '../includes/sidebar.php';
+            ?>
 
             <!-- Main content -->
             <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
@@ -214,7 +203,7 @@ try {
         </div>
     </div>
 
-    <?php include 'includes/footer.php'; ?>
+    <?php include '../includes/footer.php'; ?>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {

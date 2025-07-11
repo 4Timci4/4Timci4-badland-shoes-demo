@@ -4,7 +4,7 @@ $authService = new AuthService();
 
 // Eğer kullanıcı zaten giriş yapmışsa profile sayfasına yönlendir
 if ($authService->isLoggedIn()) {
-    header('Location: profile.php');
+    header('Location: /user/profile.php');
     exit;
 }
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result['success']) {
         // Başarılı giriş, profile sayfasına yönlendir
-        header('Location: profile.php');
+        header('Location: /user/profile.php');
         exit;
     } else {
         $error_message = $result['message'];

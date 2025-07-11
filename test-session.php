@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Ana Sayfa
                 </a>
                 <?php if ($authService->isLoggedIn()): ?>
-                    <a href="profile.php" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded">
+                    <a href="/user/profile.php" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded">
                         <i class="fas fa-user mr-2"></i>
                         Profil
                     </a>

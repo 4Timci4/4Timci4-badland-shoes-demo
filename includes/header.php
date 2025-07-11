@@ -247,9 +247,9 @@ if (!empty($breadcrumbs)) {
                                  x-transition:leave-end="transform opacity-0 scale-95"
                                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5"
                                  style="display: none;">
-                                <a href="/profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Profilim</a>
+                                <a href="/user/profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Profilim</a>
                                 <?php if ($is_logged_in): ?>
-                                <a href="/profile.php?tab=favorites" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Favorilerim</a>
+                                <a href="/user/profile.php?tab=favorites" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Favorilerim</a>
                                 <?php endif; ?>
                                 <a href="/logout.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Çıkış Yap</a>
                             </div>
@@ -293,11 +293,11 @@ if (!empty($breadcrumbs)) {
                         <div class="text-xs text-gray-500 px-2 mb-2">
                             <?php echo htmlspecialchars($current_user['full_name'] ?? $current_user['email']); ?>
                         </div>
-                        <a href="/profile.php" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
+                        <a href="/user/profile.php" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
                             <i class="fas fa-user mr-2"></i>Profilim
                         </a>
                         <?php if ($is_logged_in): ?>
-                        <a href="/profile.php?tab=favorites" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
+                        <a href="/user/profile.php?tab=favorites" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
                             <i class="fas fa-heart mr-2"></i>Favorilerim
                         </a>
                         <?php endif; ?>
