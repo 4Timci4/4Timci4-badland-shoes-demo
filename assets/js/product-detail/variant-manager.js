@@ -38,6 +38,27 @@ export function initializeVariantData(state, productVariants) {
             return sizes.sort((a, b) => a.size_value.localeCompare(b.size_value, undefined, {numeric: true}));
         },
         
+        // Ürüne tanımlı bedenleri döndür, mevcut olmayanları işaretle
+        getAllSizesWithAvailability: (colorId, allSizesData) => {
+            const variants = state.variantsByColor.get(colorId) || [];
+            const availableSizeIds = [...new Set(variants.map(v => v.size_id))];
+            
+            // Sadece ürüne tanımlı bedenleri filtrele ve durumlarını işaretle
+            const productSizes = allSizesData.filter(size => {
+                // Herhangi bir varyant bu bedeni kullanıyor mu kontrol et
+                return productVariants.some(v => v.size_id === size.id);
+            });
+            
+            return productSizes.map(size => {
+                const isAvailable = availableSizeIds.includes(size.id) &&
+                                   variants.some(v => v.size_id === size.id && v.stock_quantity > 0);
+                return {
+                    ...size,
+                    isAvailable
+                };
+            }).sort((a, b) => a.size_value.localeCompare(b.size_value, undefined, {numeric: true}));
+        },
+        
         updateStockStatus: (selectedColor, selectedSize, productVariants) => {
             const stockStatus = document.getElementById('stock-status');
             const currentPriceElement = document.getElementById('current-price');

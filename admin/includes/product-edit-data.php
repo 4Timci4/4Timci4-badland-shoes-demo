@@ -13,7 +13,7 @@ function get_product_edit_data($product_id) {
 
     // Ürün bilgilerini getir
     $product_data = get_product_model($product_id);
-    if (empty($product_data)) {
+    if (empty($product_data) || !isset($product_data[0])) {
         return null;
     }
     
@@ -87,11 +87,13 @@ function get_selected_genders($product_id) {
 }
 
 function prepare_page_data($product) {
+    $product_name = !empty($product) && isset($product['name']) ? htmlspecialchars($product['name']) : 'Bilinmeyen Ürün';
+    
     return [
-        'page_title' => 'Ürün Düzenle: ' . htmlspecialchars($product['name']),
+        'page_title' => 'Ürün Düzenle: ' . $product_name,
         'breadcrumb_items' => [
             ['title' => 'Ürün Yönetimi', 'url' => 'products.php', 'icon' => 'fas fa-box'],
-            ['title' => htmlspecialchars($product['name']), 'url' => '#', 'icon' => 'fas fa-tag'],
+            ['title' => $product_name, 'url' => '#', 'icon' => 'fas fa-tag'],
             ['title' => 'Düzenle', 'url' => '#', 'icon' => 'fas fa-edit']
         ]
     ];

@@ -26,8 +26,8 @@ export function initializeColorSelector(state, productColors, imageManager, vari
             updateImagesForColor(colorId);
         }
         
-        // Önce bedenlerin görünümünü güncelle
-        updateSizeButtonsBasedOnStock();
+        // Tüm bedenlerin görünümünü güncelle
+        updateAllSizeButtons();
         
         // Beden seçimini sıfırla
         state.selectedSize = null;
@@ -42,7 +42,7 @@ export function initializeColorSelector(state, productColors, imageManager, vari
         });
         
         // Stokta olan ilk bedeni otomatik seç
-        const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
+        const firstAvailableSizeButton = document.querySelector('.size-option:not(.unavailable)');
         if (firstAvailableSizeButton) {
             firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
         } else {
@@ -50,20 +50,24 @@ export function initializeColorSelector(state, productColors, imageManager, vari
         }
     }
     
-    // Stok olmayan bedenlerin üstünü çiz
-    function updateSizeButtonsBasedOnStock() {
+    // Tüm bedenleri göster, stokta olmayanların üstünü çiz
+    function updateAllSizeButtons() {
         if (!state.selectedColor) return;
         
+        // Tüm bedenleri al ve durumlarını işaretle
+        const sizesWithAvailability = variantManager.getAllSizesWithAvailability(state.selectedColor, window.productSizesData);
+        
+        // Beden butonlarını güncelle
         document.querySelectorAll('.size-option').forEach(button => {
             const sizeId = parseInt(button.dataset.size);
-            const variant = variantManager.findVariant(state.selectedColor, sizeId);
+            const sizeInfo = sizesWithAvailability.find(s => s.id === sizeId);
             
-            if (!variant || variant.stock_quantity <= 0) {
-                button.classList.add('line-through', 'opacity-50');
-                button.disabled = true;
-            } else {
-                button.classList.remove('line-through', 'opacity-50');
+            if (sizeInfo && sizeInfo.isAvailable) {
+                button.classList.remove('line-through', 'opacity-50', 'unavailable');
                 button.disabled = false;
+            } else {
+                button.classList.add('line-through', 'opacity-50', 'unavailable');
+                button.disabled = true;
             }
         });
     }
@@ -107,6 +111,6 @@ export function initializeColorSelector(state, productColors, imageManager, vari
     // Public API
     return {
         selectColor: selectColor,
-        updateSizeButtonsBasedOnStock: updateSizeButtonsBasedOnStock
+        updateAllSizeButtons: updateAllSizeButtons
     };
 }

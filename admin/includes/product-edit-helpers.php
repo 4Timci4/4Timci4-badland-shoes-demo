@@ -100,7 +100,7 @@ function validate_product_id($product_id) {
 }
 
 function check_product_exists($product_data) {
-    if (empty($product_data)) {
+    if (empty($product_data) || !isset($product_data[0])) {
         set_flash_message('error', 'Ürün bulunamadı.');
         header('Location: products.php');
         exit;

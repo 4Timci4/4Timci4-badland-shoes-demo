@@ -26,73 +26,45 @@ class ProductQueryService {
             if ($model_id <= 0) {
                 return [];
             }
+
+            // Supabase'in ilişkisel veri çekme gücünü kullanarak tek bir sorgu yap
+            $select_query = '*, categories:product_categories(categories(*)), genders:product_genders(genders(*)), images:product_images(*)';
             
-            // Temel ürün bilgisini al
-            $products = $this->db->select('product_models', ['id' => $model_id], ['*'], ['limit' => 1]);
-            
+            $products = $this->db->select('product_models', ['id' => $model_id], $select_query, ['limit' => 1]);
+
             if (empty($products)) {
                 return [];
             }
-            
+
             $product = $products[0];
+
+            // Veriyi daha kullanışlı bir formata dönüştür
+            $product['categories'] = !empty($product['categories']) ? array_map(function($c) { return $c['categories']; }, $product['categories']) : [];
+            $product['genders'] = !empty($product['genders']) ? array_map(function($g) { return $g['genders']; }, $product['genders']) : [];
             
-            // Kategori bilgilerini ekle - MariaDB uyumlu şekilde
-            $category_relations = $this->db->select('product_categories', ['product_id' => $model_id], 'category_id');
-            $categories = [];
-            
-            if (!empty($category_relations)) {
-                $category_ids = array_column($category_relations, 'category_id');
-                if (!empty($category_ids)) {
-                    // MariaDB için IN operatörünü düzelt
-                    $categories = $this->db->select('categories', ['id' => ['IN', $category_ids]], ['id', 'name', 'slug']);
-                }
-            }
-            
-            if (!empty($categories)) {
-                $product['category_name'] = $categories[0]['name'];
-                $product['category_slug'] = $categories[0]['slug'];
-                $product['categories'] = $categories; // Tüm kategoriler
+            // Ana kategoriyi belirle
+            if (!empty($product['categories'])) {
+                $product['category_name'] = $product['categories'][0]['name'];
+                $product['category_slug'] = $product['categories'][0]['slug'];
             } else {
-                // Kategori bulunamazsa varsayılan değerler
                 $product['category_name'] = 'Ayakkabı';
                 $product['category_slug'] = 'ayakkabi';
-                $product['categories'] = [];
             }
-            
-            // Cinsiyet bilgilerini ekle - MariaDB uyumlu şekilde
-            $gender_relations = $this->db->select('product_genders', ['product_id' => $model_id], 'gender_id');
-            $genders = [];
-            
-            if (!empty($gender_relations)) {
-                $gender_ids = array_column($gender_relations, 'gender_id');
-                if (!empty($gender_ids)) {
-                    // MariaDB için IN operatörünü düzelt
-                    $genders = $this->db->select('genders', ['id' => ['IN', $gender_ids]], ['id', 'name', 'slug']);
+
+            // Ana görseli belirle
+            if (!empty($product['images'])) {
+                $primary_image = array_filter($product['images'], function($img) { return $img['is_primary'] == 1; });
+                if (!empty($primary_image)) {
+                    $product['image_url'] = reset($primary_image)['image_url'];
+                } else {
+                    $product['image_url'] = $product['images'][0]['image_url'];
                 }
             }
-            
-            $product['genders'] = $genders;
-            
-            // Ana görsel bilgisini ekle
-            $images = $this->db->select('product_images', [
-                'model_id' => $model_id,
-                'is_primary' => 1
-            ], 'image_url', ['limit' => 1]);
-            
-            if (!empty($images)) {
-                $product['image_url'] = $images[0]['image_url'];
-            } else {
-                // Birincil yoksa herhangi bir resim
-                $images = $this->db->select('product_images', ['model_id' => $model_id], 'image_url', ['limit' => 1]);
-                if (!empty($images)) {
-                    $product['image_url'] = $images[0]['image_url'];
-                }
-            }
-            
-            return $product;
-            
+
+            return [$product]; // Geriye dönük uyumluluk için dizi içinde döndür
+
         } catch (Exception $e) {
-            error_log("Ürün modeli getirme hatası: " . $e->getMessage());
+            error_log("Ürün modeli getirme hatası (Optimized): " . $e->getMessage());
             return [];
         }
     }

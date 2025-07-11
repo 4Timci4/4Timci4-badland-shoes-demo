@@ -8,16 +8,16 @@ export function initializeColorSizeGrid(state, productColors, productSizesData, 
         let gridHTML = '<div class="grid grid-cols-4 gap-2 mt-4">';
         
         productColors.forEach(color => {
-            const availableSizes = variantManager.getAvailableSizesForColor(color.id, productSizesData);
+            // Ürüne tanımlı bedenleri al ve durumlarını işaretle
+            const sizesWithAvailability = variantManager.getAllSizesWithAvailability(color.id, productSizesData);
             
-            availableSizes.forEach(size => {
-                const variant = variantManager.findVariant(color.id, size.id);
-                const isInStock = variant && variant.stock_quantity > 0;
+            sizesWithAvailability.forEach(size => {
+                const isInStock = size.isAvailable;
                 const isSelected = state.selectedColor === color.id && state.selectedSize === size.id;
                 
                 gridHTML += `
-                    <div 
-                        class="variant-grid-item p-2 border rounded-md text-center cursor-pointer ${isInStock ? '' : 'opacity-50'} ${isSelected ? 'border-primary bg-primary/10' : 'border-gray-300'}"
+                    <div
+                        class="variant-grid-item p-2 border rounded-md text-center cursor-pointer ${isInStock ? '' : 'opacity-50 line-through'} ${isSelected ? 'border-primary bg-primary/10' : 'border-gray-300'}"
                         data-color-id="${color.id}"
                         data-size-id="${size.id}"
                         data-color-name="${color.name}"
