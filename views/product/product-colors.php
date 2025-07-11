@@ -14,14 +14,14 @@
             // Bu renk seçili mi kontrol et
             $is_selected = ($selected_color_id == $color['id']);
         ?>
-            <a href="<?php echo htmlspecialchars($color_url); ?>" 
+            <button type="button"
                class="color-option w-10 h-10 rounded-full border-2 <?php echo $is_selected ? 'border-secondary' : 'border-gray-300'; ?> hover:border-secondary transition-all duration-200 block"
                style="background-color: <?php echo htmlspecialchars($color['hex_code']); ?>"
                data-color-id="<?php echo $color['id']; ?>"
                data-color-name="<?php echo htmlspecialchars($color['name']); ?>"
                data-color-slug="<?php echo htmlspecialchars($color_slug); ?>"
                title="<?php echo htmlspecialchars($color['name']); ?>">
-            </a>
+            </button>
         <?php endforeach; ?>
     </div>
     <p class="text-sm text-gray-600 mt-2">Seçili renk: <span id="selected-color"><?php
