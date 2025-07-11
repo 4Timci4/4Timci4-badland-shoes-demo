@@ -7,13 +7,16 @@
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/Product/FavoriteService.php';
 
 class AuthService {
     private $db;
+    private $favoriteService;
     
     public function __construct() {
         $this->db = database();
         $this->startSession();
+        $this->favoriteService = new FavoriteService($this->db);
     }
     
     /**

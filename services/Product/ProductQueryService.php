@@ -10,8 +10,8 @@ require_once __DIR__ . '/../../lib/DatabaseFactory.php';
 class ProductQueryService {
     private $db;
     
-    public function __construct() {
-        $this->db = database();
+    public function __construct($db = null) {
+        $this->db = $db ?: database();
     }
     
     /**

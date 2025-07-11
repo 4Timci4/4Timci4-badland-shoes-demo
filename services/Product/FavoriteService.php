@@ -19,9 +19,9 @@ class FavoriteService {
     /**
      * FavoriteService sınıfını başlatır
      */
-    public function __construct() {
-        $this->db = database();
-        $this->productQueryService = new ProductQueryService();
+    public function __construct($db = null) {
+        $this->db = $db ?: database();
+        $this->productQueryService = new ProductQueryService($this->db);
     }
     
     /**
