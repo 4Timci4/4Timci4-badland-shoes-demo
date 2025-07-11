@@ -6,10 +6,24 @@ $error_message = '';
 $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'] ?? '';
+    $email = trim($_POST['email'] ?? '');
     
-    // Session kaldırıldı, şifre sıfırlama fonksiyonu çalışmayacak
-    $error_message = 'Şifre sıfırlama özelliği session yönetimi kaldırıldığı için çalışmamaktadır.';
+    if (empty($email)) {
+        $error_message = 'E-posta adresi boş bırakılamaz.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = 'Geçerli bir e-posta adresi girin.';
+    } else {
+        try {
+            $result = $auth_service->createPasswordResetToken($email);
+            if ($result) {
+                $success_message = 'Şifre sıfırlama linki e-posta adresinize gönderildi. Lütfen e-posta kutunuzu kontrol edin.';
+            } else {
+                $error_message = 'Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.';
+            }
+        } catch (Exception $e) {
+            $error_message = 'Şifre sıfırlama işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.';
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -36,12 +50,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
             </div>
 
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <span class="block sm:inline">Session yönetimi kaldırıldığı için şifre sıfırlama özelliği çalışmamaktadır.</span>
-                <p class="mt-2">
-                    <a href="login.php" class="text-red-800 underline">Giriş sayfasına dönün</a>
-                </p>
-            </div>
+            <?php if (!empty($error_message)): ?>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><?php echo htmlspecialchars($error_message); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($success_message)): ?>
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><?php echo htmlspecialchars($success_message); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if (empty($success_message)): ?>
+                <form method="POST" action="forgot-password.php" class="mt-8 space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">E-posta Adresi</label>
+                        <input type="email" id="email" name="email" required
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                               placeholder="E-posta adresinizi girin"
+                               value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                    </div>
+
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            Şifre Sıfırlama Linki Gönder
+                        </button>
+                    </div>
+                </form>
+            <?php endif; ?>
             
             <div class="text-sm text-center">
                 <a href="login.php" class="font-medium text-primary hover:text-primary-dark">

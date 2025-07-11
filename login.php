@@ -2,7 +2,15 @@
 require_once 'services/AuthService.php';
 $authService = new AuthService();
 
+// Eğer kullanıcı zaten giriş yapmışsa profile sayfasına yönlendir
+if ($authService->isLoggedIn()) {
+    header('Location: profile.php');
+    exit;
+}
+
 $error_message = '';
+$success_message = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -10,8 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $authService->login($email, $password);
 
     if ($result['success']) {
-        // Session kaldırıldı, login başarılı mesajı göster
-        $success_message = 'Giriş başarılı! Ancak session kaldırıldığı için profil sayfasına yönlendirilmeyecek.';
+        // Başarılı giriş, profile sayfasına yönlendir
+        header('Location: profile.php');
+        exit;
     } else {
         $error_message = $result['message'];
     }
@@ -77,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="text-sm">
-                        <a href="#" class="font-medium text-primary hover:text-primary-dark">
+                        <a href="forgot-password.php" class="font-medium text-primary hover:text-primary-dark">
                             Şifrenizi mi unuttunuz?
                         </a>
                     </div>

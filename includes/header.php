@@ -1,5 +1,5 @@
 <?php
-// Session kaldırıldı - Session yönetimi devre dışı
+
 
 require_once __DIR__ . '/../lib/SEOManager.php';
 require_once __DIR__ . '/../services/AuthService.php';
@@ -7,7 +7,8 @@ require_once __DIR__ . '/../services/AuthService.php';
 $current_page = basename($_SERVER['PHP_SELF']);
 $seo = seo();
 $authService = new AuthService();
-$is_logged_in = $authService->isLoggedIn(); // Her zaman false döner (Session kaldırıldı)
+$is_logged_in = $authService->isLoggedIn();
+$current_user = $is_logged_in ? $authService->getCurrentUser() : null;
 
 // Sayfa bazlı SEO ayarları
 switch($current_page) {
@@ -219,10 +220,14 @@ if (!empty($breadcrumbs)) {
                 </nav>
                 <div class="flex items-center space-x-4">
                     <?php if ($is_logged_in): ?>
-                        <!-- Session kaldırıldı - Bu blok asla çalışmaz -->
+                        
                         <div x-data="{ open: false }" class="relative">
-                            <button @click="open = !open" class="text-gray-600 hover:text-primary focus:outline-none">
+                            <button @click="open = !open" class="flex items-center space-x-2 text-gray-600 hover:text-primary focus:outline-none">
                                 <i class="fas fa-user-circle text-2xl"></i>
+                                <span class="hidden sm:inline-block text-sm font-medium">
+                                    <?php echo htmlspecialchars($current_user['full_name'] ?? $current_user['email']); ?>
+                                </span>
+                                <i class="fas fa-chevron-down text-xs"></i>
                             </button>
                             <div x-show="open" @click.away="open = false"
                                  x-transition:enter="transition ease-out duration-100"
@@ -271,6 +276,32 @@ if (!empty($breadcrumbs)) {
                 <a href="/about.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'about.php') ? 'bg-primary text-white' : ''; ?>">Hakkımızda</a>
                 <a href="/blog.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'blog.php') ? 'bg-primary text-white' : ''; ?>">Blog</a>
                 <a href="/contact.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'contact.php') ? 'bg-primary text-white' : ''; ?>">İletişim</a>
+                
+                <?php if ($is_logged_in): ?>
+                    <div class="border-t pt-2 mt-2">
+                        <div class="text-xs text-gray-500 px-2 mb-2">
+                            <?php echo htmlspecialchars($current_user['full_name'] ?? $current_user['email']); ?>
+                        </div>
+                        <a href="/profile.php" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
+                            <i class="fas fa-user mr-2"></i>Profilim
+                        </a>
+                        <a href="/profile.php?tab=favorites" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
+                            <i class="fas fa-heart mr-2"></i>Favorilerim
+                        </a>
+                        <a href="/logout.php" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="border-t pt-2 mt-2">
+                        <a href="/login.php" class="text-gray-600 hover:text-primary p-2 rounded block">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                        </a>
+                        <a href="/register.php" class="text-gray-600 hover:text-primary p-2 rounded block">
+                            <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
+                        </a>
+                    </div>
+                <?php endif; ?>
             </nav>
         </div>
     </header>

@@ -1,8 +1,13 @@
 <?php
-// Session kaldırıldı - Session yönetimi devre dışı
-
 require_once 'services/AuthService.php';
 $authService = new AuthService();
+
+// Eğer kullanıcı zaten giriş yapmışsa profile sayfasına yönlendir
+if ($authService->isLoggedIn()) {
+    header('Location: profile.php');
+    exit;
+}
+
 $error_message = '';
 $success_message = '';
 
@@ -25,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'gender' => $gender
         ]);
         if ($result['success']) {
-            $success_message = 'Hesabınız başarıyla oluşturuldu! Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın.';
+            $success_message = 'Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.';
         } else {
             $error_message = $result['message'];
         }
@@ -70,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
                     <p class="font-bold">Başarılı</p>
                     <p><?php echo $success_message; ?></p>
+                    <p class="mt-2">
+                        <a href="login.php" class="text-green-800 underline">Giriş sayfasına gidin</a>
+                    </p>
                 </div>
             <?php else: ?>
                 <form class="mt-8 space-y-6" action="register.php" method="POST">
