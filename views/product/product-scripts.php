@@ -32,23 +32,27 @@
 </script>
 
 <script>
-// Verileri global değişkenler olarak tanımlayalım
-const productData = <?php echo json_encode($product); ?>;
-const productVariantsData = productData.variants || [];
-const productColorsData = <?php echo json_encode($all_colors ?? []); ?>;
-const productName = "<?php echo addslashes($product['name']); ?>";
-const isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
-const currentUser = <?php echo $current_user ? json_encode($current_user) : 'null'; ?>;
-const favoriteVariantIds = <?php echo json_encode($favorite_variant_ids); ?>;
+// Verileri global değişkenler olarak tanımlayalım (window nesnesine bağlı)
+window.productData = <?php echo json_encode($product); ?>;
+window.productVariantsData = window.productData.variants || [];
+window.productColorsData = <?php echo json_encode($all_colors ?? []); ?>;
+window.productName = "<?php echo addslashes($product['name']); ?>";
+window.isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+window.currentUser = <?php echo $current_user ? json_encode($current_user) : 'null'; ?>;
+window.favoriteVariantIds = <?php echo json_encode($favorite_variant_ids); ?>;
 
 // Beden verilerini global değişken olarak tanımla
-const productSizesData = <?php echo json_encode($available_sizes ?? []); ?>;
+window.productSizesData = <?php echo json_encode($available_sizes ?? []); ?>;
 </script>
-<script src="/assets/js/product-detail.js"></script>
+<!-- Modüler JS yapısını kullan -->
+<script type="module" src="/assets/js/product-detail/main.js"></script>
+
+<!-- Eski JS dosyasını yedek olarak tut -->
+<!-- <script src="/assets/js/product-detail.js"></script> -->
 
 <!-- Favori özelliği aktif -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Favori özelliği aktif. Giriş durumu:', isLoggedIn);
+    console.log('Favori özelliği aktif. Giriş durumu:', window.isLoggedIn);
 });
 </script>
