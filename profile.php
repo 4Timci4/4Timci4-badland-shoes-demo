@@ -55,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <title>Profil Sayfası - Bandland Shoes</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
@@ -66,11 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             <!-- Sidebar -->
             <aside class="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
                 <nav class="space-y-1">
-                    <a href="profile.php?tab=profile" class="<?php echo $active_tab === 'profile' ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    <a href="profile.php?tab=profile" class="tab-link <?php echo $active_tab === 'profile' ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
                         <i class="fas fa-user text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Profil Bilgileri</span>
                     </a>
-                    <a href="profile.php?tab=favorites" class="<?php echo $active_tab === 'favorites' ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                    <a href="profile.php?tab=favorites" class="tab-link <?php echo $active_tab === 'favorites' ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:text-gray-900'; ?> group rounded-md px-3 py-2 flex items-center text-sm font-medium">
                         <i class="fas fa-heart text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"></i>
                         <span class="truncate">Favorilerim</span>
                     </a>
@@ -119,23 +118,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </div>
                 <?php endif; ?>
 
-                <?php
-                define('IS_PROFILE_PAGE', true);
+                <div id="profile-content">
+                    <?php
+                    define('IS_PROFILE_PAGE', true);
 
-                if ($active_tab === 'profile') {
-                    if (file_exists('views/profile/profile-form.php')) {
-                        include 'views/profile/profile-form.php';
-                    } else {
-                        echo '<p>Profil formu yüklenemedi.</p>';
+                    if ($active_tab === 'profile') {
+                        if (file_exists('views/profile/profile-form.php')) {
+                            include 'views/profile/profile-form.php';
+                        } else {
+                            echo '<p>Profil formu yüklenemedi.</p>';
+                        }
+                    } elseif ($active_tab === 'favorites') {
+                        if (file_exists('views/profile/favorites.php')) {
+                            include 'views/profile/favorites.php';
+                        } else {
+                            echo '<p>Favoriler yüklenemedi.</p>';
+                        }
                     }
-                } elseif ($active_tab === 'favorites') {
-                    if (file_exists('views/profile/favorites.php')) {
-                        include 'views/profile/favorites.php';
-                    } else {
-                        echo '<p>Favoriler yüklenemedi.</p>';
-                    }
-                }
-                ?>
+                    ?>
+                </div>
             </div>
         </div>
     </div>
@@ -143,50 +144,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <?php include 'includes/footer.php'; ?>
 
     <script>
-        // Tab navigation functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Mobile responsive sidebar toggle
-            const sidebarToggle = document.createElement('button');
-            sidebarToggle.className = 'md:hidden mb-4 px-4 py-2 bg-primary text-white rounded-md';
-            sidebarToggle.innerHTML = '<i class="fas fa-bars mr-2"></i>Menü';
-            sidebarToggle.onclick = function() {
-                const sidebar = document.querySelector('aside');
-                sidebar.classList.toggle('hidden');
-            };
-            
-            // Insert toggle button on mobile
-            const mainContent = document.querySelector('.lg\\:col-span-9');
-            if (mainContent && window.innerWidth < 768) {
-                mainContent.insertBefore(sidebarToggle, mainContent.firstChild);
-            }
-            
-            // Form validation
-            const form = document.querySelector('form[method="POST"]');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    const firstName = document.getElementById('first_name');
-                    const lastName = document.getElementById('last_name');
-                    const phoneNumber = document.getElementById('phone_number');
-                    
-                    if (firstName && firstName.value.trim() === '') {
-                        alert('Ad alanı boş bırakılamaz.');
-                        e.preventDefault();
-                        return false;
-                    }
-                    
-                    if (lastName && lastName.value.trim() === '') {
-                        alert('Soyad alanı boş bırakılamaz.');
-                        e.preventDefault();
-                        return false;
-                    }
-                    
-                    if (phoneNumber && phoneNumber.value.trim() !== '' && !/^[+]?[\d\s\-\(\)]+$/.test(phoneNumber.value.trim())) {
-                        alert('Geçerli bir telefon numarası girin.');
-                        e.preventDefault();
-                        return false;
-                    }
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const profileContent = document.getElementById('profile-content');
+
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.href;
+                    const tab = new URL(url).searchParams.get('tab');
+
+                    // Update active class
+                    tabLinks.forEach(l => l.classList.remove('bg-gray-50', 'text-gray-900'));
+                    this.classList.add('bg-gray-50', 'text-gray-900');
+
+                    // Fetch new content
+                    fetch(`/api/profile-tabs.php?tab=${tab}`)
+                        .then(response => response.text())
+                        .then(html => {
+                            profileContent.style.opacity = 0;
+                            setTimeout(() => {
+                                profileContent.innerHTML = html;
+                                profileContent.style.opacity = 1;
+                            }, 300);
+                        });
+
+                    // Update browser history
+                    window.history.pushState({tab: tab}, '', url);
                 });
-            }
+            });
+
+            // Handle back/forward browser buttons
+            window.addEventListener('popstate', function(e) {
+                if (e.state && e.state.tab) {
+                    const tab = e.state.tab;
+                    const link = document.querySelector(`.tab-link[href*="tab=${tab}"]`);
+                    if (link) {
+                        link.click();
+                    }
+                }
+            });
         });
     </script>
 </body>

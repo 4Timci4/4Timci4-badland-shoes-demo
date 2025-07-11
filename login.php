@@ -14,8 +14,9 @@ $success_message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
+    $rememberMe = isset($_POST['remember-me']);
 
-    $result = $authService->login($email, $password);
+    $result = $authService->login($email, $password, $rememberMe);
 
     if ($result['success']) {
         // Başarılı giriş, profile sayfasına yönlendir

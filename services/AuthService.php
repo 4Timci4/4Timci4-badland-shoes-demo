@@ -1,12 +1,13 @@
 <?php
 /**
  * Database-based Authentication Service
- * 
+ *
  * Veritabanı tabanlı kimlik doğrulama servisi
  * Session yönetimi, şifre hash'leme ve güvenlik kontrolleri içerir
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/Product/FavoriteService.php';
 
 class AuthService {
@@ -20,12 +21,27 @@ class AuthService {
     }
     
     /**
-     * Session başlatma
+     * Session başlatma - SessionConfig kullanarak
      */
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        // SessionConfig otomatik olarak session'ı başlatır ve güvenlik kontrollerini yapar
+        // Timeout kontrolü
+        if (!SessionConfig::checkTimeout(1800)) { // 30 dakika
+            $this->logout();
+            return false;
         }
+        
+        // Concurrent session kontrolü (eğer kullanıcı giriş yapmışsa)
+        if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']) {
+            if (!SessionConfig::checkConcurrentSession($_SESSION['user_id'], $this->db)) {
+                return false;
+            }
+            
+            // Session activity'sini güncelle
+            SessionConfig::updateSessionActivity($_SESSION['user_id'], $this->db);
+        }
+        
+        return true;
     }
     
     /**
@@ -80,7 +96,7 @@ class AuthService {
      * @param string $password Şifre
      * @return array Başarı durumu ve mesaj
      */
-    public function login($email, $password) {
+    public function login($email, $password, $rememberMe = false) {
         try {
             // Kullanıcıyı veritabanından getir
             $users = $this->db->select('users', ['email' => $email], '*', ['limit' => 1]);
@@ -98,6 +114,13 @@ class AuthService {
             
             // Session'a kullanıcı bilgilerini kaydet
             $this->createUserSession($user);
+
+            // Session'ı veritabanına kaydet
+            SessionConfig::saveUserSession($user['id'], $this->db);
+
+            if ($rememberMe) {
+                $this->createRememberMeToken($user['id']);
+            }
             
             return ['success' => true, 'message' => 'Giriş başarılı.'];
             
@@ -109,16 +132,27 @@ class AuthService {
     
     /**
      * Kullanıcı çıkışı
-     * 
+     *
      * @return array Başarı durumu
      */
     public function logout() {
+        $userId = $_SESSION['user_id'] ?? null;
+        
+        // Remember me token temizle
+        if (isset($_COOKIE['remember_me'])) {
+            list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
+            $this->db->delete('auth_tokens', ['selector' => $selector]);
+            setcookie('remember_me', '', time() - 3600, '/');
+        }
+
         try {
-            // Session'ı temizle
-            if (session_status() !== PHP_SESSION_NONE) {
-                session_unset();
-                session_destroy();
+            // Session'ı veritabanından temizle
+            if ($userId) {
+                SessionConfig::clearUserSession($userId, $this->db);
             }
+            
+            // Session'ı güvenli şekilde yok et
+            SessionConfig::destroySession();
             
             return ['success' => true, 'message' => 'Çıkış yapıldı.'];
             
@@ -126,6 +160,46 @@ class AuthService {
             error_log("Logout error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Çıkış yapılırken hata oluştu.'];
         }
+    }
+
+    private function createRememberMeToken($userId) {
+        $selector = bin2hex(random_bytes(16));
+        $validator = bin2hex(random_bytes(32));
+        $hashedValidator = password_hash($validator, PASSWORD_DEFAULT);
+        $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30)); // 30 days
+
+        $this->db->insert('auth_tokens', [
+            'user_id' => $userId,
+            'selector' => $selector,
+            'hashed_validator' => $hashedValidator,
+            'expires_at' => $expiresAt
+        ]);
+
+        setcookie('remember_me', $selector . ':' . $validator, time() + (86400 * 30), '/');
+    }
+
+    public function loginWithRememberMeCookie() {
+        if (isset($_COOKIE['remember_me'])) {
+            list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
+
+            $token = $this->db->select('auth_tokens', ['selector' => $selector], '*', ['limit' => 1]);
+
+            if (!empty($token)) {
+                $token = $token[0];
+                if (password_verify($validator, $token['hashed_validator'])) {
+                    if (strtotime($token['expires_at']) > time()) {
+                        $user = $this->db->select('users', ['id' => $token['user_id']], '*', ['limit' => 1]);
+                        if (!empty($user)) {
+                            $this->createUserSession($user[0]);
+                            return true;
+                        }
+                    } else {
+                        $this->db->delete('auth_tokens', ['id' => $token['id']]);
+                    }
+                }
+            }
+        }
+        return false;
     }
     
     /**
@@ -308,10 +382,13 @@ class AuthService {
     
     /**
      * Kullanıcı session'ı oluştur
-     * 
+     *
      * @param array $user Kullanıcı bilgileri
      */
     private function createUserSession($user) {
+        // Session fixation saldırılarını önlemek için session ID'yi yenile
+        SessionConfig::regenerateSession();
+        
         $_SESSION['user_logged_in'] = true;
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
@@ -321,6 +398,9 @@ class AuthService {
         $_SESSION['user_gender'] = $user['gender'];
         $_SESSION['user_login_time'] = time();
         $_SESSION['user_last_activity'] = time();
+        
+        // Log kayıt
+        error_log("User session created for user ID: " . $user['id'] . " from IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
     }
     
     /**
@@ -335,8 +415,99 @@ class AuthService {
     }
     
     /**
-     * Benzersiz kullanıcı ID'si oluştur
-     * 
-     * @return string Kullanıcı ID'si
+     * Session debug bilgilerini getir
+     *
+     * @return array Debug bilgileri
      */
+    public function getSessionDebugInfo() {
+        if (!$this->isLoggedIn()) {
+            return ['error' => 'Kullanıcı giriş yapmamış'];
+        }
+        
+        $debugInfo = SessionConfig::getDebugInfo();
+        $debugInfo['user_id'] = $_SESSION['user_id'] ?? null;
+        $debugInfo['user_email'] = $_SESSION['user_email'] ?? null;
+        $debugInfo['login_time'] = $_SESSION['user_login_time'] ?? null;
+        $debugInfo['login_duration'] = isset($_SESSION['user_login_time']) ? (time() - $_SESSION['user_login_time']) : null;
+        
+        return $debugInfo;
+    }
+    
+    /**
+     * Session sağlık durumunu kontrol et
+     *
+     * @return array Sağlık durumu
+     */
+    public function checkSessionHealth() {
+        $health = [
+            'status' => 'healthy',
+            'issues' => [],
+            'warnings' => []
+        ];
+        
+        // Session timeout kontrolü
+        if (isset($_SESSION['user_last_activity'])) {
+            $inactiveTime = time() - $_SESSION['user_last_activity'];
+            if ($inactiveTime > 1500) { // 25 dakika
+                $health['warnings'][] = 'Session yakında timeout olacak';
+            }
+        }
+        
+        // Session regeneration kontrolü
+        if (isset($_SESSION['last_regeneration'])) {
+            $lastRegeneration = time() - $_SESSION['last_regeneration'];
+            if ($lastRegeneration > 1900) { // 31 dakika
+                $health['warnings'][] = 'Session ID yakında yenilenecek';
+            }
+        }
+        
+        // IP adresi kontrolü
+        if (isset($_SESSION['user_ip']) && $_SESSION['user_ip'] !== ($_SERVER['REMOTE_ADDR'] ?? '')) {
+            $health['status'] = 'critical';
+            $health['issues'][] = 'IP adresi değişmiş - güvenlik riski';
+        }
+        
+        return $health;
+    }
+    
+    /**
+     * Kullanıcının aktif session'larını getir
+     *
+     * @param int $userId Kullanıcı ID'si
+     * @return array Aktif session'lar
+     */
+    public function getActiveSessions($userId) {
+        try {
+            return $this->db->select('user_sessions', ['user_id' => $userId], '*');
+        } catch (Exception $e) {
+            error_log("Get active sessions error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Belirli bir session'ı sonlandır
+     *
+     * @param int $userId Kullanıcı ID'si
+     * @param string $sessionId Session ID'si
+     * @return bool Başarı durumu
+     */
+    public function terminateSession($userId, $sessionId) {
+        try {
+            $result = $this->db->delete('user_sessions', [
+                'user_id' => $userId,
+                'session_id' => $sessionId
+            ]);
+            
+            if ($result) {
+                error_log("Session terminated: User ID $userId, Session ID $sessionId");
+                return true;
+            }
+            
+            return false;
+        } catch (Exception $e) {
+            error_log("Terminate session error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

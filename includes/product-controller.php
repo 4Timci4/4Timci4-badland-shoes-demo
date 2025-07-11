@@ -11,6 +11,8 @@
 // Required services and configuration
 require_once 'config/database.php';
 require_once 'services/Product/ProductApiService.php';
+require_once 'services/AuthService.php';
+require_once 'services/Product/FavoriteService.php';
 
 // --- MAIN DATA FETCH ---
 
@@ -22,6 +24,16 @@ if (!$product_id) {
 
 $db = database();
 $product_api_service = product_api_service();
+$authService = new AuthService();
+$favoriteService = new FavoriteService();
+
+// Kullanıcı giriş durumu ve favori kontrolü
+$is_logged_in = $authService->isLoggedIn();
+$current_user = $is_logged_in ? $authService->getCurrentUser() : null;
+$favorite_variant_ids = [];
+if ($is_logged_in) {
+    $favorite_variant_ids = $favoriteService->getFavoriteVariantIds($current_user['id']);
+}
 
 $product_data = $db->select('product_details_view', ['id' => ['eq', $product_id]]);
 if (empty($product_data)) {

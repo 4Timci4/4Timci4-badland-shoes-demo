@@ -2,15 +2,17 @@
 // Verileri global değişkenler olarak tanımlayalım
 const productData = <?php echo json_encode($product); ?>;
 const productVariantsData = productData.variants || [];
-const productColorsData = <?php echo json_encode($all_colors ?? []); ?>; // Bu, controller'dan gelmeye devam ediyor
+const productColorsData = <?php echo json_encode($all_colors ?? []); ?>;
 const productName = "<?php echo addslashes($product['name']); ?>";
-const isLoggedIn = false; // Session kaldırıldı
+const isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+const currentUser = <?php echo $current_user ? json_encode($current_user) : 'null'; ?>;
+const favoriteVariantIds = <?php echo json_encode($favorite_variant_ids); ?>;
 </script>
 <script src="/assets/js/product-detail.js"></script>
 
-<!-- Session kaldırıldı - Favori özelliği çalışmaz -->
+<!-- Favori özelliği aktif -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Session yönetimi kaldırıldı - Favori özelliği çalışmamaktadır.');
+    console.log('Favori özelliği aktif. Giriş durumu:', isLoggedIn);
 });
 </script>

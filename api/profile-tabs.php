@@ -1,25 +1,46 @@
 <?php
-/**
- * Profile Tabs AJAX API
- * Tab içeriklerini AJAX ile getirmek için endpoint
- * Session yönetimi kaldırıldı - Profil özelliği çalışmamaktadır.
- */
+// Start output buffering
+ob_start();
 
-// JSON response header
-header('Content-Type: application/json');
+require_once '../services/AuthService.php';
+$authService = new AuthService();
 
-// AJAX isteği kontrolü
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+// Giriş kontrolü
+if (!$authService->isLoggedIn()) {
+    // HTMX istekleri için 401 Unauthorized hatası döndür
+    header('HTTP/1.1 401 Unauthorized');
+    echo '<p>Bu içeriği görüntülemek için giriş yapmalısınız.</p>';
     exit;
 }
 
-// Session kaldırıldı - Profil özelliği devre dışı
-http_response_code(503);
-echo json_encode([
-    'error' => 'Session yönetimi kaldırıldı - Profil özelliği çalışmamaktadır',
-    'redirect' => '/login.php?reason=session_disabled'
-]);
-exit;
+// Kullanıcı bilgilerini al
+$currentUser = $authService->getCurrentUser();
+$user = $currentUser;
+$user_profile = $authService->getUserProfile($currentUser['id']);
+
+// Aktif tab kontrolü
+$active_tab = $_GET['tab'] ?? 'profile';
+
+// Güvenlik sabiti
+define('IS_PROFILE_PAGE', true);
+
+// İlgili view dosyasını include et
+if ($active_tab === 'profile') {
+    if (file_exists('../views/profile/profile-form.php')) {
+        include '../views/profile/profile-form.php';
+    } else {
+        echo '<p>Profil formu yüklenemedi.</p>';
+    }
+} elseif ($active_tab === 'favorites') {
+    if (file_exists('../views/profile/favorites.php')) {
+        include '../views/profile/favorites.php';
+    } else {
+        echo '<p>Favoriler yüklenemedi.</p>';
+    }
+} else {
+    echo '<p>Geçersiz sekme.</p>';
+}
+
+// End output buffering and flush buffer
+ob_end_flush();
 ?>

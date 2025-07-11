@@ -26,7 +26,7 @@ class FavoriteService {
     
     /**
      * Bir ürün varyantını favorilere ekler
-     * 
+     *
      * @param string $userId Kullanıcı ID
      * @param int $variantId Ürün varyant ID
      * @param int|null $colorId Renk ID
@@ -48,6 +48,18 @@ class FavoriteService {
                 return [
                     'success' => true,
                     'message' => 'Ürün zaten favorilerinizde'
+                ];
+            }
+
+            // Kullanıcının veritabanında var olup olmadığını kontrol et
+            $userCheck = $this->db->select('users', ['id' => $userId], 'id', ['limit' => 1]);
+            if (empty($userCheck)) {
+                error_log("FavoriteService::addFavorite - User ID not found in database: $userId");
+                return [
+                    'success' => false,
+                    'message' => 'Kullanıcı bilgileri bulunamadı. Lütfen tekrar giriş yapın.',
+                    'error_code' => 'user_not_found',
+                    'redirect' => 'logout.php'
                 ];
             }
 
@@ -80,13 +92,25 @@ class FavoriteService {
     
     /**
      * Bir ürün varyantını favorilerden kaldırır
-     * 
+     *
      * @param string $userId Kullanıcı ID
      * @param int $variantId Ürün varyant ID
      * @return array Sonuç
      */
     public function removeFavorite($userId, $variantId) {
         try {
+            // Kullanıcının veritabanında var olup olmadığını kontrol et
+            $userCheck = $this->db->select('users', ['id' => $userId], 'id', ['limit' => 1]);
+            if (empty($userCheck)) {
+                error_log("FavoriteService::removeFavorite - User ID not found in database: $userId");
+                return [
+                    'success' => false,
+                    'message' => 'Kullanıcı bilgileri bulunamadı. Lütfen tekrar giriş yapın.',
+                    'error_code' => 'user_not_found',
+                    'redirect' => 'logout.php'
+                ];
+            }
+            
             $result = $this->db->delete('favorites', [
                 'user_id' => $userId,
                 'variant_id' => $variantId

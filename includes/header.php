@@ -7,6 +7,12 @@ require_once __DIR__ . '/../services/AuthService.php';
 $current_page = basename($_SERVER['PHP_SELF']);
 $seo = seo();
 $authService = new AuthService();
+
+// Check for remember me cookie if not logged in
+if (!$authService->isLoggedIn()) {
+    $authService->loginWithRememberMeCookie();
+}
+
 $is_logged_in = $authService->isLoggedIn();
 $current_user = $is_logged_in ? $authService->getCurrentUser() : null;
 
