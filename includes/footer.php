@@ -216,6 +216,7 @@ if (isset($seo)) {
                     if (isHidden) {
                         // Menüyü aç
                         mobileMenu.classList.remove('hidden');
+                        mobileMenuButton.setAttribute('aria-expanded', 'true');
                         // Animasyon için kısa gecikme
                         requestAnimationFrame(() => {
                             mobileMenu.classList.add('show');
@@ -223,6 +224,7 @@ if (isset($seo)) {
                     } else {
                         // Menüyü kapat
                         mobileMenu.classList.remove('show');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
                         setTimeout(() => {
                             mobileMenu.classList.add('hidden');
                         }, 300);
@@ -234,6 +236,7 @@ if (isset($seo)) {
                     if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
                         if (!mobileMenu.classList.contains('hidden')) {
                             mobileMenu.classList.remove('show');
+                            mobileMenuButton.setAttribute('aria-expanded', 'false');
                             setTimeout(() => {
                                 mobileMenu.classList.add('hidden');
                             }, 300);
@@ -245,6 +248,7 @@ if (isset($seo)) {
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
                         mobileMenu.classList.remove('show');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
                         setTimeout(() => {
                             mobileMenu.classList.add('hidden');
                         }, 300);

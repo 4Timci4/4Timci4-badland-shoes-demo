@@ -444,7 +444,9 @@ if (!empty($breadcrumbs)) {
                             </div>
                         </div>
                     <?php endif; ?>
-                    <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-primary">
+                    <button id="mobile-menu-button"
+                        class="md:hidden text-gray-600 hover:text-primary focus:outline-none" type="button"
+                        aria-label="Mobil menüyü aç/kapat" aria-expanded="false">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                 </div>
