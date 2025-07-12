@@ -93,7 +93,7 @@ class EmailService {
     
     /**
      * Kayıt onay e-postası gönder
-     * 
+     *
      * @param string $email Kullanıcı e-posta adresi
      * @param string $firstName Kullanıcı adı
      * @param string $lastName Kullanıcı soyadı
@@ -107,9 +107,46 @@ class EmailService {
             return ['success' => false, 'message' => 'Kayıt onay e-posta şablonu bulunamadı.'];
         }
 
-        $subject = $this->replacePlaceholders($template['subject'], ['fullName' => $fullName]);
-        $htmlBody = $this->replacePlaceholders($template['body_html'], ['fullName' => $fullName]);
-        $textBody = $this->replacePlaceholders($template['body_text'], ['fullName' => $fullName]);
+        $placeholders = ['fullName' => $fullName];
+        $subject = $this->replacePlaceholders($template['subject'], $placeholders);
+        $htmlBody = $this->replacePlaceholders($template['body_html'], $placeholders);
+        $textBody = $this->replacePlaceholders($template['body_text'], $placeholders);
+        
+        return $this->sendEmail($email, $subject, $htmlBody, $textBody);
+    }
+
+    /**
+     * Şifre sıfırlama e-postası gönder
+     *
+     * @param string $email Kullanıcı e-posta adresi
+     * @param string $token Şifre sıfırlama token'ı
+     * @param string $firstName Kullanıcı adı
+     * @param string $lastName Kullanıcı soyadı
+     * @return array Başarı durumu ve mesaj
+     */
+    public function sendPasswordResetEmail($email, $token, $firstName = '', $lastName = '') {
+        $fullName = trim($firstName . ' ' . $lastName);
+        if (empty($fullName)) {
+            $fullName = 'Değerli Müşterimiz';
+        }
+        
+        $template = $this->getEmailTemplate('password_reset');
+        
+        if (!$template) {
+            return ['success' => false, 'message' => 'Şifre sıfırlama e-posta şablonu bulunamadı.'];
+        }
+
+        // Şifre sıfırlama linkini oluştur
+        $resetLink = (APP_ENV === 'development' ? 'http://localhost:3000' : 'https://badlandshoes.com.tr') . '/reset-password.php?token=' . urlencode($token);
+        
+        $placeholders = [
+            'fullName' => $fullName,
+            'reset_link' => $resetLink
+        ];
+
+        $subject = $this->replacePlaceholders($template['subject'], $placeholders);
+        $htmlBody = $this->replacePlaceholders($template['body_html'], $placeholders);
+        $textBody = $this->replacePlaceholders($template['body_text'], $placeholders);
         
         return $this->sendEmail($email, $subject, $htmlBody, $textBody);
     }
@@ -141,7 +178,8 @@ class EmailService {
             $content = str_replace('{{' . $key . '}}', htmlspecialchars($value), $content);
         }
         // Genel yer tutucular
-        $content = str_replace('{{site_url}}', (APP_ENV === 'development' ? 'http://localhost' : 'https://badlandshoes.com.tr'), $content);
+        $content = str_replace('{{site_url}}', (APP_ENV === 'development' ? 'http://localhost:3000' : 'https://badlandshoes.com.tr'), $content);
+        $content = str_replace('{{contact_url}}', (APP_ENV === 'development' ? 'http://localhost:3000/contact.php' : 'https://badlandshoes.com.tr/contact.php'), $content);
         $content = str_replace('{{current_year}}', date('Y'), $content);
         return $content;
     }

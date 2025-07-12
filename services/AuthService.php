@@ -390,18 +390,20 @@ class AuthService {
     }
     
     /**
-     * Şifre sıfırlama token'ı oluştur
-     * 
+     * Şifre sıfırlama token'ı oluştur ve e-posta gönder
+     *
      * @param string $email E-posta adresi
-     * @return array Başarı durumu
+     * @return bool Başarı durumu
      */
     public function createPasswordResetToken($email) {
         try {
             // Kullanıcı kontrolü
             $users = $this->db->select('users', ['email' => $email], '*', ['limit' => 1]);
             if (empty($users)) {
-                return ['success' => false, 'message' => 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.'];
+                return false; // forgot-password.php'nin beklediği false döndür
             }
+            
+            $user = $users[0];
             
             // Token oluştur
             $token = bin2hex(random_bytes(32));
@@ -417,14 +419,33 @@ class AuthService {
             ]);
             
             if ($result !== false) {
-                return ['success' => true, 'token' => $token, 'message' => 'Şifre sıfırlama token\'ı oluşturuldu.'];
+                // Şifre sıfırlama e-postasını gönder
+                try {
+                    $emailResult = $this->emailService->sendPasswordResetEmail(
+                        $email,
+                        $token,
+                        $user['first_name'] ?? '',
+                        $user['last_name'] ?? ''
+                    );
+                    
+                    if ($emailResult['success']) {
+                        return true; // forgot-password.php'nin beklediği true döndür
+                    } else {
+                        // E-posta gönderiminde hata olsa da token oluşturuldu, ama kullanıcıya bildirelim
+                        error_log("Password reset email failed for {$email}: " . $emailResult['message']);
+                        return false; // E-posta gönderilemediği için false döndür
+                    }
+                } catch (Exception $emailException) {
+                    error_log("Password reset email exception for {$email}: " . $emailException->getMessage());
+                    return false; // E-posta gönderilemediği için false döndür
+                }
             }
             
-            return ['success' => false, 'message' => 'Token oluşturulurken hata oluştu.'];
+            return false;
             
         } catch (Exception $e) {
             error_log("Create password reset token error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Sistem hatası oluştu.'];
+            return false;
         }
     }
     

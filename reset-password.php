@@ -4,7 +4,7 @@ require_once 'services/AuthService.php';
 $auth_service = new AuthService();
 $error_message = '';
 $success_message = '';
-$token = $_GET['token'] ?? '';
+$token = $_REQUEST['token'] ?? '';
 
 // Token kontrolü
 if (empty($token)) {
@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
             <?php endif; ?>
 
             <?php if (empty($success_message) && empty($error_message)): ?>
-                <form method="POST" action="reset-password.php" class="mt-8 space-y-6">
+                <form method="POST" action="reset-password.php?token=<?php echo htmlspecialchars($token); ?>" class="mt-8 space-y-6">
                     <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
                     
                     <div>
