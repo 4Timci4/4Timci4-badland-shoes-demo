@@ -36,7 +36,7 @@ class CategoryService {
             }
             
             $result = $this->db->select('category_product_counts', $conditions, '*', [
-                'order' => 'name ASC'
+                'order' => 'category_name ASC'
             ]);
             
             $this->performance_metrics['queries_executed']++;
@@ -79,6 +79,23 @@ class CategoryService {
 
     public function deleteCategory($id) {
         return $this->db->delete('categories', ['id' => $id]);
+    }
+
+    public function getCategoryById($id) {
+        $start_time = microtime(true);
+        try {
+            $result = $this->db->select('category_product_counts', ['category_id' => $id], '*', ['limit' => 1]);
+            
+            $this->performance_metrics['queries_executed']++;
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            
+            return $result[0] ?? null;
+            
+        } catch (Exception $e) {
+            error_log("CategoryService Error (getCategoryById): " . $e->getMessage());
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return null;
+        }
     }
 }
 

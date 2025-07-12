@@ -10,10 +10,6 @@ import { initializeTabSystem } from './tab-system.js';
 import { initializeNotifications } from './notification.js';
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded - Ürün detay sayfası yüklendi');
-    console.log('Kullanıcı giriş durumu:', window.isLoggedIn);
-    console.log('Favori varyant ID\'leri:', window.favoriteVariantIds);
-    
     // Global durum nesnesi
     const state = {
         selectedColor: null,

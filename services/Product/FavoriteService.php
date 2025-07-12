@@ -200,7 +200,7 @@ class FavoriteService {
                     'id' => $fav['product_id'],
                     'name' => $fav['product_name'],
                     'description' => $fav['product_description'],
-                    'category_name' => $fav['category_name'],
+                    'category_name' => $fav['category_name'] ?? null,
                     'variant_image_url' => $fav['variant_image_url'],
                     'image_url' => $fav['product_image_url']
                 ];

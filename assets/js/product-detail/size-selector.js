@@ -37,16 +37,11 @@ export function initializeSizeSelector(state, variantManager) {
             
             if (variant) {
                 state.currentSelectedVariantId = variant.id;
-                console.log('Varyant bulundu:', variant.id, 'Favori mi:', window.favoriteVariantIds.includes(variant.id));
                 
                 // Favori durumunu güncelle (favoriteManager tarafından yapılacak)
                 const event = new CustomEvent('variantSelected', { detail: { variantId: variant.id } });
                 document.dispatchEvent(event);
-            } else {
-                console.log('Eşleşen varyant bulunamadı');
             }
-        } else {
-            console.log('Renk veya beden seçilmemiş');
         }
     }
     

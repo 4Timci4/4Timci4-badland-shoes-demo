@@ -1,6 +1,4 @@
 <?php
-
-
 require_once __DIR__ . '/../lib/SEOManager.php';
 require_once __DIR__ . '/../services/AuthService.php';
 
@@ -18,6 +16,12 @@ if (!$authService->isLoggedIn()) {
 
 $is_logged_in = $authService->isLoggedIn();
 $current_user = $is_logged_in ? $authService->getCurrentUser() : null;
+
+// Generate CSRF token for logout form
+$csrf_token = '';
+if ($is_logged_in) {
+    $csrf_token = $authService->generateCsrfToken();
+}
 
 // Sayfa bazlı SEO ayarları
 switch($current_page) {
@@ -248,10 +252,11 @@ if (!empty($breadcrumbs)) {
                                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5"
                                  style="display: none;">
                                 <a href="/user/profile.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Profilim</a>
-                                <?php if ($is_logged_in): ?>
                                 <a href="/user/profile.php?tab=favorites" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Favorilerim</a>
-                                <?php endif; ?>
-                                <a href="/logout.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Çıkış Yap</a>
+                                <form action="/logout.php" method="POST" class="w-full">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                    <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-no-transition="true" rel="nofollow">Çıkış Yap</button>
+                                </form>
                             </div>
                         </div>
                     <?php else: ?>
@@ -296,14 +301,15 @@ if (!empty($breadcrumbs)) {
                         <a href="/user/profile.php" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
                             <i class="fas fa-user mr-2"></i>Profilim
                         </a>
-                        <?php if ($is_logged_in): ?>
                         <a href="/user/profile.php?tab=favorites" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
                             <i class="fas fa-heart mr-2"></i>Favorilerim
                         </a>
-                        <?php endif; ?>
-                        <a href="/logout.php" class="text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap
-                        </a>
+                        <form action="/logout.php" method="POST" class="w-full">
+                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                            <button type="submit" class="w-full text-left text-gray-600 hover:text-primary p-2 rounded block" data-no-transition="true" rel="nofollow">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap
+                            </button>
+                        </form>
                     </div>
                 <?php else: ?>
                     <div class="border-t pt-2 mt-2">

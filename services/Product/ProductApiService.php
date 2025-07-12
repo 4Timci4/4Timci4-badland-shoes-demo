@@ -98,8 +98,17 @@ class ProductApiService {
 
         // Build sort order
         $sort_parts = explode('-', $sort);
-        $order_field = 'created_at';
+        $sort_field = $sort_parts[0] ?? 'created_at';
         $order_direction = $sort_parts[1] ?? 'desc';
+        
+        $order_field_map = [
+            'name' => 'name',
+            'price' => 'price',
+            'created_at' => 'created_at'
+        ];
+        
+        $order_field = $order_field_map[$sort_field] ?? 'created_at';
+        
         $order = $order_field . ' ' . strtoupper($order_direction);
         
         // Get total count using the adapter's count method for reliability
@@ -167,8 +176,20 @@ class ProductApiService {
 
         // Build sort order
         $sort_parts = explode('-', $sort);
-        $order_field = 'p.created_at';
+        $sort_field = $sort_parts[0];
         $order_direction = $sort_parts[1] ?? 'desc';
+
+        switch ($sort_field) {
+            case 'name':
+                $order_field = 'p.name';
+                break;
+            case 'price':
+                $order_field = 'p.price';
+                break;
+            default:
+                $order_field = 'p.created_at';
+        }
+        
         $order = $order_field . ' ' . strtoupper($order_direction);
         
         // Get total count with JOINs
@@ -327,16 +348,15 @@ class ProductApiService {
                         LEFT JOIN product_genders pg ON p.id = pg.product_id
                         LEFT JOIN genders g ON pg.gender_id = g.id
                         WHERE p.id != :product_id";
+                        
+                        // Debug
+                        error_log("Similar products query: " . $similarQuery);
         
         $params = ['product_id' => $product_id];
         
-        // Add category condition if available
-        if (!empty($product_details['category_slug'])) {
-            $similarQuery .= " AND c.slug = :category_slug";
-            $params['category_slug'] = $product_details['category_slug'];
-        }
+        // Kategori koşulunu kaldırdık çünkü diğer ürünlerin kategorileri yok
         
-        $similarQuery .= " ORDER BY p.created_at DESC LIMIT :limit";
+        $similarQuery .= " ORDER BY p.id DESC LIMIT :limit";
         $params['limit'] = $limit;
         
         $similar_products = $this->db->executeRawSql($similarQuery, $params);

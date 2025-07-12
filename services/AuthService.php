@@ -6,6 +6,7 @@
  * Session yönetimi, şifre hash'leme ve güvenlik kontrolleri içerir
  */
 
+require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/Product/FavoriteService.php';
@@ -16,11 +17,42 @@ class AuthService {
     
     public function __construct() {
         $this->db = database();
-        // Session başlatıldığından emin ol
+        $this->startSession();
+        $this->favoriteService = new FavoriteService($this->db);
+    }
+
+    /**
+     * Starts a secure session if not already started.
+     */
+    public function startSession() {
         if (session_status() === PHP_SESSION_NONE) {
             SessionConfig::init();
         }
-        $this->favoriteService = new FavoriteService($this->db);
+    }
+
+    /**
+     * Generates and stores a CSRF token in the session.
+     *
+     * @return string The generated CSRF token.
+     */
+    public function generateCsrfToken() {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    /**
+     * Validates a given CSRF token against the one in the session.
+     *
+     * @param string $token The CSRF token to validate.
+     * @return bool True if the token is valid, false otherwise.
+     */
+    public function validateCsrfToken($token) {
+        if (empty($_SESSION['csrf_token']) || empty($token)) {
+            return false;
+        }
+        return hash_equals($_SESSION['csrf_token'], $token);
     }
     
     /**
@@ -83,6 +115,7 @@ class AuthService {
             
             // Kullanıcı verilerini hazırla
             $userData = [
+                'id' => generate_uuid(),
                 'email' => $email,
                 'password_hash' => $passwordHash,
                 'first_name' => $options['first_name'] ?? null,

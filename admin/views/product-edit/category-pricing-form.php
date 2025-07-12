@@ -30,13 +30,13 @@ $selected_genders = $selected_genders ?? [];
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <?php foreach ($categories as $category): ?>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                                    <input type="checkbox" 
-                                           name="category_ids[]" 
-                                           value="<?= htmlspecialchars($category['id']) ?>"
-                                           <?= in_array($category['id'], $selected_categories ?? []) ? 'checked' : '' ?>
+                                    <input type="checkbox"
+                                           name="category_ids[]"
+                                           value="<?= htmlspecialchars($category['category_id']) ?>"
+                                           <?= in_array($category['category_id'], $selected_categories ?? []) ? 'checked' : '' ?>
                                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
                                     <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <?= htmlspecialchars($category['name']) ?>
+                                        <?= htmlspecialchars($category['category_name']) ?>
                                     </span>
                                 </label>
                             <?php endforeach; ?>

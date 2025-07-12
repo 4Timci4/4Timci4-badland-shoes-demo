@@ -162,7 +162,7 @@ include 'includes/header.php';
                 <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                 <input type="hidden" name="action" value="<?= $edit_mode ? 'edit' : 'add' ?>">
                 <?php if ($edit_mode): ?>
-                    <input type="hidden" name="category_id" value="<?= $edit_category['id'] ?>">
+                    <input type="hidden" name="category_id" value="<?= $edit_category['category_id'] ?>">
                 <?php endif; ?>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -172,10 +172,10 @@ include 'includes/header.php';
                             <i class="fas fa-tag mr-2"></i>Kategori Adı *
                         </label>
                         <input type="text" 
-                               id="name" 
-                               name="name" 
+                               id="name"
+                               name="name"
                                required
-                               value="<?= htmlspecialchars($edit_category['name'] ?? '') ?>"
+                               value="<?= htmlspecialchars($edit_category['category_name'] ?? '') ?>"
                                placeholder="Örn: Spor Ayakkabıları"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                     </div>
@@ -228,21 +228,21 @@ include 'includes/header.php';
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($categories as $category): ?>
-                            <tr class="hover:bg-gray-50 transition-colors <?= ($edit_mode && $edit_category['id'] == $category['id']) ? 'bg-blue-50' : '' ?>">
+                            <tr class="hover:bg-gray-50 transition-colors <?= ($edit_mode && $edit_category['category_id'] == $category['category_id']) ? 'bg-blue-50' : '' ?>">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
                                             <i class="fas fa-folder text-primary-600"></i>
                                         </div>
                                         <div>
-                                            <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($category['name']) ?></h4>
-                                            <p class="text-sm text-gray-500">ID: #<?= $category['id'] ?></p>
+                                            <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($category['category_name']) ?></h4>
+                                            <p class="text-sm text-gray-500">ID: #<?= $category['category_id'] ?></p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
-                                        <?= htmlspecialchars($category['slug']) ?>
+                                        <?= htmlspecialchars($category['category_slug']) ?>
                                     </code>
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -254,7 +254,7 @@ include 'includes/header.php';
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <a href="categories.php?edit=<?= $category['id'] ?>" 
+                                        <a href="categories.php?edit=<?= $category['category_id'] ?>"
                                            class="inline-flex items-center justify-center w-24 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>
                                             Düzenle
@@ -264,8 +264,8 @@ include 'includes/header.php';
                                             <form method="POST" class="inline-block" onsubmit="return confirm('Bu kategoriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
                                                 <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                 <input type="hidden" name="action" value="delete">
-                                                <input type="hidden" name="category_id" value="<?= $category['id'] ?>">
-                                                <button type="submit" 
+                                                <input type="hidden" name="category_id" value="<?= $category['category_id'] ?>">
+                                                <button type="submit"
                                                         class="inline-flex items-center justify-center w-24 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
                                                     <i class="fas fa-trash mr-1"></i>
                                                     Sil

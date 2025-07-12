@@ -4,7 +4,6 @@ export function initializeImagePreloader(state) {
         try {
             const colorImageDataElement = document.getElementById('color-image-data');
             if (!colorImageDataElement) {
-                console.error('color-image-data elementi bulunamadı');
                 return;
             }
             
@@ -27,10 +26,8 @@ export function initializeImagePreloader(state) {
             
             Promise.all(preloadPromises).then(() => {
                 state.preloadComplete = true;
-                console.log('Tüm görseller preload edildi');
             });
         } catch (error) {
-            console.error('Görsel önbelleğe alma hatası:', error);
         }
     }
     
@@ -210,7 +207,6 @@ export function initializeImagePreloader(state) {
                     return firstImage;
                 }
             } catch (error) {
-                console.error('Renk önizleme hatası:', error);
             }
             return null;
         }

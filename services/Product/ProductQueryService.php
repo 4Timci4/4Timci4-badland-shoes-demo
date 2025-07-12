@@ -27,10 +27,47 @@ class ProductQueryService {
                 return [];
             }
 
-            // Supabase'in ilişkisel veri çekme gücünü kullanarak tek bir sorgu yap
-            $select_query = '*, categories:product_categories(categories(*)), genders:product_genders(genders(*)), images:product_images(*)';
+            // Veritabanı türüne göre farklı sorgular kullan
+            $dbType = DatabaseFactory::getCurrentType();
             
-            $products = $this->db->select('product_models', ['id' => $model_id], $select_query, ['limit' => 1]);
+            if ($dbType === 'supabase') {
+                // Supabase'in ilişkisel veri çekme gücünü kullanarak tek bir sorgu yap
+                $select_query = '*, categories:product_categories(categories(*)), genders:product_genders(genders(*)), images:product_images(*)';
+                $products = $this->db->select('product_models', ['id' => $model_id], $select_query, ['limit' => 1]);
+            } else {
+                // MariaDB için ayrı sorgular kullan
+                $products = $this->db->select('product_models', ['id' => $model_id], '*', ['limit' => 1]);
+                
+                if (!empty($products)) {
+                    // Kategorileri getir
+                    $categories = $this->db->executeRawSql(
+                        "SELECT c.* FROM categories c
+                         JOIN product_categories pc ON c.id = pc.category_id
+                         WHERE pc.product_id = ?",
+                        [$model_id]
+                    );
+                    $products[0]['categories'] = [];
+                    foreach ($categories as $category) {
+                        $products[0]['categories'][] = ['categories' => $category];
+                    }
+                    
+                    // Cinsiyetleri getir
+                    $genders = $this->db->executeRawSql(
+                        "SELECT g.* FROM genders g
+                         JOIN product_genders pg ON g.id = pg.gender_id
+                         WHERE pg.product_id = ?",
+                        [$model_id]
+                    );
+                    $products[0]['genders'] = [];
+                    foreach ($genders as $gender) {
+                        $products[0]['genders'][] = ['genders' => $gender];
+                    }
+                    
+                    // Görselleri getir
+                    $images = $this->db->select('product_images', ['model_id' => $model_id]);
+                    $products[0]['images'] = $images;
+                }
+            }
 
             if (empty($products)) {
                 return [];

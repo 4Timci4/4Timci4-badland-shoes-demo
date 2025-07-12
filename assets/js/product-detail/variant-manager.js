@@ -43,15 +43,15 @@ export function initializeVariantData(state, productVariants) {
             const variants = state.variantsByColor.get(colorId) || [];
             const availableSizeIds = [...new Set(variants.map(v => v.size_id))];
             
-            // Sadece ürüne tanımlı bedenleri filtrele ve durumlarını işaretle
+            // Sadece seçili renge ait varyantların kullandığı bedenleri filtrele
             const productSizes = allSizesData.filter(size => {
-                // Herhangi bir varyant bu bedeni kullanıyor mu kontrol et
-                return productVariants.some(v => v.size_id === size.id);
+                // Veri tiplerinin (string/number) uyuşmazlığını önlemek için parseInt kullan
+                return variants.some(v => parseInt(v.size_id) === parseInt(size.id));
             });
             
             return productSizes.map(size => {
                 const isAvailable = availableSizeIds.includes(size.id) &&
-                                   variants.some(v => v.size_id === size.id && v.stock_quantity > 0);
+                                   variants.some(v => parseInt(v.size_id) === parseInt(size.id) && v.stock_quantity > 0);
                 return {
                     ...size,
                     isAvailable
@@ -64,7 +64,7 @@ export function initializeVariantData(state, productVariants) {
             const currentPriceElement = document.getElementById('current-price');
             
             if (selectedColor && selectedSize) {
-                const variant = productVariants.find(v => 
+                const variant = productVariants.find(v =>
                     v.color_id === selectedColor && v.size_id === selectedSize
                 );
                 
@@ -89,6 +89,29 @@ export function initializeVariantData(state, productVariants) {
                 stockStatus.textContent = '';
                 stockStatus.className = 'text-xs text-gray-600';
             }
+        },
+        
+        reinitialize: (newVariants) => {
+            // Haritaları temizle
+            state.variantMap.clear();
+            state.variantsByColor.clear();
+            state.variantsBySize.clear();
+            
+            // Yeni verilerle haritaları yeniden doldur
+            newVariants.forEach(variant => {
+                const key = `${variant.color_id}-${variant.size_id}`;
+                state.variantMap.set(key, variant);
+                
+                if (!state.variantsByColor.has(variant.color_id)) {
+                    state.variantsByColor.set(variant.color_id, []);
+                }
+                state.variantsByColor.get(variant.color_id).push(variant);
+                
+                if (!state.variantsBySize.has(variant.size_id)) {
+                    state.variantsBySize.set(variant.size_id, []);
+                }
+                state.variantsBySize.get(variant.size_id).push(variant);
+            });
         }
     };
 }

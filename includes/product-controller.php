@@ -107,12 +107,15 @@ if (!empty($product['images'])) {
     }
 }
 
-// Prepare available sizes for the selected color
+// Prepare all available sizes for the entire product
 $available_sizes = [];
-if ($selected_color_id && isset($variants_by_color_id[$selected_color_id])) {
-    $size_ids = array_column($variants_by_color_id[$selected_color_id], 'size_id');
-    if(!empty($size_ids)){
-        $available_sizes = $db->select('sizes', ['id' => ['in', $size_ids]]);
+if (!empty($product['variants'])) {
+    // Get all unique size IDs from all variants of the product
+    $all_size_ids = array_unique(array_column($product['variants'], 'size_id'));
+    
+    if(!empty($all_size_ids)){
+        $available_sizes = $db->select('sizes', ['id' => ['in', $all_size_ids]]);
+        // Sort sizes naturally
         usort($available_sizes, fn($a, $b) => strnatcmp($a['size_value'], $b['size_value']));
     }
 }

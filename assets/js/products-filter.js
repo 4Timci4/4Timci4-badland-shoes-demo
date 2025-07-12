@@ -22,9 +22,15 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(data => {
             // Update content
-            productGrid.innerHTML = data.products_html;
-            paginationContainer.innerHTML = data.pagination_html;
-            productCountDisplay.innerHTML = data.count_html;
+            if (productGrid) {
+                productGrid.innerHTML = data.products_html;
+            }
+            if (paginationContainer) {
+                paginationContainer.innerHTML = data.pagination_html;
+            }
+            if (productCountDisplay) {
+                productCountDisplay.innerHTML = data.count_html;
+            }
 
             // Update browser history with the clean URL
             if (updateHistory) {

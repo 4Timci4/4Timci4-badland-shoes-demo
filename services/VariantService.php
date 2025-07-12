@@ -242,30 +242,45 @@ class VariantService {
      */
     public function getVariantById($variant_id) {
         try {
-            // PostgREST'in "embedding" özelliğini kullanarak doğru select sorgusu oluştur
-            $select_query = '*,colors(name,hex_code),sizes(size_value,size_type)';
-            
-            $variants = $this->db->select(
-                'product_variants',
-                ['id' => intval($variant_id)],
-                $select_query,
-                ['limit' => 1]
-            );
-            
-            if (!empty($variants)) {
-                $variant = $variants[0];
-                // Gömülü verileri ana nesneye taşı
-                if (isset($variant['colors'])) {
-                    $variant['color_name'] = $variant['colors']['name'];
-                    $variant['color_hex'] = $variant['colors']['hex_code'];
-                    unset($variant['colors']);
+            $dbType = DatabaseFactory::getCurrentType();
+
+            if ($dbType === 'supabase') {
+                // Supabase-specific logic with embedding
+                $select_query = '*,colors(name,hex_code),sizes(size_value,size_type)';
+                $variants = $this->db->select(
+                    'product_variants',
+                    ['id' => intval($variant_id)],
+                    $select_query,
+                    ['limit' => 1]
+                );
+
+                if (!empty($variants)) {
+                    $variant = $variants[0];
+                    if (isset($variant['colors'])) {
+                        $variant['color_name'] = $variant['colors']['name'];
+                        $variant['color_hex'] = $variant['colors']['hex_code'];
+                        unset($variant['colors']);
+                    }
+                    if (isset($variant['sizes'])) {
+                        $variant['size_value'] = $variant['sizes']['size_value'];
+                        $variant['size_type'] = $variant['sizes']['size_type'];
+                        unset($variant['sizes']);
+                    }
+                    return $variant;
                 }
-                if (isset($variant['sizes'])) {
-                    $variant['size_value'] = $variant['sizes']['size_value'];
-                    $variant['size_type'] = $variant['sizes']['size_type'];
-                    unset($variant['sizes']);
+            } else {
+                // MariaDB-specific logic with JOINs
+                $sql = "SELECT pv.*, c.name as color_name, c.hex_code as color_hex, s.size_value, s.size_type
+                        FROM product_variants pv
+                        LEFT JOIN colors c ON pv.color_id = c.id
+                        LEFT JOIN sizes s ON pv.size_id = s.id
+                        WHERE pv.id = :variant_id
+                        LIMIT 1";
+                
+                $result = $this->db->executeRawSql($sql, ['variant_id' => intval($variant_id)]);
+                if (!empty($result)) {
+                    return $result[0];
                 }
-                return $variant;
             }
 
             return null;
@@ -369,6 +384,57 @@ class VariantService {
             'is_active' => $is_active
         ];
         return $this->createVariant($data);
+    }
+    
+    /**
+     * Belirli bir ürün ve renge ait varyantları getiren metod
+     * 
+     * @param int $model_id Ürün model ID'si
+     * @param int $color_id Renk ID'si
+     * @return array Ürün varyantları
+     */
+    public function getVariantsByProductAndColor($model_id, $color_id) {
+        try {
+            $dbType = DatabaseFactory::getCurrentType();
+
+            if ($dbType === 'supabase') {
+                $select_query = '*,sizes(id,size_value,size_type)';
+                $variants = $this->db->select(
+                    'product_variants',
+                    ['model_id' => intval($model_id), 'color_id' => intval($color_id)],
+                    $select_query
+                );
+
+                if (!empty($variants)) {
+                    foreach ($variants as &$variant) {
+                        if (isset($variant['sizes'])) {
+                            $variant['size_id'] = $variant['sizes']['id'];
+                            $variant['size_value'] = $variant['sizes']['size_value'];
+                            $variant['size_type'] = $variant['sizes']['size_type'];
+                            unset($variant['sizes']);
+                        }
+                    }
+                }
+                return $variants;
+
+            } else {
+                // MariaDB-specific logic with JOINs
+                $sql = "SELECT pv.*, s.id as size_id, s.size_value, s.size_type
+                        FROM product_variants pv
+                        LEFT JOIN sizes s ON pv.size_id = s.id
+                        WHERE pv.model_id = :model_id AND pv.color_id = :color_id";
+                
+                $params = [
+                    'model_id' => intval($model_id),
+                    'color_id' => intval($color_id)
+                ];
+                
+                return $this->db->executeRawSql($sql, $params);
+            }
+        } catch (Exception $e) {
+            error_log("Ürün ve renk varyantları getirme hatası: " . $e->getMessage());
+            return [];
+        }
     }
 }
 

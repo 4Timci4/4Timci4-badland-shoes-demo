@@ -103,11 +103,11 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                 <div class="space-y-2 max-h-48 overflow-y-auto">
                                     <?php foreach ($categories as $category): ?>
                                         <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" name="categories[]" value="<?php echo htmlspecialchars($category['slug']); ?>"
-                                                   <?php echo in_array($category['slug'], $category_filters) ? 'checked' : ''; ?>
+                                            <input type="checkbox" name="categories[]" value="<?php echo htmlspecialchars($category['category_slug']); ?>"
+                                                   <?php echo in_array($category['category_slug'], $category_filters) ? 'checked' : ''; ?>
                                                    class="mr-3 text-primary focus:ring-primary rounded">
                                             <span class="text-gray-700 text-sm">
-                                                <?php echo htmlspecialchars($category['name']); ?>
+                                                <?php echo htmlspecialchars($category['category_name']); ?>
                                                 <span class="text-gray-500">(<?php echo $category['product_count']; ?>)</span>
                                             </span>
                                         </label>
@@ -159,6 +159,8 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                             <select name="sort" id="sort-filter" class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
                                 <option value="created_at-desc" <?php echo ($sort_filter === 'created_at-desc') ? 'selected' : ''; ?>>Önce En Yeni</option>
                                 <option value="name-asc" <?php echo ($sort_filter === 'name-asc') ? 'selected' : ''; ?>>İsim A-Z</option>
+                                <option value="price-asc" <?php echo ($sort_filter === 'price-asc') ? 'selected' : ''; ?>>Fiyat Artan</option>
+                                <option value="price-desc" <?php echo ($sort_filter === 'price-desc') ? 'selected' : ''; ?>>Fiyat Azalan</option>
                             </select>
                         </div>
                     </div>

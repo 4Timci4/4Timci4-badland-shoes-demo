@@ -8,6 +8,12 @@
 
 // Aktif sayfayı belirle (varsayılan: profile)
 $active_page = $active_page ?? 'profile';
+
+// CSRF token'ı al (parent script'te $authService'in tanımlandığını varsayarak)
+$csrf_token = '';
+if (isset($authService) && method_exists($authService, 'generateCsrfToken')) {
+    $csrf_token = $authService->generateCsrfToken();
+}
 ?>
 
 <!-- Sidebar -->
@@ -21,9 +27,12 @@ $active_page = $active_page ?? 'profile';
             <i class="fas fa-heart text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-5 w-5"></i>
             <span class="truncate">Favorilerim</span>
         </a>
-        <a href="/logout.php" class="text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
-            <i class="fas fa-sign-out-alt text-red-400 group-hover:text-red-500 flex-shrink-0 -ml-1 mr-3 h-5 w-5"></i>
-            <span class="truncate">Çıkış Yap</span>
-        </a>
+        <form action="/logout.php" method="POST" class="w-full">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+            <button type="submit" class="w-full text-red-600 hover:text-red-900 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                <i class="fas fa-sign-out-alt text-red-400 group-hover:text-red-500 flex-shrink-0 -ml-1 mr-3 h-5 w-5"></i>
+                <span class="truncate">Çıkış Yap</span>
+            </button>
+        </form>
     </nav>
 </aside>
