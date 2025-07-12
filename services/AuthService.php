@@ -10,15 +10,18 @@ require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/Product/FavoriteService.php';
+require_once __DIR__ . '/EmailService.php';
 
 class AuthService {
     private $db;
     private $favoriteService;
+    private $emailService;
     
     public function __construct() {
         $this->db = database();
         $this->startSession();
         $this->favoriteService = new FavoriteService($this->db);
+        $this->emailService = new EmailService();
     }
 
     /**
@@ -129,7 +132,25 @@ class AuthService {
             $result = $this->db->insert('users', $userData);
             
             if ($result !== false) {
-                return ['success' => true, 'message' => 'Hesabınız başarıyla oluşturuldu.'];
+                // Başarılı kayıt sonrası hoş geldin e-postası gönder
+                try {
+                    $emailResult = $this->emailService->sendRegistrationConfirmation(
+                        $email,
+                        $options['first_name'] ?? '',
+                        $options['last_name'] ?? ''
+                    );
+                    
+                    if (!$emailResult['success']) {
+                        // E-posta gönderiminde hata olsa bile kayıt başarılı sayılır
+                        // Hata loglanır ama kullanıcıya hata gösterilmez
+                        error_log("Registration email failed for {$email}: " . $emailResult['message']);
+                    }
+                } catch (Exception $emailException) {
+                    // E-posta gönderiminde kritik hata olsa bile kayıt başarılı sayılır
+                    error_log("Registration email exception for {$email}: " . $emailException->getMessage());
+                }
+                
+                return ['success' => true, 'message' => 'Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.'];
             }
             
             return ['success' => false, 'message' => 'Hesap oluşturulurken bir hata oluştu.'];

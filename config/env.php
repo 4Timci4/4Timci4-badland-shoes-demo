@@ -39,6 +39,15 @@ define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
 // Uygulamanın çalıştığı ortam (development, production, testing)
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
 
+// E-posta Ayarları
+define('MAIL_HOST', getenv('MAIL_HOST') ?: 'mail.badlandshoes.com.tr');
+define('MAIL_PORT', getenv('MAIL_PORT') ?: 587);
+define('MAIL_USERNAME', getenv('MAIL_USERNAME') ?: 'mail@badlandshoes.com.tr');
+define('MAIL_PASSWORD', getenv('MAIL_PASSWORD') ?: 'Parola28!');
+define('MAIL_ENCRYPTION', getenv('MAIL_ENCRYPTION') ?: 'tls');
+define('MAIL_FROM_ADDRESS', getenv('MAIL_FROM_ADDRESS') ?: 'mail@badlandshoes.com.tr');
+define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Application');
+
 /**
  * Veritabanı bağlantı bilgilerini şifreli olarak konsola yazar
  * Hata ayıklama amaçlıdır, üretim ortamında kullanılmamalıdır
