@@ -29,6 +29,7 @@ switch ($action) {
 
 function send_test_email() {
     $to = $_POST['to_email'] ?? '';
+    $template_name = $_POST['template_name'] ?? '';
     $subject = $_POST['subject'] ?? '';
     $body_html = $_POST['body_html'] ?? '';
 
@@ -36,17 +37,17 @@ function send_test_email() {
         echo json_encode(['success' => false, 'message' => 'Geçerli bir test e-posta adresi girin.']);
         exit;
     }
+    
+    if (empty($template_name)) {
+        echo json_encode(['success' => false, 'message' => 'Şablon adı belirtilmedi.']);
+        exit;
+    }
 
     try {
         $emailService = new EmailService();
         
-        // Test e-postası için genel yer tutucuları hazırla
-        $placeholders = [
-            'fullName' => 'Test Kullanıcısı',
-            'reset_link' => '#',
-            'activation_link' => '#',
-            // Diğer genel değişkenler EmailService içinde zaten dolduruluyor
-        ];
+        // Şablona özel örnek yer tutucuları al
+        $placeholders = $emailService->getSamplePlaceholders($template_name);
         
         $final_subject = $emailService->replacePlaceholders($subject, $placeholders);
         $final_body = $emailService->replacePlaceholders($body_html, $placeholders);

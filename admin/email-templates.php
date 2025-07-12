@@ -104,6 +104,7 @@ include 'includes/header.php';
                 <form method="POST" class="bg-white rounded-2xl shadow-lg border border-gray-100">
                     <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                     <input type="hidden" name="template_id" value="<?= $edit_template['id'] ?>">
+                    <input type="hidden" name="template_name" value="<?= $edit_template['name'] ?>">
                     
                     <div class="p-6 border-b">
                         <h3 class="text-lg font-bold">"<?= htmlspecialchars($edit_template['description']) ?>" Şablonunu Düzenle</h3>
@@ -401,7 +402,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('test-email-btn')?.addEventListener('click', function() {
         const toEmail = prompt('Test e-postasını göndermek istediğiniz adresi girin:', 'test@example.com');
         if (toEmail) {
-            sendAjaxRequest('send_test_email', { to_email: toEmail });
+            const templateName = document.querySelector('input[name="template_name"]')?.value || '';
+            sendAjaxRequest('send_test_email', { to_email: toEmail, template_name: templateName });
         }
     });
 

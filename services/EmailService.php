@@ -236,4 +236,28 @@ class EmailService {
         
         return $this->sendEmail($to, $subject, $body, $altBody);
     }
+
+    /**
+     * Şablona göre örnek yer tutucu verileri döndürür.
+     * @param string $templateName Şablonun adı
+     * @return array Örnek veri dizisi
+     */
+    public function getSamplePlaceholders($templateName) {
+        $placeholders = [
+            'fullName' => 'Ayşe Yılmaz',
+            // Genel değişkenler her zaman eklenir
+        ];
+
+        switch ($templateName) {
+            case 'password_reset':
+                $placeholders['reset_link'] = (APP_ENV === 'development' ? 'http://localhost:3000' : 'https://badlandshoes.com.tr') . '/reset-password.php?token=ornek_test_tokeni_123456';
+                break;
+            case 'registration_confirmation':
+                // Bu şablon için özel bir değişken yok, sadece fullName yeterli.
+                break;
+            // Diğer şablonlar için buraya case'ler eklenebilir
+        }
+
+        return $placeholders;
+    }
 }
