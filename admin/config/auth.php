@@ -426,6 +426,183 @@ function get_favorited_variants_summary($limit = 50) {
 }
 
 /**
+ * Favori trendleri - Son 30 günün favori ekleme istatistikleri
+ */
+function get_favorite_trends($days = 30) {
+    require_once __DIR__ . '/../../config/database.php';
+    
+    try {
+        $db = database();
+        
+        // Son X gün için tarih aralığı
+        $end_date = date('Y-m-d');
+        $start_date = date('Y-m-d', strtotime("-$days days"));
+        
+        // Günlük favori sayılarını getir
+        $favorites = $db->select('favorites', [
+            'created_at' => ['>=', $start_date . ' 00:00:00']
+        ], 'DATE(created_at) as date, COUNT(*) as count', [
+            'group' => 'DATE(created_at)',
+            'order' => 'date ASC'
+        ]);
+        
+        // Tüm günler için veri oluştur (eksik günler için 0 değeri)
+        $data = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $found = false;
+            
+            foreach ($favorites as $fav) {
+                if ($fav['date'] === $date) {
+                    $data[] = [
+                        'date' => $date,
+                        'formatted_date' => date('d.m', strtotime($date)),
+                        'count' => (int)$fav['count']
+                    ];
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found) {
+                $data[] = [
+                    'date' => $date,
+                    'formatted_date' => date('d.m', strtotime($date)),
+                    'count' => 0
+                ];
+            }
+        }
+        
+        return $data;
+        
+    } catch (Exception $e) {
+        error_log("Favorite trends error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Renk dağılımı - En popüler renkler
+ */
+function get_color_distribution() {
+    require_once __DIR__ . '/../../config/database.php';
+    
+    try {
+        $db = database();
+        
+        // Renklere göre favori sayıları
+        $colors = $db->select('favorites_view', [],
+            'color_name, color_hex, COUNT(*) as favorite_count', [
+            'group' => 'color_name, color_hex',
+            'order' => 'favorite_count DESC',
+            'limit' => 10
+        ]);
+        
+        return $colors;
+        
+    } catch (Exception $e) {
+        error_log("Color distribution error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Beden dağılımı - En popüler bedenler
+ */
+function get_size_distribution() {
+    require_once __DIR__ . '/../../config/database.php';
+    
+    try {
+        $db = database();
+        
+        // Bedenlere göre favori sayıları
+        $sizes = $db->select('favorites_view', [],
+            'size_value, COUNT(*) as favorite_count', [
+            'group' => 'size_value',
+            'order' => 'favorite_count DESC'
+        ]);
+        
+        return $sizes;
+        
+    } catch (Exception $e) {
+        error_log("Size distribution error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Gelişmiş favori istatistikleri
+ */
+function get_advanced_favorite_stats() {
+    require_once __DIR__ . '/../../config/database.php';
+    
+    try {
+        $db = database();
+        
+        // Toplam veriler
+        $total_favorites = $db->count('favorites');
+        $total_users_with_favorites_result = $db->executeRawSql("SELECT COUNT(DISTINCT user_id) as total FROM favorites");
+        $total_users_with_favorites = $total_users_with_favorites_result[0]['total'] ?? 0;
+        
+        $total_favorited_products_result = $db->executeRawSql("SELECT COUNT(DISTINCT product_id) as total FROM favorites_view");
+        $total_favorited_products = $total_favorited_products_result[0]['total'] ?? 0;
+        
+        $total_favorited_variants_result = $db->executeRawSql("SELECT COUNT(DISTINCT variant_id) as total FROM favorites");
+        $total_favorited_variants = $total_favorited_variants_result[0]['total'] ?? 0;
+        
+        // Bu ay eklenen favoriler
+        $current_month_start = date('Y-m-01 00:00:00');
+        $monthly_favorites = $db->count('favorites', ['created_at' => ['>=', $current_month_start]]);
+        
+        // Bu hafta eklenen favoriler
+        $current_week_start = date('Y-m-d', strtotime('monday this week')) . ' 00:00:00';
+        $weekly_favorites = $db->count('favorites', ['created_at' => ['>=', $current_week_start]]);
+        
+        // Bugün eklenen favoriler
+        $today_start = date('Y-m-d 00:00:00');
+        $daily_favorites = $db->count('favorites', ['created_at' => ['>=', $today_start]]);
+        
+        // Ortalama kullanıcı başına favori
+        $avg_favorites_per_user = $total_users_with_favorites > 0 ?
+            round($total_favorites / $total_users_with_favorites, 1) : 0;
+        
+        // En popüler ürünü bul
+        $top_product = $db->select('favorites_view', [],
+            'product_name, COUNT(*) as favorite_count', [
+            'group' => 'product_id, product_name',
+            'order' => 'favorite_count DESC',
+            'limit' => 1
+        ]);
+        
+        return [
+            'total_favorites' => $total_favorites,
+            'total_users_with_favorites' => $total_users_with_favorites,
+            'total_favorited_products' => $total_favorited_products,
+            'total_favorited_variants' => $total_favorited_variants,
+            'monthly_favorites' => $monthly_favorites,
+            'weekly_favorites' => $weekly_favorites,
+            'daily_favorites' => $daily_favorites,
+            'avg_favorites_per_user' => $avg_favorites_per_user,
+            'top_product' => !empty($top_product) ? $top_product[0] : null
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Advanced favorite stats error: " . $e->getMessage());
+        return [
+            'total_favorites' => 0,
+            'total_users_with_favorites' => 0,
+            'total_favorited_products' => 0,
+            'total_favorited_variants' => 0,
+            'monthly_favorites' => 0,
+            'weekly_favorites' => 0,
+            'daily_favorites' => 0,
+            'avg_favorites_per_user' => 0,
+            'top_product' => null
+        ];
+    }
+}
+
+/**
  * Logout işlemi
  */
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
