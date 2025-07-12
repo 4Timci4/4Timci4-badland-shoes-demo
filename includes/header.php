@@ -166,6 +166,9 @@ if (!empty($breadcrumbs)) {
                     fontFamily: {
                         'sans': ['Inter', 'sans-serif'],
                         'display': ['Poppins', 'sans-serif'],
+                    },
+                    maxWidth: {
+                        '8xl': '88rem', // 1408px
                     }
                 }
             }
@@ -244,7 +247,7 @@ if (!empty($breadcrumbs)) {
 </head>
 <body class="font-sans bg-gray-50">
     <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="max-w-screen-xl mx-auto px-4">
+        <div class="max-w-8xl mx-auto px-4">
             <div class="flex justify-between items-center py-4">
                 <div class="logo">
                     <a href="/index.php">
