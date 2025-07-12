@@ -81,25 +81,25 @@ include 'includes/header.php';
         ?>
 
         <div class="mb-8">
-            <div class="flex flex-wrap gap-2 justify-center">
+            <div class="flex flex-wrap gap-3 justify-center">
                 <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'tag' => $tag])); ?>"
-                    class="px-4 py-2 rounded-full border <?php echo !$category ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'; ?>">
+                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo !$category ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Tüm Kategoriler
                 </a>
                 <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Trendler', 'tag' => $tag])); ?>"
-                    class="px-4 py-2 rounded-full border <?php echo $category === 'Trendler' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'; ?>">
+                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Trendler' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Trendler
                 </a>
                 <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Sağlık', 'tag' => $tag])); ?>"
-                    class="px-4 py-2 rounded-full border <?php echo $category === 'Sağlık' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'; ?>">
+                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Sağlık' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Sağlık
                 </a>
                 <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Moda', 'tag' => $tag])); ?>"
-                    class="px-4 py-2 rounded-full border <?php echo $category === 'Moda' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'; ?>">
+                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Moda' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Moda
                 </a>
                 <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Bakım', 'tag' => $tag])); ?>"
-                    class="px-4 py-2 rounded-full border <?php echo $category === 'Bakım' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'; ?>">
+                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Bakım' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Bakım
                 </a>
             </div>
@@ -108,7 +108,7 @@ include 'includes/header.php';
         <div class="blog-grid">
             <?php if (empty($posts)): ?>
                 <div class="col-span-full">
-                    <div class="text-center py-12">
+                    <div class="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
                         <div class="max-w-md mx-auto">
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -147,31 +147,35 @@ include 'includes/header.php';
                     $post['category'] = $post['category'] ?? 'Genel';
                     $post['created_at'] = $post['created_at'] ?? date('Y-m-d H:i:s');
                     ?>
-                    <div class="blog-card">
+                    <div class="blog-card bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                         <a href="/blog-detail.php?id=<?php echo $post['id']; ?>" class="block">
-                            <div class="blog-image">
+                            <div class="blog-image relative h-60">
                                 <img src="<?php echo htmlspecialchars($post['image_url']); ?>"
-                                    alt="<?php echo htmlspecialchars($post['title']); ?>"
+                                    alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover"
                                     onerror="this.src='/assets/images/placeholder.svg'">
-                                <div class="category"><?php echo htmlspecialchars($post['category']); ?></div>
+                                <div
+                                    class="category absolute top-4 left-4 px-3 py-1 text-xs font-semibold text-white rounded-full uppercase tracking-wide">
+                                    <?php echo htmlspecialchars($post['category']); ?>
+                                </div>
                             </div>
                         </a>
-                        <div class="blog-content">
-                            <div class="blog-meta">
-                                <span class="date">
-                                    <i class="far fa-calendar-alt"></i>
+                        <div class="blog-content p-6">
+                            <div class="blog-meta flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                <span class="date flex items-center gap-2">
+                                    <i class="far fa-calendar-alt text-primary"></i>
                                     <?php echo date('d F Y', strtotime($post['created_at'])); ?>
                                 </span>
                             </div>
-                            <h2 class="font-display">
+                            <h2 class="font-display text-xl font-semibold mb-3 leading-tight">
                                 <a href="/blog-detail.php?id=<?php echo $post['id']; ?>"
-                                    class="hover:text-primary transition-colors duration-300">
+                                    class="text-gray-900 hover:text-primary transition-colors duration-300">
                                     <?php echo htmlspecialchars($post['title']); ?>
                                 </a>
                             </h2>
-                            <p class="text-gray-600"><?php echo htmlspecialchars($post['excerpt']); ?></p>
-                            <a href="/blog-detail.php?id=<?php echo $post['id']; ?>" class="read-more mt-4">
-                                Devamını Oku <i class="fas fa-arrow-right"></i>
+                            <p class="text-gray-600 mb-4 line-clamp-3"><?php echo htmlspecialchars($post['excerpt']); ?></p>
+                            <a href="/blog-detail.php?id=<?php echo $post['id']; ?>"
+                                class="read-more inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all duration-300">
+                                Devamını Oku <i class="fas fa-arrow-right text-sm"></i>
                             </a>
                         </div>
                     </div>
@@ -180,37 +184,39 @@ include 'includes/header.php';
         </div>
 
         <?php if ($totalPages > 1): ?>
-            <div class="pagination">
+            <div class="pagination flex justify-center items-center mt-12 gap-2">
                 <?php if ($page > 1): ?>
                     <a href="?<?php echo http_build_query(array_filter(['page' => $page - 1, 'category' => $category, 'tag' => $tag])); ?>"
-                        class="prev">
-                        <i class="fas fa-chevron-left"></i>
+                        class="prev flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300">
+                        <i class="fas fa-chevron-left text-sm"></i>
                         <span>Önceki</span>
                     </a>
                 <?php else: ?>
-                    <span class="prev disabled">
-                        <i class="fas fa-chevron-left"></i>
+                    <span
+                        class="prev disabled flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-gray-400 cursor-not-allowed">
+                        <i class="fas fa-chevron-left text-sm"></i>
                         <span>Önceki</span>
                     </span>
                 <?php endif; ?>
 
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <a href="?<?php echo http_build_query(array_filter(['page' => $i, 'category' => $category, 'tag' => $tag])); ?>"
-                        class="<?php echo ($i == $page) ? 'active' : ''; ?>">
+                        class="w-10 h-10 flex items-center justify-center rounded-full border font-semibold transition-all duration-300 <?php echo ($i == $page) ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                         <?php echo $i; ?>
                     </a>
                 <?php endfor; ?>
 
                 <?php if ($page < $totalPages): ?>
                     <a href="?<?php echo http_build_query(array_filter(['page' => $page + 1, 'category' => $category, 'tag' => $tag])); ?>"
-                        class="next">
+                        class="next flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300">
                         <span>Sonraki</span>
-                        <i class="fas fa-chevron-right"></i>
+                        <i class="fas fa-chevron-right text-sm"></i>
                     </a>
                 <?php else: ?>
-                    <span class="next disabled">
+                    <span
+                        class="next disabled flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-gray-400 cursor-not-allowed">
                         <span>Sonraki</span>
-                        <i class="fas fa-chevron-right"></i>
+                        <i class="fas fa-chevron-right text-sm"></i>
                     </span>
                 <?php endif; ?>
             </div>

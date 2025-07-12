@@ -1,12 +1,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
-    
     initSlider();
-    
-    
-    initMobileMenu();
 });
-
 
 function initSlider() {
     const slides = document.querySelectorAll('.slide');
@@ -60,27 +55,13 @@ function initSlider() {
     dots.forEach((dot, index) => {
         dot.addEventListener('click', () => {
             showSlide(index);
-            startSlider(); 
+            startSlider();
         });
     });
 
-    
     showSlide(0);
     startSlider();
 }
-
-
-function initMobileMenu() {
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const mobileMenu = document.getElementById('mobile-menu');
-    
-    if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', function() {
-            mobileMenu.classList.toggle('hidden');
-        });
-    }
-}
-
 
 function filterProducts(category) {
     const products = document.querySelectorAll('.product-card');

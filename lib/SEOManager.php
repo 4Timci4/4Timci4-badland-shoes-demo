@@ -3,9 +3,10 @@
 class SEOManager
 {
     private static $instance = null;
+    private $db;
     private $meta_tags = [];
     private $structured_data = [];
-    private $default_config = [];
+    private $all_settings = [];
 
     public static function getInstance()
     {
@@ -17,12 +18,14 @@ class SEOManager
 
     private function __construct()
     {
-        $this->setDefaultConfig();
+        require_once __DIR__ . '/DatabaseFactory.php';
+        $this->db = database();
+        $this->loadAllSettings();
     }
 
-    private function setDefaultConfig()
+    private function loadAllSettings()
     {
-        $this->default_config = [
+        $defaults = [
             'site_name' => 'Bandland Shoes',
             'site_description' => 'Türkiye\'nin en kaliteli ayakkabı markası. Modern tasarım, konfor ve dayanıklılığı bir araya getiren ayakkabı koleksiyonları.',
             'site_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'),
@@ -32,16 +35,34 @@ class SEOManager
             'language' => 'tr',
             'locale' => 'tr_TR',
             'author' => 'Bandland Shoes',
-            'robots' => 'index, follow',
-            'googlebot' => 'index, follow',
-            'revisit_after' => '1 days'
+            'robots' => 'index, follow'
         ];
+
+        try {
+            $site_settings_raw = $this->db->select('site_settings', [], '*');
+            $seo_settings_raw = $this->db->select('seo_settings', [], '*');
+
+            $site_settings = [];
+            foreach ($site_settings_raw as $setting) {
+                $site_settings[$setting['setting_key']] = $setting['setting_value'];
+            }
+
+            $seo_settings = [];
+            foreach ($seo_settings_raw as $setting) {
+                $seo_settings[$setting['setting_key']] = $setting['setting_value'];
+            }
+
+            $this->all_settings = array_merge($defaults, $site_settings, $seo_settings);
+        } catch (Exception $e) {
+            error_log('Failed to load settings from DB: ' . $e->getMessage());
+            $this->all_settings = $defaults;
+        }
     }
 
     public function setTitle($title, $append_site_name = true)
     {
-        if ($append_site_name && $title !== $this->default_config['site_name']) {
-            $title = $title . ' | ' . $this->default_config['site_name'];
+        if ($append_site_name && $title !== $this->getSetting('site_name')) {
+            $title = $title . ' | ' . $this->getSetting('site_name');
         }
 
         $this->meta_tags['title'] = htmlspecialchars($title);
@@ -59,15 +80,6 @@ class SEOManager
         return $this;
     }
 
-    public function setKeywords($keywords)
-    {
-        if (is_array($keywords)) {
-            $keywords = implode(', ', $keywords);
-        }
-
-        $this->meta_tags['keywords'] = htmlspecialchars($keywords);
-        return $this;
-    }
 
     public function setCanonical($url)
     {
@@ -84,13 +96,13 @@ class SEOManager
     public function setOpenGraph($data)
     {
         $defaults = [
-            'title' => $this->meta_tags['title'] ?? $this->default_config['site_name'],
-            'description' => $this->meta_tags['description'] ?? $this->default_config['site_description'],
-            'image' => $this->default_config['default_image'],
+            'title' => $this->meta_tags['title'] ?? $this->getSetting('site_name'),
+            'description' => $this->meta_tags['description'] ?? $this->getSetting('site_description'),
+            'image' => $this->getSetting('default_image'),
             'url' => $this->getCurrentURL(),
             'type' => 'website',
-            'site_name' => $this->default_config['site_name'],
-            'locale' => $this->default_config['locale']
+            'site_name' => $this->getSetting('site_name'),
+            'locale' => $this->getSetting('og_locale', 'tr_TR')
         ];
 
         $this->meta_tags['og'] = array_merge($defaults, $data);
@@ -101,10 +113,10 @@ class SEOManager
     {
         $defaults = [
             'card' => 'summary_large_image',
-            'title' => $this->meta_tags['title'] ?? $this->default_config['site_name'],
-            'description' => $this->meta_tags['description'] ?? $this->default_config['site_description'],
-            'image' => $this->default_config['default_image'],
-            'site' => $this->default_config['twitter_username']
+            'title' => $this->meta_tags['title'] ?? $this->getSetting('site_name'),
+            'description' => $this->meta_tags['description'] ?? $this->getSetting('site_description'),
+            'image' => $this->getSetting('default_image'),
+            'site' => $this->getSetting('twitter_username')
         ];
 
         $this->meta_tags['twitter'] = array_merge($defaults, $data);
@@ -122,26 +134,46 @@ class SEOManager
         return $this;
     }
 
-    public function addOrganizationSchema($data = [])
+    public function addOrganizationSchema()
     {
-        $defaults = [
-            'name' => $this->default_config['site_name'],
-            'url' => $this->default_config['site_url'],
-            'logo' => $this->default_config['site_url'] . '/assets/images/logo.png',
-            'sameAs' => [
-                'https://www.facebook.com/bandlandshoes',
-                'https://www.instagram.com/bandlandshoes',
-                'https://twitter.com/bandlandshoes'
-            ],
+        if ($this->getSetting('schema_enabled', 'false') !== 'true') {
+            return $this;
+        }
+
+        $schema = [
+            '@type' => $this->getSetting('schema_organization_type', 'Organization'),
+            'name' => $this->getSetting('schema_organization_name', $this->getSetting('site_name')),
+            'url' => $this->getSetting('schema_organization_url', $this->getSetting('site_url')),
+            'logo' => $this->getSetting('schema_organization_logo', $this->getSetting('site_url') . '/assets/images/logo.png'),
+            'description' => $this->getSetting('schema_organization_description', $this->getSetting('site_description')),
             'contactPoint' => [
                 '@type' => 'ContactPoint',
-                'telephone' => '+90-555-123-4567',
+                'telephone' => $this->getSetting('schema_organization_phone'),
                 'contactType' => 'customer service',
+                'email' => $this->getSetting('schema_organization_email'),
                 'availableLanguage' => 'Turkish'
+            ],
+            'address' => [
+                '@type' => 'PostalAddress',
+                'addressCountry' => 'TR',
+                'addressLocality' => 'Istanbul',
+                'streetAddress' => $this->getSetting('schema_organization_address')
             ]
         ];
 
-        return $this->addStructuredData('Organization', array_merge($defaults, $data));
+        $this->addStructuredData($schema['@type'], $schema);
+
+        // Add Website Schema with search action
+        $this->addStructuredData('WebSite', [
+            'url' => $this->getSetting('site_url'),
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => $this->getSetting('site_url') . '/products.php?q={search_term_string}',
+                'query-input' => 'required name=search_term_string'
+            ]
+        ]);
+
+        return $this;
     }
 
     public function addProductSchema($product_data)
@@ -150,14 +182,14 @@ class SEOManager
             '@type' => 'Product',
             'brand' => [
                 '@type' => 'Brand',
-                'name' => $this->default_config['site_name']
+                'name' => $this->getSetting('site_name')
             ],
             'offers' => [
                 '@type' => 'Offer',
                 'availability' => 'https://schema.org/InStock',
                 'seller' => [
                     '@type' => 'Organization',
-                    'name' => $this->default_config['site_name']
+                    'name' => $this->getSetting('site_name')
                 ]
             ]
         ];
@@ -171,15 +203,15 @@ class SEOManager
             '@type' => 'Article',
             'publisher' => [
                 '@type' => 'Organization',
-                'name' => $this->default_config['site_name'],
+                'name' => $this->getSetting('site_name'),
                 'logo' => [
                     '@type' => 'ImageObject',
-                    'url' => $this->default_config['site_url'] . '/assets/images/logo.png'
+                    'url' => $this->getSetting('site_url') . '/assets/images/logo.png'
                 ]
             ],
             'author' => [
                 '@type' => 'Person',
-                'name' => $this->default_config['author']
+                'name' => $this->getSetting('author')
             ],
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
@@ -207,38 +239,9 @@ class SEOManager
         ]);
     }
 
-    public function addLocalBusinessSchema($business_data = [])
+    private function getSetting($key, $default = '')
     {
-        $defaults = [
-            '@type' => 'LocalBusiness',
-            'name' => $this->default_config['site_name'],
-            'image' => $this->default_config['site_url'] . '/assets/images/store.jpg',
-            'url' => $this->default_config['site_url'],
-            'telephone' => '+90-555-123-4567',
-            'address' => [
-                '@type' => 'PostalAddress',
-                'streetAddress' => 'Bağdat Caddesi No:123',
-                'addressLocality' => 'Kadıköy',
-                'addressRegion' => 'İstanbul',
-                'postalCode' => '34710',
-                'addressCountry' => 'TR'
-            ],
-            'openingHoursSpecification' => [
-                '@type' => 'OpeningHoursSpecification',
-                'dayOfWeek' => [
-                    'Monday',
-                    'Tuesday',
-                    'Wednesday',
-                    'Thursday',
-                    'Friday',
-                    'Saturday'
-                ],
-                'opens' => '10:00',
-                'closes' => '20:00'
-            ]
-        ];
-
-        return $this->addStructuredData('LocalBusiness', array_merge($defaults, $business_data));
+        return $this->all_settings[$key] ?? $default;
     }
 
     private function getCurrentURL()
@@ -262,20 +265,13 @@ class SEOManager
             $html .= '<meta name="description" content="' . $this->meta_tags['description'] . '">' . "\n";
         }
 
-        if (isset($this->meta_tags['keywords'])) {
-            $html .= '<meta name="keywords" content="' . $this->meta_tags['keywords'] . '">' . "\n";
-        }
-
-        $robots = $this->meta_tags['robots'] ?? $this->default_config['robots'];
+        $robots = $this->meta_tags['robots'] ?? $this->getSetting('robots');
         $html .= '<meta name="robots" content="' . $robots . '">' . "\n";
-        $html .= '<meta name="googlebot" content="' . $this->default_config['googlebot'] . '">' . "\n";
 
-        $html .= '<meta name="language" content="' . $this->default_config['language'] . '">' . "\n";
-        $html .= '<meta property="og:locale" content="' . $this->default_config['locale'] . '">' . "\n";
+        $html .= '<meta name="language" content="' . $this->getSetting('language') . '">' . "\n";
+        $html .= '<meta property="og:locale" content="' . $this->getSetting('og_locale', 'tr_TR') . '">' . "\n";
 
-        $html .= '<meta name="author" content="' . $this->default_config['author'] . '">' . "\n";
-
-        $html .= '<meta name="revisit-after" content="' . $this->default_config['revisit_after'] . '">' . "\n";
+        $html .= '<meta name="author" content="' . $this->getSetting('author') . '">' . "\n";
 
         if (isset($this->meta_tags['canonical'])) {
             $html .= '<link rel="canonical" href="' . $this->meta_tags['canonical'] . '">' . "\n";
@@ -324,7 +320,7 @@ class SEOManager
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
-        $xml .= $this->addSitemapURL($this->default_config['site_url'], date('Y-m-d'), 'daily', '1.0');
+        $xml .= $this->addSitemapURL($this->getSetting('site_url'), date('Y-m-d'), 'daily', '1.0');
 
         $default_pages = [
             '/products.php' => ['weekly', '0.9'],
@@ -335,7 +331,7 @@ class SEOManager
 
         foreach ($default_pages as $page => $settings) {
             $xml .= $this->addSitemapURL(
-                $this->default_config['site_url'] . $page,
+                $this->getSetting('site_url') . $page,
                 date('Y-m-d'),
                 $settings[0],
                 $settings[1]
@@ -384,7 +380,7 @@ class SEOManager
         }
 
         $robots .= "\n";
-        $robots .= "Sitemap: " . $this->default_config['site_url'] . "/sitemap.xml\n";
+        $robots .= "Sitemap: " . $this->getSetting('site_url') . "/sitemap.xml\n";
 
         return $robots;
     }

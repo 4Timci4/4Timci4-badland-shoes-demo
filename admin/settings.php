@@ -168,7 +168,7 @@ include 'includes/header.php';
                                     <input type="color" name="primary_color"
                                         value="<?= htmlspecialchars($general_settings['primary_color'] ?? '#e91e63') ?>"
                                         class="w-12 h-10 border border-gray-300 rounded-lg">
-                                    <input type="text" name="primary_color_text"
+                                    <input type="text"
                                         value="<?= htmlspecialchars($general_settings['primary_color'] ?? '#e91e63') ?>"
                                         class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                                 </div>
@@ -179,7 +179,7 @@ include 'includes/header.php';
                                     <input type="color" name="secondary_color"
                                         value="<?= htmlspecialchars($general_settings['secondary_color'] ?? '#2c2c54') ?>"
                                         class="w-12 h-10 border border-gray-300 rounded-lg">
-                                    <input type="text" name="secondary_color_text"
+                                    <input type="text"
                                         value="<?= htmlspecialchars($general_settings['secondary_color'] ?? '#2c2c54') ?>"
                                         class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                                 </div>
@@ -331,7 +331,7 @@ include 'includes/header.php';
     document.addEventListener('DOMContentLoaded', function () {
 
         const primaryColorPicker = document.querySelector('input[name="primary_color"]');
-        const primaryColorText = document.querySelector('input[name="primary_color_text"]');
+        const primaryColorText = document.querySelector('input[name="primary_color"] + input[type="text"]');
 
         if (primaryColorPicker && primaryColorText) {
             primaryColorPicker.addEventListener('change', function () {
@@ -345,7 +345,7 @@ include 'includes/header.php';
 
 
         const secondaryColorPicker = document.querySelector('input[name="secondary_color"]');
-        const secondaryColorText = document.querySelector('input[name="secondary_color_text"]');
+        const secondaryColorText = document.querySelector('input[name="secondary_color"] + input[type="text"]');
 
         if (secondaryColorPicker && secondaryColorText) {
             secondaryColorPicker.addEventListener('change', function () {

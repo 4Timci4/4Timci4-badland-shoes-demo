@@ -47,21 +47,17 @@ switch ($current_page) {
     case 'index.php':
         $seo->setTitle('Bandland Shoes | Türkiye\'nin En Kaliteli Ayakkabı Markası', false)
             ->setDescription('Modern tasarım, konfor ve dayanıklılığı bir araya getiren ayakkabı koleksiyonları. En trend modeller ve uygun fiyatlarla.')
-            ->setKeywords(['ayakkabı', 'spor ayakkabı', 'klasik ayakkabı', 'kadın ayakkabı', 'erkek ayakkabı', 'Türkiye'])
             ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/')
             ->setOpenGraph([
                 'type' => 'website',
                 'image' => '/assets/images/og-homepage.jpg'
             ])
-            ->setTwitterCard([])
-            ->addOrganizationSchema()
-            ->addLocalBusinessSchema();
+            ->setTwitterCard([]);
         break;
 
     case 'products.php':
         $seo->setTitle('Ayakkabı Koleksiyonu')
             ->setDescription('Geniş ayakkabı koleksiyonumuzdan size uygun modeli bulun. Spor, klasik, casual ve özel tasarım ayakkabılar.')
-            ->setKeywords(['ayakkabı koleksiyonu', 'ayakkabı modelleri', 'online ayakkabı'])
             ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/products.php')
             ->setOpenGraph(['type' => 'website']);
         break;
@@ -69,14 +65,12 @@ switch ($current_page) {
     case 'about.php':
         $seo->setTitle('Hakkımızda')
             ->setDescription('Bandland Shoes\'un hikayesi, değerleri ve kalite anlayışı. Müşteri memnuniyeti odaklı hizmet yaklaşımımız.')
-            ->setKeywords(['hakkımızda', 'bandland shoes', 'kalite', 'müşteri memnuniyeti'])
             ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/about.php');
         break;
 
     case 'blog.php':
         $seo->setTitle('Blog')
             ->setDescription('Ayakkabı bakımı, moda trendleri ve stil önerileri hakkında güncel yazılarımızı okuyun.')
-            ->setKeywords(['ayakkabı blog', 'moda', 'stil önerileri', 'ayakkabı bakımı'])
             ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/blog.php')
             ->setOpenGraph(['type' => 'website']);
         break;
@@ -84,7 +78,6 @@ switch ($current_page) {
     case 'contact.php':
         $seo->setTitle('İletişim')
             ->setDescription('Bizimle iletişime geçin. Mağaza adresimiz, telefon numaralarımız ve iletişim formu.')
-            ->setKeywords(['iletişim', 'adres', 'telefon', 'mağaza'])
             ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/contact.php');
         break;
 
@@ -229,11 +222,22 @@ if (!empty($breadcrumbs)) {
             transition: all 0.3s ease;
             transform: translateY(-10px);
             opacity: 0;
+            visibility: hidden;
         }
 
         #mobile-menu.show {
             transform: translateY(0);
             opacity: 1;
+            visibility: visible;
+        }
+
+        #mobile-menu.hidden {
+            display: none !important;
+        }
+
+        /* Mobil menü içindeki tıklamaları engelleme */
+        #mobile-menu nav {
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -448,7 +452,8 @@ if (!empty($breadcrumbs)) {
         </div>
         <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
             <nav class="flex flex-col p-4 space-y-2"
-                x-data="{ openProducts: false, activeMobileGender: '<?php echo !empty($mega_menu_genders) ? $mega_menu_genders[0]['slug'] : 'kadin'; ?>' }">
+                x-data="{ openProducts: false, activeMobileGender: '<?php echo !empty($mega_menu_genders) ? $mega_menu_genders[0]['slug'] : 'kadin'; ?>' }"
+                @click.stop>
                 <a href="/index.php"
                     class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'index.php') ? 'bg-primary text-white' : ''; ?>">Ana
                     Sayfa</a>

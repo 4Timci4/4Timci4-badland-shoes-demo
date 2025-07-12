@@ -41,7 +41,6 @@ $current_url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
 $seo->setTitle($post['title'])
     ->setDescription($post['excerpt'] ?? substr(strip_tags($post['content'] ?? ''), 0, 160))
-    ->setKeywords(array_merge($tags, ['blog', 'ayakkabı', $post['category']]))
     ->setCanonical($current_url)
     ->setOpenGraph([
         'type' => 'article',

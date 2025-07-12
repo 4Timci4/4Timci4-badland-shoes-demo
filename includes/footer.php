@@ -11,9 +11,11 @@ $footer_info = $contactService->getFooterInfo();
             <div class="space-y-4">
                 <h2 class="text-2xl font-semibold">
                     <?= htmlspecialchars($footer_info['footer']['site_title'] ?? 'Schön') ?><span
-                        class="text-primary">.</span></h2>
+                        class="text-primary">.</span>
+                </h2>
                 <p class="text-gray-300 leading-relaxed">
-                    <?= htmlspecialchars($footer_info['footer']['site_description'] ?? '') ?></p>
+                    <?= htmlspecialchars($footer_info['footer']['site_description'] ?? '') ?>
+                </p>
                 <div class="flex space-x-4 mt-5">
                     <?php foreach ($footer_info['social_links'] as $social): ?>
                         <a href="<?= htmlspecialchars($social['url']) ?>"
@@ -197,17 +199,29 @@ if (isset($seo)) {
             const mobileMenu = document.getElementById('mobile-menu');
 
             if (mobileMenuButton && mobileMenu) {
-                mobileMenuButton.addEventListener('click', () => {
+                // Eğer buton zaten event listener'a sahipse, yeni ekleme
+                if (mobileMenuButton.hasAttribute('data-menu-initialized')) {
+                    return;
+                }
+
+                // Butonun initialize edildiğini işaretle
+                mobileMenuButton.setAttribute('data-menu-initialized', 'true');
+
+                mobileMenuButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     const isHidden = mobileMenu.classList.contains('hidden');
 
                     if (isHidden) {
-
+                        // Menüyü aç
                         mobileMenu.classList.remove('hidden');
-                        setTimeout(() => {
+                        // Animasyon için kısa gecikme
+                        requestAnimationFrame(() => {
                             mobileMenu.classList.add('show');
-                        }, 10);
+                        });
                     } else {
-
+                        // Menüyü kapat
                         mobileMenu.classList.remove('show');
                         setTimeout(() => {
                             mobileMenu.classList.add('hidden');
@@ -215,7 +229,7 @@ if (isset($seo)) {
                     }
                 });
 
-
+                // Menü dışına tıklanınca kapat
                 document.addEventListener('click', (e) => {
                     if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
                         if (!mobileMenu.classList.contains('hidden')) {
@@ -224,6 +238,16 @@ if (isset($seo)) {
                                 mobileMenu.classList.add('hidden');
                             }, 300);
                         }
+                    }
+                });
+
+                // ESC tuşu ile kapat
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.remove('show');
+                        setTimeout(() => {
+                            mobileMenu.classList.add('hidden');
+                        }, 300);
                     }
                 });
             }
