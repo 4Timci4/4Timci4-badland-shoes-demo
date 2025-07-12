@@ -1,43 +1,40 @@
 <?php
-/**
- * Renkler & Bedenler Yönetimi Sayfası
- * Modern, kullanıcı dostu özellik yönetim paneli
- */
+
 
 require_once 'config/auth.php';
 check_admin_auth();
 
-// Veritabanı bağlantısı
+
 require_once '../config/database.php';
 require_once '../services/AttributeService.php';
 
-// Sayfa bilgileri
+
 $page_title = 'Renkler & Bedenler';
 $breadcrumb_items = [
     ['title' => 'Renkler & Bedenler', 'url' => '#', 'icon' => 'fas fa-palette']
 ];
 
-// Aktif sekme kontrolü
+
 $active_tab = $_GET['tab'] ?? 'colors';
 if (!in_array($active_tab, ['colors', 'sizes'])) {
     $active_tab = 'colors';
 }
 
-// POST işlemleri
+
 if ($_POST) {
     $csrf_token = $_POST['csrf_token'] ?? '';
-    
+
     if (!verify_csrf_token($csrf_token)) {
         set_flash_message('error', 'Güvenlik hatası. Lütfen tekrar deneyin.');
     } else {
         $action = $_POST['action'] ?? '';
         $type = $_POST['type'] ?? '';
-        
+
         switch ($action) {
             case 'add_color':
                 $name = trim($_POST['name'] ?? '');
                 $hex_code = trim($_POST['hex_code'] ?? '');
-                
+
                 if (empty($name) || empty($hex_code)) {
                     set_flash_message('error', 'Renk adı ve hex kodu zorunludur.');
                 } else {
@@ -48,12 +45,12 @@ if ($_POST) {
                     }
                 }
                 break;
-                
+
             case 'edit_color':
                 $color_id = intval($_POST['color_id'] ?? 0);
                 $name = trim($_POST['name'] ?? '');
                 $hex_code = trim($_POST['hex_code'] ?? '');
-                
+
                 if ($color_id > 0 && !empty($name) && !empty($hex_code)) {
                     if (attribute_service()->updateColor($color_id, ['name' => $name, 'hex_code' => $hex_code])) {
                         set_flash_message('success', 'Renk başarıyla güncellendi.');
@@ -62,10 +59,10 @@ if ($_POST) {
                     }
                 }
                 break;
-                
+
             case 'delete_color':
                 $color_id = intval($_POST['color_id'] ?? 0);
-                
+
                 if ($color_id > 0) {
                     if (attribute_service()->deleteColor($color_id)) {
                         set_flash_message('success', 'Renk başarıyla silindi.');
@@ -74,10 +71,10 @@ if ($_POST) {
                     }
                 }
                 break;
-                
+
             case 'add_size':
                 $name = trim($_POST['name'] ?? '');
-                
+
                 if (empty($name)) {
                     set_flash_message('error', 'Beden adı zorunludur.');
                 } else {
@@ -88,11 +85,11 @@ if ($_POST) {
                     }
                 }
                 break;
-                
+
             case 'edit_size':
                 $size_id = intval($_POST['size_id'] ?? 0);
                 $name = trim($_POST['name'] ?? '');
-                
+
                 if ($size_id > 0 && !empty($name)) {
                     if (attribute_service()->updateSize($size_id, ['name' => $name])) {
                         set_flash_message('success', 'Beden başarıyla güncellendi.');
@@ -101,10 +98,10 @@ if ($_POST) {
                     }
                 }
                 break;
-                
+
             case 'delete_size':
                 $size_id = intval($_POST['size_id'] ?? 0);
-                
+
                 if ($size_id > 0) {
                     if (attribute_service()->deleteSize($size_id)) {
                         set_flash_message('success', 'Beden başarıyla silindi.');
@@ -113,10 +110,10 @@ if ($_POST) {
                     }
                 }
                 break;
-                
+
             case 'update_size_order':
                 $order_data = json_decode($_POST['order_data'] ?? '[]', true);
-                
+
                 if (!empty($order_data)) {
                     if (attribute_service()->updateSizeOrder($order_data)) {
                         set_flash_message('success', 'Beden sıralaması güncellendi.');
@@ -126,18 +123,18 @@ if ($_POST) {
                 }
                 break;
         }
-        
-        // Redirect to maintain tab
+
+
         header('Location: attributes.php?tab=' . $active_tab);
         exit;
     }
 }
 
-// Veri getirme
+
 $colors = attribute_service()->getColorsWithUsageCounts();
 $sizes = attribute_service()->getSizesWithUsageCounts();
 
-// Düzenleme modu kontrolü
+
 $edit_mode = isset($_GET['edit']) && !empty($_GET['edit']);
 $edit_type = $_GET['type'] ?? '';
 $edit_item = null;
@@ -149,19 +146,19 @@ if ($edit_mode) {
     } elseif ($edit_type === 'size') {
         $edit_item = attribute_service()->getSizeById($edit_id);
     }
-    
+
     if (empty($edit_item)) {
         $edit_mode = false;
     }
 }
 
-// Header dahil et
+
 include 'includes/header.php';
 ?>
 
 <!-- Attributes Management Content -->
 <div class="space-y-6">
-    
+
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -169,7 +166,8 @@ include 'includes/header.php';
             <p class="text-gray-600">Ürün özelliklerini yönetin ve düzenleyin</p>
         </div>
         <div class="mt-4 lg:mt-0">
-            <a href="products.php" class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+            <a href="products.php"
+                class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
                 <i class="fas fa-box mr-2"></i>
                 Ürünlere Dön
             </a>
@@ -184,7 +182,7 @@ include 'includes/header.php';
         $text_color = $flash_message['type'] === 'success' ? 'text-green-800' : 'text-red-800';
         $icon = $flash_message['type'] === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
         $icon_color = $flash_message['type'] === 'success' ? 'text-green-500' : 'text-red-500';
-    ?>
+        ?>
         <div class="<?= $bg_color ?> border rounded-xl p-4 flex items-center">
             <i class="fas <?= $icon ?> <?= $icon_color ?> mr-3"></i>
             <span class="<?= $text_color ?> font-medium"><?= htmlspecialchars($flash_message['message']) ?></span>
@@ -195,13 +193,13 @@ include 'includes/header.php';
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="border-b border-gray-100">
             <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                <a href="attributes.php?tab=colors" 
-                   class="border-b-2 py-4 px-1 text-sm font-medium transition-colors <?= $active_tab === 'colors' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?>">
+                <a href="attributes.php?tab=colors"
+                    class="border-b-2 py-4 px-1 text-sm font-medium transition-colors <?= $active_tab === 'colors' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?>">
                     <i class="fas fa-palette mr-2"></i>
                     Renkler (<?= count($colors) ?>)
                 </a>
-                <a href="attributes.php?tab=sizes" 
-                   class="border-b-2 py-4 px-1 text-sm font-medium transition-colors <?= $active_tab === 'sizes' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?>">
+                <a href="attributes.php?tab=sizes"
+                    class="border-b-2 py-4 px-1 text-sm font-medium transition-colors <?= $active_tab === 'sizes' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?>">
                     <i class="fas fa-ruler mr-2"></i>
                     Bedenler (<?= count($sizes) ?>)
                 </a>
@@ -218,24 +216,21 @@ include 'includes/header.php';
                     </h3>
                     <form method="POST" class="space-y-4">
                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-                        <input type="hidden" name="action" value="<?= ($edit_mode && $edit_type === 'color') ? 'edit_color' : 'add_color' ?>">
+                        <input type="hidden" name="action"
+                            value="<?= ($edit_mode && $edit_type === 'color') ? 'edit_color' : 'add_color' ?>">
                         <?php if ($edit_mode && $edit_type === 'color'): ?>
                             <input type="hidden" name="color_id" value="<?= $edit_item['id'] ?>">
                         <?php endif; ?>
-                        
+
                         <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                             <!-- Color Name -->
                             <div class="lg:col-span-2">
                                 <label for="color_name" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-tag mr-2"></i>Renk Adı *
                                 </label>
-                                <input type="text" 
-                                       id="color_name" 
-                                       name="name" 
-                                       required
-                                       value="<?= htmlspecialchars($edit_item['name'] ?? '') ?>"
-                                       placeholder="Örn: Kırmızı"
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                <input type="text" id="color_name" name="name" required
+                                    value="<?= htmlspecialchars($edit_item['name'] ?? '') ?>" placeholder="Örn: Kırmızı"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
 
                             <!-- Color Picker -->
@@ -243,25 +238,23 @@ include 'includes/header.php';
                                 <label for="color_hex" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-palette mr-2"></i>Renk Kodu *
                                 </label>
-                                <input type="color" 
-                                       id="color_hex" 
-                                       name="hex_code" 
-                                       required
-                                       value="<?= htmlspecialchars($edit_item['hex_code'] ?? '#000000') ?>"
-                                       class="w-full h-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                <input type="color" id="color_hex" name="hex_code" required
+                                    value="<?= htmlspecialchars($edit_item['hex_code'] ?? '#000000') ?>"
+                                    class="w-full h-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
 
                             <!-- Submit Button -->
                             <div class="lg:self-end">
                                 <div class="flex space-x-2">
-                                    <button type="submit" 
-                                            class="flex-1 bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
-                                        <i class="fas <?= ($edit_mode && $edit_type === 'color') ? 'fa-save' : 'fa-plus' ?> mr-2"></i>
+                                    <button type="submit"
+                                        class="flex-1 bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
+                                        <i
+                                            class="fas <?= ($edit_mode && $edit_type === 'color') ? 'fa-save' : 'fa-plus' ?> mr-2"></i>
                                         <?= ($edit_mode && $edit_type === 'color') ? 'Güncelle' : 'Ekle' ?>
                                     </button>
                                     <?php if ($edit_mode && $edit_type === 'color'): ?>
-                                        <a href="attributes.php?tab=colors" 
-                                           class="bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
+                                        <a href="attributes.php?tab=colors"
+                                            class="bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
                                             <i class="fas fa-times"></i>
                                         </a>
                                     <?php endif; ?>
@@ -277,34 +270,37 @@ include 'includes/header.php';
                     <?php if (!empty($colors)): ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <?php foreach ($colors as $color): ?>
-                                <div class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow <?= ($edit_mode && $edit_type === 'color' && $edit_item['id'] == $color['id']) ? 'ring-2 ring-primary-500' : '' ?>">
+                                <div
+                                    class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow <?= ($edit_mode && $edit_type === 'color' && $edit_item['id'] == $color['id']) ? 'ring-2 ring-primary-500' : '' ?>">
                                     <div class="flex items-center space-x-4 mb-3">
-                                        <div class="w-8 h-8 rounded-full border-2 border-gray-200" 
-                                             style="background-color: <?= htmlspecialchars($color['hex_code']) ?>"></div>
+                                        <div class="w-8 h-8 rounded-full border-2 border-gray-200"
+                                            style="background-color: <?= htmlspecialchars($color['hex_code']) ?>"></div>
                                         <div class="flex-1">
                                             <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($color['name']) ?></h4>
-                                            <p class="text-sm text-gray-500 font-mono"><?= htmlspecialchars($color['hex_code']) ?></p>
+                                            <p class="text-sm text-gray-500 font-mono"><?= htmlspecialchars($color['hex_code']) ?>
+                                            </p>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="flex items-center justify-between">
                                         <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                                             <?= $color['usage_count'] ?> kullanım
                                         </span>
-                                        
+
                                         <div class="flex space-x-1">
-                                            <a href="attributes.php?tab=colors&edit=<?= $color['id'] ?>&type=color" 
-                                               class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs">
+                                            <a href="attributes.php?tab=colors&edit=<?= $color['id'] ?>&type=color"
+                                                class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            
+
                                             <?php if ($color['usage_count'] == 0): ?>
-                                                <form method="POST" class="inline-block" onsubmit="return confirm('Bu rengi silmek istediğinizden emin misiniz?')">
+                                                <form method="POST" class="inline-block"
+                                                    onsubmit="return confirm('Bu rengi silmek istediğinizden emin misiniz?')">
                                                     <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                     <input type="hidden" name="action" value="delete_color">
                                                     <input type="hidden" name="color_id" value="<?= $color['id'] ?>">
-                                                    <button type="submit" 
-                                                            class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs">
+                                                    <button type="submit"
+                                                        class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -338,37 +334,36 @@ include 'includes/header.php';
                     </h3>
                     <form method="POST" class="space-y-4">
                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-                        <input type="hidden" name="action" value="<?= ($edit_mode && $edit_type === 'size') ? 'edit_size' : 'add_size' ?>">
+                        <input type="hidden" name="action"
+                            value="<?= ($edit_mode && $edit_type === 'size') ? 'edit_size' : 'add_size' ?>">
                         <?php if ($edit_mode && $edit_type === 'size'): ?>
                             <input type="hidden" name="size_id" value="<?= $edit_item['id'] ?>">
                         <?php endif; ?>
-                        
+
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                             <!-- Size Name -->
                             <div class="lg:col-span-2">
                                 <label for="size_name" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-ruler mr-2"></i>Beden Adı *
                                 </label>
-                                <input type="text" 
-                                       id="size_name" 
-                                       name="name" 
-                                       required
-                                       value="<?= htmlspecialchars($edit_item['size_value'] ?? '') ?>"
-                                       placeholder="Örn: 42, Large, XL"
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                <input type="text" id="size_name" name="name" required
+                                    value="<?= htmlspecialchars($edit_item['size_value'] ?? '') ?>"
+                                    placeholder="Örn: 42, Large, XL"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
 
                             <!-- Submit Button -->
                             <div class="lg:self-end">
                                 <div class="flex space-x-2">
-                                    <button type="submit" 
-                                            class="flex-1 bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
-                                        <i class="fas <?= ($edit_mode && $edit_type === 'size') ? 'fa-save' : 'fa-plus' ?> mr-2"></i>
+                                    <button type="submit"
+                                        class="flex-1 bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center">
+                                        <i
+                                            class="fas <?= ($edit_mode && $edit_type === 'size') ? 'fa-save' : 'fa-plus' ?> mr-2"></i>
                                         <?= ($edit_mode && $edit_type === 'size') ? 'Güncelle' : 'Ekle' ?>
                                     </button>
                                     <?php if ($edit_mode && $edit_type === 'size'): ?>
-                                        <a href="attributes.php?tab=sizes" 
-                                           class="bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
+                                        <a href="attributes.php?tab=sizes"
+                                            class="bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center">
                                             <i class="fas fa-times"></i>
                                         </a>
                                     <?php endif; ?>
@@ -389,41 +384,44 @@ include 'includes/header.php';
                             </p>
                         <?php endif; ?>
                     </div>
-                    
+
                     <?php if (!empty($sizes)): ?>
                         <div id="sizes-list" class="space-y-2">
                             <?php foreach ($sizes as $size): ?>
-                                <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-move hover:shadow-md transition-shadow <?= ($edit_mode && $edit_type === 'size' && $edit_item['id'] == $size['id']) ? 'ring-2 ring-primary-500' : '' ?>" 
-                                     data-size-id="<?= $size['id'] ?>">
+                                <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-move hover:shadow-md transition-shadow <?= ($edit_mode && $edit_type === 'size' && $edit_item['id'] == $size['id']) ? 'ring-2 ring-primary-500' : '' ?>"
+                                    data-size-id="<?= $size['id'] ?>">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-4">
                                             <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                                                 <i class="fas fa-grip-vertical text-gray-400"></i>
                                             </div>
                                             <div>
-                                                <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($size['size_value']) ?></h4>
-                                                <p class="text-sm text-gray-500">Type: <?= htmlspecialchars($size['size_type']) ?></p>
+                                                <h4 class="font-semibold text-gray-900"><?= htmlspecialchars($size['size_value']) ?>
+                                                </h4>
+                                                <p class="text-sm text-gray-500">Type: <?= htmlspecialchars($size['size_type']) ?>
+                                                </p>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="flex items-center space-x-4">
                                             <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                                                 <?= $size['usage_count'] ?> kullanım
                                             </span>
-                                            
+
                                             <div class="flex space-x-1">
-                                                <a href="attributes.php?tab=sizes&edit=<?= $size['id'] ?>&type=size" 
-                                                   class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs">
+                                                <a href="attributes.php?tab=sizes&edit=<?= $size['id'] ?>&type=size"
+                                                    class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                
+
                                                 <?php if ($size['usage_count'] == 0): ?>
-                                                    <form method="POST" class="inline-block" onsubmit="return confirm('Bu bedeni silmek istediğinizden emin misiniz?')">
+                                                    <form method="POST" class="inline-block"
+                                                        onsubmit="return confirm('Bu bedeni silmek istediğinizden emin misiniz?')">
                                                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                         <input type="hidden" name="action" value="delete_size">
                                                         <input type="hidden" name="size_id" value="<?= $size['id'] ?>">
-                                                        <button type="submit" 
-                                                                class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs">
+                                                        <button type="submit"
+                                                            class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
@@ -465,19 +463,19 @@ include 'includes/header.php';
 </div>
 
 <!-- Sortable.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https:
 
 <!-- JavaScript for enhanced UX -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Sortable sizes list
+    
     const sizesList = document.getElementById('sizes-list');
     if (sizesList) {
         new Sortable(sizesList, {
             animation: 150,
             ghostClass: 'opacity-50',
             onEnd: function(evt) {
-                // Collect new order
+                
                 const orderData = {};
                 const items = sizesList.querySelectorAll('[data-size-id]');
                 
@@ -486,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     orderData[sizeId] = index + 1;
                 });
                 
-                // Send update request
+                
                 const formData = new FormData();
                 formData.append('csrf_token', '<?= generate_csrf_token() ?>');
                 formData.append('action', 'update_size_order');
@@ -498,47 +496,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(response => response.text())
                 .then(() => {
-                    // Show success message (optional)
+                    
                     console.log('Order updated successfully');
                 })
                 .catch(error => {
                     console.error('Error updating order:', error);
-                    // Reload page on error
+                    
                     window.location.reload();
                 });
             }
         });
     }
     
-    // Color picker preview
+    
     const colorInput = document.getElementById('color_hex');
     if (colorInput) {
         colorInput.addEventListener('input', function() {
-            // Visual feedback could be added here
+            
         });
     }
     
-    // Form submission loading states
+    
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                const btnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>İşleniyor...';
-                
-                // Re-enable after 3 seconds as fallback
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = btnText;
-                }, 3000);
+            const submitBtn = this.querySelector('button[type=" submit"]'); if (submitBtn) { const
+    btnText=submitBtn.innerHTML; submitBtn.disabled=true;
+    submitBtn.innerHTML='<i class="fas fa-spinner animate-spin mr-2"></i>İşleniyor...' ; setTimeout(()=> {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = btnText;
+        }, 3000);
             }
         });
     });
 });
-</script>
+    </script>
 
 <?php
-// Footer dahil et
+
 include 'includes/footer.php';
 ?>

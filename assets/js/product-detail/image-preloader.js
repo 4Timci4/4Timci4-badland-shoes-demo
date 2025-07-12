@@ -1,4 +1,4 @@
-// Görsel önbelleğe alma
+
 export function initializeImagePreloader(state) {
     function preloadColorImages() {
         try {
@@ -10,13 +10,13 @@ export function initializeImagePreloader(state) {
             const colorImageData = JSON.parse(colorImageDataElement.textContent);
             const preloadPromises = [];
             
-            // Önce seçili rengin görsellerini yükle
+            
             if (state.selectedColor && colorImageData[state.selectedColor]) {
                 const selectedColorImages = colorImageData[state.selectedColor];
                 preloadSelectedColorImages(selectedColorImages, preloadPromises);
             }
             
-            // Sonra diğer renklerin görsellerini yükle
+            
             Object.keys(colorImageData).forEach(colorId => {
                 if (colorId != state.selectedColor) {
                     const images = colorImageData[colorId];
@@ -33,20 +33,20 @@ export function initializeImagePreloader(state) {
     
     function preloadSelectedColorImages(images, promises) {
         images.forEach(image => {
-            // Ana görsel
+            
             const imgPromise = new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => {
                     state.imageCache.set(image.image_url, img);
                     resolve();
                 };
-                img.onerror = () => resolve(); // Hata durumunda da devam et
+                img.onerror = () => resolve(); 
                 img.src = image.image_url;
-                img.importance = "high"; // Tarayıcıya yüksek öncelik bildir
+                img.importance = "high"; 
             });
             promises.push(imgPromise);
             
-            // WebP varsa onu da yükle
+            
             if (image.webp_url) {
                 const webpPromise = new Promise((resolve) => {
                     const webpImg = new Image();
@@ -61,7 +61,7 @@ export function initializeImagePreloader(state) {
                 promises.push(webpPromise);
             }
             
-            // Thumbnail varsa
+            
             if (image.thumbnail_url) {
                 const thumbPromise = new Promise((resolve) => {
                     const thumbImg = new Image();
@@ -80,7 +80,7 @@ export function initializeImagePreloader(state) {
     
     function preloadColorImagesWithLowPriority(images, promises) {
         images.forEach(image => {
-            // Ana görsel
+            
             const imgPromise = new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => {
@@ -89,11 +89,11 @@ export function initializeImagePreloader(state) {
                 };
                 img.onerror = () => resolve();
                 img.src = image.image_url;
-                img.importance = "low"; // Tarayıcıya düşük öncelik bildir
+                img.importance = "low"; 
             });
             promises.push(imgPromise);
             
-            // WebP varsa onu da yükle
+            
             if (image.webp_url) {
                 const webpPromise = new Promise((resolve) => {
                     const webpImg = new Image();
@@ -111,7 +111,7 @@ export function initializeImagePreloader(state) {
     }
     
     function updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl) {
-        // WebP source'u güncelle
+        
         if (webpUrl) {
             const existingSource = mainPicture.querySelector('source[type="image/webp"]');
             if (existingSource) {
@@ -124,16 +124,16 @@ export function initializeImagePreloader(state) {
             }
         }
         
-        // Ana resim özelliklerini güncelle
+        
         mainImage.src = imageUrl;
         mainImage.setAttribute('data-original', originalUrl);
         mainImage.alt = altText;
     }
     
-    // Preloading'i hemen başlat
+    
     preloadColorImages();
     
-    // Public API
+    
     return {
         changeMainImage: (imageData, thumbnail, isPreview = false) => {
             const mainImage = document.getElementById('main-product-image');
@@ -142,7 +142,7 @@ export function initializeImagePreloader(state) {
             
             let imageUrl, originalUrl, altText, webpUrl;
             
-            // imageData bir obje mi yoksa string mi kontrol et
+            
             if (typeof imageData === 'string') {
                 imageUrl = imageData;
                 originalUrl = imageData;
@@ -154,27 +154,27 @@ export function initializeImagePreloader(state) {
                 webpUrl = imageData.webp_url;
             }
             
-            // Önizleme modu için farklı geçiş efekti
+            
             if (isPreview) {
                 mainImage.classList.add('preview-mode');
             } else {
                 mainImage.classList.remove('preview-mode');
             }
             
-            // Fade out efekti
+            
             mainImage.style.opacity = '0';
             
-            // Yeni resim cache'de var mı kontrol et
+            
             const cachedImage = state.imageCache.get(imageUrl);
             
             if (cachedImage) {
-                // Cache'den hızlıca yükle
+                
                 setTimeout(() => {
                     updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl);
                     mainImage.style.opacity = '1';
-                }, 50); // Daha hızlı geçiş için süreyi azalttık
+                }, 50); 
             } else {
-                // Yeni resmi yükle
+                
                 const newImage = new Image();
                 newImage.onload = function() {
                     state.imageCache.set(imageUrl, newImage);
@@ -182,13 +182,13 @@ export function initializeImagePreloader(state) {
                     mainImage.style.opacity = '1';
                 };
                 newImage.onerror = function() {
-                    // Hata durumunda opacity'yi geri getir
+                    
                     mainImage.style.opacity = '1';
                 };
                 newImage.src = imageUrl;
             }
             
-            // Thumbnail border'larını güncelle (sadece thumbnail varsa ve önizleme modu değilse)
+            
             if (thumbnail && !isPreview) {
                 document.querySelectorAll('.thumbnail, .thumbnail-item').forEach(thumb => {
                     thumb.classList.remove('border-primary', 'border-blue-500', 'border-opacity-100');

@@ -1,23 +1,15 @@
 <?php
-/**
- * =================================================================
- * OPTIMIZED PRODUCTS PAGE - FINAL VERSION
- * =================================================================
- * This is the final, optimized version of products.php, relying
- * entirely on Materialized Views for high performance.
- * =================================================================
- */
 
-// Session yönetimini etkinleştir
+
 require_once 'services/AuthService.php';
 $authService = new AuthService();
 
-// Required optimized services
+
 require_once 'services/CategoryService.php';
 require_once 'services/Product/ProductApiService.php';
 require_once 'services/GenderService.php';
 
-// --- Parameter Handling ---
+
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = 9;
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
@@ -25,19 +17,19 @@ $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET[
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
 $featured_filter = isset($_GET['featured']) ? (bool)$_GET['featured'] : null;
 
-// --- Service Initialization ---
+
 $category_service = category_service();
 $product_api_service = product_api_service();
 
-// --- Data Fetching (Optimized with Materialized Views) ---
 
-// Fetch categories with counts directly from the view
+
+
 $categories = $category_service->getCategoriesWithProductCountsOptimized(true);
 
-// Fetch genders with counts directly from the view
+
 $genders = gender_service()->getGendersWithProductCounts();
 
-// Fetch products using slugs directly
+
 $products_result = $product_api_service->getProductsForApi([
     'page' => $page,
     'limit' => $limit,
@@ -65,7 +57,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
 <body>
     <?php include 'includes/header.php'; ?>
     
-    <!-- Breadcrumb -->
     <section class="bg-gray-50 py-4 border-b">
         <div class="max-w-7xl mx-auto px-5">
             <nav class="text-sm">
@@ -78,26 +69,22 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
         </div>
     </section>
 
-    <!-- Page Title -->
     <section class="bg-white py-12">
         <div class="max-w-7xl mx-auto px-5 text-center">
             <h1 class="text-5xl font-bold text-secondary mb-4 tracking-tight">AYAKKABI KOLEKSİYONU</h1>
         </div>
     </section>
 
-    <!-- Main Content -->
     <section class="py-8 bg-white">
         <div class="max-w-7xl mx-auto px-5">
             <form method="GET" action="products.php" id="filter-form">
                 <div class="flex flex-col lg:flex-row gap-8">
                     
-                    <!-- Sol Sidebar - Filtreler -->
                     <aside class="lg:w-1/4">
                         <div class="bg-gray-50 p-6 rounded-lg">
                             <h3 class="text-xl font-bold text-secondary mb-6">FİLTRELE</h3>
                             
                             <div class="space-y-6">
-                            <!-- Kategori Filtreleri -->
                             <div class="border-b pb-6">
                                 <h4 class="font-semibold text-secondary mb-4">Kategoriler</h4>
                                 <div class="space-y-2 max-h-48 overflow-y-auto">
@@ -115,7 +102,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                 </div>
                             </div>
                             
-                            <!-- Cinsiyet Filtreleri -->
                             <div class="border-b pb-6">
                                 <h4 class="font-semibold text-secondary mb-4">Cinsiyet</h4>
                                 <div class="space-y-2">
@@ -133,7 +119,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                 </div>
                             </div>
                             
-                            <!-- Öne Çıkanlar -->
                             <div class="pb-6">
                                 <label class="flex items-center cursor-pointer">
                                     <input type="checkbox" name="featured" value="1"
@@ -145,15 +130,12 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                         </div>
                     </aside>
                 
-                <!-- Sağ İçerik Alanı -->
                 <main class="lg:w-3/4">
-                    <!-- Sonuç Sayısı ve Sıralama -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div class="text-gray-600" id="product-count-display">
                             <strong><?php echo number_format($total_products); ?></strong> ürün bulundu
                         </div>
                         
-                        <!-- Sıralama -->
                         <div class="flex items-center gap-2">
                             <span class="text-sm text-gray-600">Sırala:</span>
                             <select name="sort" id="sort-filter" class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-sm">
@@ -165,7 +147,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                         </div>
                     </div>
                     
-                    <!-- Ürün Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="product-grid">
                         <?php if (!empty($products)): ?>
                             <?php foreach ($products as $product): ?>
@@ -222,7 +203,6 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                         <?php endif; ?>
                     </div>
                     
-                    <!-- Sayfalama -->
                     <?php if ($total_pages > 1): ?>
                         <div class="flex justify-center mt-12">
                             <nav class="flex items-center gap-2" id="pagination-container">

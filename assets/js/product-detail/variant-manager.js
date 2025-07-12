@@ -1,24 +1,24 @@
-// Varyant verilerini yönetir
+
 export function initializeVariantData(state, productVariants) {
-    // Varyant verilerini indeksle
+    
     productVariants.forEach(variant => {
         const key = `${variant.color_id}-${variant.size_id}`;
         state.variantMap.set(key, variant);
         
-        // Renge göre varyantları grupla
+        
         if (!state.variantsByColor.has(variant.color_id)) {
             state.variantsByColor.set(variant.color_id, []);
         }
         state.variantsByColor.get(variant.color_id).push(variant);
         
-        // Bedene göre varyantları grupla
+        
         if (!state.variantsBySize.has(variant.size_id)) {
             state.variantsBySize.set(variant.size_id, []);
         }
         state.variantsBySize.get(variant.size_id).push(variant);
     });
     
-    // Public API
+    
     return {
         findVariant: (colorId, sizeId) => {
             const key = `${colorId}-${sizeId}`;
@@ -38,14 +38,14 @@ export function initializeVariantData(state, productVariants) {
             return sizes.sort((a, b) => a.size_value.localeCompare(b.size_value, undefined, {numeric: true}));
         },
         
-        // Ürüne tanımlı bedenleri döndür, mevcut olmayanları işaretle
+        
         getAllSizesWithAvailability: (colorId, allSizesData) => {
             const variants = state.variantsByColor.get(colorId) || [];
             const availableSizeIds = [...new Set(variants.map(v => v.size_id))];
             
-            // Sadece seçili renge ait varyantların kullandığı bedenleri filtrele
+            
             const productSizes = allSizesData.filter(size => {
-                // Veri tiplerinin (string/number) uyuşmazlığını önlemek için parseInt kullan
+                
                 return variants.some(v => parseInt(v.size_id) === parseInt(size.id));
             });
             
@@ -69,7 +69,7 @@ export function initializeVariantData(state, productVariants) {
                 );
                 
                 if (variant && variant.stock_quantity > 0) {
-                    // Fiyatı güncelle
+                    
                     if (variant.price && currentPriceElement) {
                         currentPriceElement.textContent = '₺ ' + parseFloat(variant.price).toLocaleString('tr-TR', {
                             minimumFractionDigits: 2,
@@ -92,12 +92,12 @@ export function initializeVariantData(state, productVariants) {
         },
         
         reinitialize: (newVariants) => {
-            // Haritaları temizle
+            
             state.variantMap.clear();
             state.variantsByColor.clear();
             state.variantsBySize.clear();
             
-            // Yeni verilerle haritaları yeniden doldur
+            
             newVariants.forEach(variant => {
                 const key = `${variant.color_id}-${variant.size_id}`;
                 state.variantMap.set(key, variant);

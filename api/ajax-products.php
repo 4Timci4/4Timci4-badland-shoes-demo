@@ -1,26 +1,26 @@
 <?php
-// Bu dosya, AJAX istekleri için yalnızca ürün listesi, sayfalama ve ürün sayısı HTML'ini döndürür.
 
-// API bootstrap dosyasını dahil et (session kontrolü, yetkilendirme vb.)
+
+
 require_once __DIR__ . '/api_bootstrap.php';
 require_once '../services/CategoryService.php';
 require_once '../services/Product/ProductApiService.php';
 require_once '../services/GenderService.php';
 
-// Parametreleri al
+
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = 9;
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
 $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
-$featured_filter = isset($_GET['featured']) ? (bool)$_GET['featured'] : null;
+$featured_filter = isset($_GET['featured']) ? (bool) $_GET['featured'] : null;
 
-// Servisleri başlat
+
 $category_service = category_service();
 $product_api_service = product_api_service();
 $gender_service = gender_service();
 
-// Ürünleri doğrudan slug'lar ile al
+
 $products_result = $product_api_service->getProductsForApi([
     'page' => $page,
     'limit' => $limit,
@@ -34,13 +34,13 @@ $products = $products_result['products'];
 $total_products = $products_result['total'];
 $total_pages = isset($products_result['pages']) ? $products_result['pages'] : ceil($total_products / $limit);
 
-// Response için HTML oluştur
+
 ob_start();
 
-// 1. Ürün Grid HTML'i
+
 if (!empty($products)) {
     foreach ($products as $product) {
-        // Bu kısım products.php'deki ürün kartı ile aynı olmalı
+
         echo '<div class="product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">';
         echo '    <div class="relative overflow-hidden bg-gray-100 aspect-square">';
         echo '        <img src="' . htmlspecialchars($product['primary_image'] ?? 'assets/images/placeholder.svg') . '" alt="' . htmlspecialchars($product['name']) . '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">';
@@ -80,7 +80,7 @@ if (!empty($products)) {
 }
 $products_html = ob_get_clean();
 
-// 2. Sayfalama HTML'i
+
 ob_start();
 if ($total_pages > 1) {
     $start_page = max(1, $page - 2);
@@ -95,26 +95,29 @@ if ($total_pages > 1) {
     }
 
     if ($page > 1) {
-        echo '<a href="?page=' . ($page - 1) . '&' . http_build_query(array_filter($_GET, function($k) { return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>';
+        echo '<a href="?page=' . ($page - 1) . '&' . http_build_query(array_filter($_GET, function ($k) {
+            return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>';
     }
 
     for ($i = $start_page; $i <= $end_page; $i++) {
-        echo '<a href="?page=' . $i . '&' . http_build_query(array_filter($_GET, function($k) { return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-4 py-2 rounded transition-all ' . ($i === $page ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white') . '">' . $i . '</a>';
+        echo '<a href="?page=' . $i . '&' . http_build_query(array_filter($_GET, function ($k) {
+            return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-4 py-2 rounded transition-all ' . ($i === $page ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white') . '">' . $i . '</a>';
     }
 
     if ($page < $total_pages) {
-        echo '<a href="?page=' . ($page + 1) . '&' . http_build_query(array_filter($_GET, function($k) { return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>';
+        echo '<a href="?page=' . ($page + 1) . '&' . http_build_query(array_filter($_GET, function ($k) {
+            return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>';
     }
 }
 $pagination_html = ob_get_clean();
 
 
-// 3. Ürün Sayısı HTML'i
+
 ob_start();
 echo '<strong>' . number_format($total_products) . '</strong> ürün bulundu';
 $count_html = ob_get_clean();
 
-// JSON olarak yanıtı gönder
+
 header('Content-Type: application/json');
 echo json_encode([
     'products_html' => $products_html,

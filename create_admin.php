@@ -1,14 +1,11 @@
 <?php
-/**
- * Admin kullanıcısı oluşturma scripti
- */
 
 require_once 'services/AdminAuthService.php';
 
-// AdminAuthService'i kullan
+
 $adminAuth = new AdminAuthService();
 
-// Kullanıcı adı: admin, şifre: admin
+
 $admin_data = [
     'username' => 'admin',
     'password' => 'admin',
@@ -19,7 +16,7 @@ $admin_data = [
 
 echo "Admin kullanıcısı oluşturuluyor...\n";
 
-// Admin'i oluştur
+
 $result = $adminAuth->createAdmin($admin_data);
 
 if (isset($result['success']) && $result['success']) {
@@ -31,11 +28,11 @@ if (isset($result['success']) && $result['success']) {
     echo "❌ Hata: " . ($result['error'] ?? 'Bilinmeyen hata') . "\n";
 }
 
-// Mevcut admin sayısını kontrol et
+
 $admin_count = $adminAuth->getAdminCount();
 echo "\n📊 Toplam admin sayısı: " . $admin_count . "\n";
 
-// Tüm adminleri listele
+
 echo "\n👥 Mevcut adminler:\n";
 $all_admins = $adminAuth->getAllAdmins();
 foreach ($all_admins as $admin) {

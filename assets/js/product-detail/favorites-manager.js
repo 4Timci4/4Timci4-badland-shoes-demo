@@ -1,8 +1,8 @@
-// Favori işlevselliği
+
 export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notificationManager) {
     let isFavoriteLoading = false;
     
-    // Favori durumunu kontrol et ve güncelle
+    
     function updateFavoriteStatus() {
         if (!isLoggedIn || !state.currentSelectedVariantId) return;
         
@@ -24,7 +24,7 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
         }
     }
     
-    // Favori butonu click event'i
+    
     function initFavoriteButton() {
         const favoriteBtn = document.getElementById('favorite-btn');
         
@@ -41,7 +41,7 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
         });
     }
     
-    // Favori ekleme/çıkarma
+    
     function toggleFavorite() {
         if (!state.currentSelectedVariantId) {
             notificationManager.showNotification('Lütfen renk ve beden seçin', 'error');
@@ -61,7 +61,7 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
             return;
         }
         
-        // Loading state
+        
         favoriteBtn.disabled = true;
         favoriteIcon.classList.add('fa-spin');
         
@@ -97,12 +97,12 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
                 }
                 updateFavoriteStatus();
                 
-                // Başarı mesajı göster
+                
                 notificationManager.showNotification(data.message || 'İşlem başarılı', 'success');
             } else {
                 notificationManager.showNotification(data.message || 'İşlem başarısız', 'error');
                 
-                // Kullanıcı bulunamadı hatası - yönlendirme
+                
                 if (data.error_code === 'user_not_found' || data.redirect) {
                     setTimeout(() => {
                         window.location.href = data.redirect || 'logout.php';
@@ -120,15 +120,15 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
         });
     }
     
-    // Varyant seçimi değiştiğinde favori durumunu güncelle
+    
     document.addEventListener('variantSelected', function(event) {
         updateFavoriteStatus();
     });
     
-    // Favori butonunu başlat
+    
     initFavoriteButton();
     
-    // Public API
+    
     return {
         updateFavoriteStatus: updateFavoriteStatus,
         toggleFavorite: toggleFavorite

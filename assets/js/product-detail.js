@@ -3,36 +3,36 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Kullanıcı giriş durumu:', isLoggedIn);
     console.log('Favori varyant ID\'leri:', favoriteVariantIds);
     
-    // Ürün varyantları ve renkleri global değişkenlerden al
+    
     const productVariants = productVariantsData;
     const productColors = productColorsData;
     
     let selectedColor = null;
     let selectedSize = null;
     
-    // Görsel preloading için cache
+    
     const imageCache = new Map();
     let preloadComplete = false;
     
-    // Varyant verilerini indeksle (O(1) erişim için)
+    
     const variantMap = new Map();
     const variantsByColor = new Map();
     const variantsBySize = new Map();
     
-    // Varyant verilerini indeksle
+    
     function indexVariantData() {
         productVariants.forEach(variant => {
-            // Renk ve beden kombinasyonu için benzersiz anahtar
+            
             const key = `${variant.color_id}-${variant.size_id}`;
             variantMap.set(key, variant);
             
-            // Renge göre varyantları grupla
+            
             if (!variantsByColor.has(variant.color_id)) {
                 variantsByColor.set(variant.color_id, []);
             }
             variantsByColor.get(variant.color_id).push(variant);
             
-            // Bedene göre varyantları grupla
+            
             if (!variantsBySize.has(variant.size_id)) {
                 variantsBySize.set(variant.size_id, []);
             }
@@ -40,21 +40,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Varyant verilerini indeksle
+    
     indexVariantData();
     
-    // Tüm renk görsellerini arka planda yükle - optimize edilmiş
+    
     function preloadColorImages() {
         const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
         const preloadPromises = [];
         
-        // Önce seçili rengin görsellerini yükle
+        
         if (selectedColor && colorImageData[selectedColor]) {
             const selectedColorImages = colorImageData[selectedColor];
             preloadSelectedColorImages(selectedColorImages, preloadPromises);
         }
         
-        // Sonra diğer renklerin görsellerini yükle
+        
         Object.keys(colorImageData).forEach(colorId => {
             if (colorId != selectedColor) {
                 const images = colorImageData[colorId];
@@ -68,23 +68,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Seçili rengin görsellerini yüksek öncelikle yükle
+    
     function preloadSelectedColorImages(images, promises) {
         images.forEach(image => {
-            // Ana görsel
+            
             const imgPromise = new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => {
                     imageCache.set(image.image_url, img);
                     resolve();
                 };
-                img.onerror = () => resolve(); // Hata durumunda da devam et
+                img.onerror = () => resolve(); 
                 img.src = image.image_url;
-                img.importance = "high"; // Tarayıcıya yüksek öncelik bildir
+                img.importance = "high"; 
             });
             promises.push(imgPromise);
             
-            // WebP varsa onu da yükle
+            
             if (image.webp_url) {
                 const webpPromise = new Promise((resolve) => {
                     const webpImg = new Image();
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 promises.push(webpPromise);
             }
             
-            // Thumbnail varsa
+            
             if (image.thumbnail_url) {
                 const thumbPromise = new Promise((resolve) => {
                     const thumbImg = new Image();
@@ -116,10 +116,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Diğer renklerin görsellerini düşük öncelikle yükle
+    
     function preloadColorImagesWithLowPriority(images, promises) {
         images.forEach(image => {
-            // Ana görsel
+            
             const imgPromise = new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => {
@@ -128,11 +128,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 img.onerror = () => resolve();
                 img.src = image.image_url;
-                img.importance = "low"; // Tarayıcıya düşük öncelik bildir
+                img.importance = "low"; 
             });
             promises.push(imgPromise);
             
-            // WebP varsa onu da yükle
+            
             if (image.webp_url) {
                 const webpPromise = new Promise((resolve) => {
                     const webpImg = new Image();
@@ -149,13 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Preloading'i hemen başlat (gecikme olmadan)
+    
     preloadColorImages();
     
-    // Sayfa yüklendiğinde ilk rengi seç
+    
     if (productColors.length > 0) {
         selectedColor = productColors[0].id;
-        // Seçili rengi UI'da da göster
+        
         const firstColorButton = document.querySelector('.color-option[data-color-id="'+selectedColor+'"]');
         if (firstColorButton) {
             firstColorButton.classList.remove('border-gray-300');
@@ -164,13 +164,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Varyant bul
+    
     function findVariant(colorId, sizeId) {
         const key = `${colorId}-${sizeId}`;
         return variantMap.get(key);
     }
     
-    // Stok olmayan bedenlerin üstünü çiz
+    
     function updateSizeButtonsBasedOnStock() {
         if (!selectedColor) return;
         
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Ana resim değiştirme - Geliştirilmiş geçiş efekti ile
+    
     window.changeMainImage = function(imageData, thumbnail, isPreview = false) {
         const mainImage = document.getElementById('main-product-image');
         const mainPicture = document.getElementById('main-product-picture');
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let imageUrl, originalUrl, altText, webpUrl;
         
-        // imageData bir obje mi yoksa string mi kontrol et
+        
         if (typeof imageData === 'string') {
             imageUrl = imageData;
             originalUrl = imageData;
@@ -208,27 +208,27 @@ document.addEventListener('DOMContentLoaded', function() {
             webpUrl = imageData.webp_url;
         }
         
-        // Önizleme modu için farklı geçiş efekti
+        
         if (isPreview) {
             mainImage.classList.add('preview-mode');
         } else {
             mainImage.classList.remove('preview-mode');
         }
         
-        // Fade out efekti
+        
         mainImage.style.opacity = '0';
         
-        // Yeni resim cache'de var mı kontrol et
+        
         const cachedImage = imageCache.get(imageUrl);
         
         if (cachedImage) {
-            // Cache'den hızlıca yükle
+            
             setTimeout(() => {
                 updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl);
                 mainImage.style.opacity = '1';
-            }, 50); // Daha hızlı geçiş için süreyi azalttık
+            }, 50); 
         } else {
-            // Yeni resmi yükle
+            
             const newImage = new Image();
             newImage.onload = function() {
                 imageCache.set(imageUrl, newImage);
@@ -236,13 +236,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 mainImage.style.opacity = '1';
             };
             newImage.onerror = function() {
-                // Hata durumunda opacity'yi geri getir
+                
                 mainImage.style.opacity = '1';
             };
             newImage.src = imageUrl;
         }
         
-        // Thumbnail border'larını güncelle (sadece thumbnail varsa ve önizleme modu değilse)
+        
         if (thumbnail && !isPreview) {
             document.querySelectorAll('.thumbnail, .thumbnail-item').forEach(thumb => {
                 thumb.classList.remove('border-primary', 'border-blue-500', 'border-opacity-100');
@@ -253,9 +253,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // Görsel kaynaklarını güncelleme helper fonksiyonu
+    
     function updateImageSources(mainImage, mainPicture, imageUrl, originalUrl, altText, webpUrl) {
-        // WebP source'u güncelle
+        
         if (webpUrl) {
             const existingSource = mainPicture.querySelector('source[type="image/webp"]');
             if (existingSource) {
@@ -268,63 +268,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Ana resim özelliklerini güncelle
+        
         mainImage.src = imageUrl;
         mainImage.setAttribute('data-original', originalUrl);
         mainImage.alt = altText;
     }
     
-    // 2. Renk seçimi için hover önizlemesi
+    
     document.querySelectorAll('.color-option').forEach(button => {
-        // Hover olduğunda önizleme göster
+        
         button.addEventListener('mouseenter', function() {
             const colorId = parseInt(this.dataset.colorId);
             previewColorImages(colorId);
         });
         
-        // Hover'dan çıkıldığında seçili rengin görsellerini göster
+        
         button.addEventListener('mouseleave', function() {
             if (selectedColor) {
                 updateImagesForColor(selectedColor);
             }
         });
         
-        // Tıklandığında rengi seç
+        
         button.addEventListener('click', function(e) {
-            e.preventDefault(); // Link davranışını engelle
+            e.preventDefault(); 
             
             const colorId = parseInt(this.dataset.colorId);
             const colorName = this.dataset.colorName;
             const colorSlug = this.dataset.colorSlug;
             
-            // URL'yi güncelle (soft geçiş)
+            
             const url = new URL(window.location);
             url.searchParams.set('color', colorSlug);
             history.pushState({colorId: colorId, colorSlug: colorSlug}, '', url);
             
-            // Renk seçimini güncelle
+            
             selectColor(colorId, colorName);
         });
     });
     
-    // Renk önizlemesi için görsel güncelleme
+    
     function previewColorImages(colorId) {
         const colorImageData = JSON.parse(document.getElementById('color-image-data').textContent);
         if (colorImageData[colorId] && colorImageData[colorId].length > 0) {
             const firstImage = colorImageData[colorId][0];
-            changeMainImage(firstImage, null, true); // true parametresi önizleme modunu belirtir
+            changeMainImage(firstImage, null, true); 
         }
     }
     
-    // Renk seçme fonksiyonu
+    
     function selectColor(colorId, colorName) {
-        // Önceki seçimi temizle
+        
         document.querySelectorAll('.color-option').forEach(btn => {
             btn.classList.remove('border-secondary');
             btn.classList.add('border-gray-300');
         });
         
-        // Yeni seçimi işaretle
+        
         const selectedButton = document.querySelector('.color-option[data-color-id="' + colorId + '"]');
         if (selectedButton) {
             selectedButton.classList.remove('border-gray-300');
@@ -334,15 +334,15 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedColor = colorId;
         document.getElementById('selected-color').textContent = colorName;
         
-        // Görselleri güncelle
+        
         if (typeof updateImagesForColor === 'function') {
             updateImagesForColor(colorId);
         }
         
-        // Önce bedenlerin görünümünü güncelle
+        
         updateSizeButtonsBasedOnStock();
         
-        // Beden seçimini sıfırla
+        
         selectedSize = null;
         document.getElementById('selected-size').textContent = '-';
         document.querySelectorAll('.size-option').forEach(btn => {
@@ -350,32 +350,32 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.add('border-gray-300');
         });
         
-        // Stok olmayan ilk uygun bedeni otomatik seç
+        
         const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
         if (firstAvailableSizeButton) {
-            firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
+            firstAvailableSizeButton.click(); 
         } else {
-            updateStockStatus(); // Uygun beden yoksa stok durumunu güncelle
+            updateStockStatus(); 
         }
         
-        // Favori durumunu güncelle
+        
         updateSelectedVariant();
     }
     
-    // Tarayıcı geri/ileri butonları için
+    
     window.addEventListener('popstate', function(event) {
         const urlParams = new URLSearchParams(window.location.search);
         const colorSlug = urlParams.get('color');
         
         if (colorSlug && event.state && event.state.colorId) {
-            // State'den renk bilgisini al
+            
             const colorId = event.state.colorId;
             const colorButton = document.querySelector('.color-option[data-color-id="' + colorId + '"]');
             if (colorButton) {
                 selectColor(colorId, colorButton.dataset.colorName);
             }
         } else if (!colorSlug) {
-            // Renk parametresi yoksa ilk rengi seç
+            
             const firstColorButton = document.querySelector('.color-option');
             if (firstColorButton) {
                 selectColor(parseInt(firstColorButton.dataset.colorId), firstColorButton.dataset.colorName);
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Sayfa yüklendiğinde URL'den renk parametresini kontrol et
+    
     const urlParams = new URLSearchParams(window.location.search);
     const urlColorSlug = urlParams.get('color');
     if (urlColorSlug) {
@@ -393,26 +393,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Sayfa yüklendiğinde bedenleri güncelle ve ilk uygun bedeni seç
+    
     if (selectedColor) {
         updateSizeButtonsBasedOnStock();
-        // Stokta olan ilk bedeni otomatik seç
+        
         setTimeout(() => {
             const firstAvailableSizeButton = document.querySelector('.size-option:not([disabled])');
             if (firstAvailableSizeButton) {
-                firstAvailableSizeButton.click(); // Otomatik olarak ilk uygun bedeni seç
-                // Varyant seçimi sonrası favori durumunu güncelle
+                firstAvailableSizeButton.click(); 
+                
                 updateSelectedVariant();
             } else {
-                updateStockStatus(); // Uygun beden yoksa stok durumunu güncelle
+                updateStockStatus(); 
             }
             
-            // Favori butonunu hemen başlat
+            
             initFavoriteButton();
-        }, 100); // Kısa bir gecikme ile çalıştır
+        }, 100); 
     }
     
-    // 4. Renk-beden grid'i
+    
     function createColorSizeGrid() {
         const gridContainer = document.getElementById('color-size-grid');
         if (!gridContainer) return;
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gridHTML += '</div>';
         gridContainer.innerHTML = gridHTML;
         
-        // Grid item'lara event listener ekle
+        
         document.querySelectorAll('.variant-grid-item:not([disabled])').forEach(item => {
             item.addEventListener('click', function() {
                 const colorId = parseInt(this.dataset.colorId);
@@ -454,23 +454,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 const colorName = this.dataset.colorName;
                 const sizeValue = this.dataset.sizeValue;
                 
-                // Önce rengi seç (eğer farklıysa)
+                
                 if (colorId !== selectedColor) {
                     selectColor(colorId, colorName);
                 }
                 
-                // Sonra bedeni seç
+                
                 selectSize(sizeId, sizeValue);
             });
         });
     }
     
-    // Renk-beden grid'ini güncelle
+    
     function updateColorSizeGrid() {
         createColorSizeGrid();
     }
     
-    // Belirli bir renk için mevcut bedenleri getir
+    
     function getAvailableSizesForColor(colorId) {
         const variants = variantsByColor.get(colorId) || [];
         const sizeIds = [...new Set(variants.map(v => v.size_id))];
@@ -484,15 +484,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return sizes.sort((a, b) => a.size_value.localeCompare(b.size_value, undefined, {numeric: true}));
     }
     
-    // Beden seçimi - optimize edilmiş
+    
     function selectSize(sizeId, sizeValue) {
-        // Önceki seçimi temizle
+        
         document.querySelectorAll('.size-option').forEach(btn => {
             btn.classList.remove('bg-primary', 'text-white', 'border-primary');
             btn.classList.add('border-gray-300');
         });
         
-        // Yeni seçimi işaretle
+        
         const selectedButton = document.querySelector(`.size-option[data-size="${sizeId}"]`);
         if (selectedButton) {
             selectedButton.classList.remove('border-gray-300');
@@ -503,11 +503,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('selected-size').textContent = sizeValue;
         
         updateStockStatus();
-        updateSelectedVariant(); // Favori durumunu güncelle
-        updateColorSizeGrid(); // Grid'i güncelle
+        updateSelectedVariant(); 
+        updateColorSizeGrid(); 
     }
     
-    // Beden seçimi event listener'ları
+    
     document.querySelectorAll('.size-option').forEach(button => {
         button.addEventListener('click', function() {
             if (this.disabled) return;
@@ -519,10 +519,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Renk-beden grid'ini oluştur
+    
     createColorSizeGrid();
     
-    // Stok durumunu güncelle
+    
     function updateStockStatus() {
         const stockStatus = document.getElementById('stock-status');
         const currentPriceElement = document.getElementById('current-price');
@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             
             if (variant && variant.stock_quantity > 0) {
-                // Fiyatı güncelle
+                
                 if (variant.price) {
                     currentPriceElement.textContent = '₺ ' + parseFloat(variant.price).toLocaleString('tr-TR', {
                         minimumFractionDigits: 2,
@@ -553,11 +553,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Favori işlevselliği
+    
     let currentSelectedVariantId = null;
     let isFavoriteLoading = false;
     
-    // Favori durumunu kontrol et ve güncelle
+    
     function updateFavoriteStatus() {
         if (!isLoggedIn || !currentSelectedVariantId) return;
         
@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Favori butonu click event'i
+    
     function initFavoriteButton() {
         const favoriteBtn = document.getElementById('favorite-btn');
         console.log('initFavoriteButton çağrıldı', favoriteBtn, 'Giriş durumu:', isLoggedIn);
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Favori butonu event listener eklendi');
     }
     
-    // Favori ekleme/çıkarma
+    
     function toggleFavorite() {
         console.log('toggleFavorite çağrıldı', 'Seçili varyant:', currentSelectedVariantId);
         
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Loading state
+        
         favoriteBtn.disabled = true;
         favoriteIcon.classList.add('fa-spin');
         
@@ -670,13 +670,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 updateFavoriteStatus();
                 
-                // Başarı mesajı göster
+                
                 showNotification(data.message || 'İşlem başarılı', 'success');
             } else {
                 console.error('API hatası:', data.message);
                 showNotification(data.message || 'İşlem başarısız', 'error');
                 
-                // Kullanıcı bulunamadı hatası - yönlendirme
+                
                 if (data.error_code === 'user_not_found' || data.redirect) {
                     console.log('Kullanıcı bulunamadı, yönlendirme yapılıyor...');
                     setTimeout(() => {
@@ -697,9 +697,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Bildirim gösterme
+    
     function showNotification(message, type = 'info') {
-        // Mevcut bildirim varsa kaldır
+        
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
             existingNotification.remove();
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.body.appendChild(notification);
         
-        // 3 saniye sonra kaldır
+        
         setTimeout(() => {
             notification.style.opacity = '0';
             setTimeout(() => {
@@ -724,7 +724,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
     
-    // Seçili varyantı güncelle
+    
     function updateSelectedVariant() {
         console.log('updateSelectedVariant çağrıldı', selectedColor, selectedSize);
         
@@ -745,37 +745,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Favori butonunu başlat
+    
     initFavoriteButton();
     
-    // Renk veya beden değişikliğinde favori durumunu güncelle
+    
     const originalSelectColor = selectColor;
     selectColor = function(colorId, colorName) {
         originalSelectColor(colorId, colorName);
         updateSelectedVariant();
     };
     
-    // Tab sistemi
+    
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', function() {
             const tabId = this.dataset.tab;
             
-            // Tüm tab butonlarını pasif yap
+            
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('border-primary', 'text-primary');
                 btn.classList.add('border-transparent', 'text-gray-500');
             });
             
-            // Aktif tab butonunu işaretle
+            
             this.classList.remove('border-transparent', 'text-gray-500');
             this.classList.add('border-primary', 'text-primary');
             
-            // Tüm tab içeriklerini gizle
+            
             document.querySelectorAll('.tab-pane').forEach(pane => {
                 pane.classList.add('hidden');
             });
             
-            // Seçili tab içeriğini göster
+            
             document.getElementById(tabId).classList.remove('hidden');
         });
     });

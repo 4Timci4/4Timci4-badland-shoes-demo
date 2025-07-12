@@ -1,14 +1,14 @@
-// Beden seçimi işlevselliği
+
 export function initializeSizeSelector(state, variantManager) {
-    // Beden seçimi fonksiyonu
+    
     function selectSize(sizeId, sizeValue) {
-        // Önceki seçimi temizle
+        
         document.querySelectorAll('.size-option').forEach(btn => {
             btn.classList.remove('bg-primary', 'text-white', 'border-primary');
             btn.classList.add('border-gray-300');
         });
         
-        // Yeni seçimi işaretle
+        
         const selectedButton = document.querySelector(`.size-option[data-size="${sizeId}"]`);
         if (selectedButton) {
             selectedButton.classList.remove('border-gray-300');
@@ -21,14 +21,14 @@ export function initializeSizeSelector(state, variantManager) {
             selectedSizeElement.textContent = sizeValue;
         }
         
-        // Stok durumunu güncelle
+        
         variantManager.updateStockStatus(state.selectedColor, state.selectedSize, window.productVariantsData);
         
-        // Seçili varyantı güncelle
+        
         updateSelectedVariant();
     }
     
-    // Seçili varyantı güncelle
+    
     function updateSelectedVariant() {
         if (state.selectedColor && state.selectedSize) {
             const variant = window.productVariantsData.find(v =>
@@ -38,14 +38,14 @@ export function initializeSizeSelector(state, variantManager) {
             if (variant) {
                 state.currentSelectedVariantId = variant.id;
                 
-                // Favori durumunu güncelle (favoriteManager tarafından yapılacak)
+                
                 const event = new CustomEvent('variantSelected', { detail: { variantId: variant.id } });
                 document.dispatchEvent(event);
             }
         }
     }
     
-    // Beden seçimi event listener'ları
+    
     document.querySelectorAll('.size-option').forEach(button => {
         button.addEventListener('click', function() {
             if (this.disabled) return;
@@ -57,7 +57,7 @@ export function initializeSizeSelector(state, variantManager) {
         });
     });
     
-    // Public API
+    
     return {
         selectSize: selectSize,
         updateSelectedVariant: updateSelectedVariant

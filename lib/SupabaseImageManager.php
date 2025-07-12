@@ -1,66 +1,50 @@
 <?php
-/**
- * Supabase Storage Entegrasyonlu Resim Yöneticisi
- * 
- * Resim optimizasyonu, yeniden boyutlandırma, WebP dönüşümü ve Supabase Storage upload
- */
 
 require_once __DIR__ . '/SupabaseClient.php';
 require_once __DIR__ . '/SecurityManager.php';
 
-class SupabaseImageManager {
+class SupabaseImageManager
+{
     private static $instance = null;
     private $supabaseClient;
     private $bucket;
-    
-    // Resim ayarları
+
     private const DEFAULT_QUALITY = 85;
     private const MAX_WIDTH = 1920;
     private const MAX_HEIGHT = 1080;
     private const THUMBNAIL_WIDTH = 300;
     private const THUMBNAIL_HEIGHT = 300;
-    
-    // Desteklenen formatlar
+
     private const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    
-    // Temporary upload dizini
+
     private $temp_dir;
-    
-    /**
-     * Singleton pattern
-     */
-    public static function getInstance() {
+
+    public static function getInstance()
+    {
         if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
-    /**
-     * Constructor
-     */
-    private function __construct() {
+
+    private function __construct()
+    {
         $this->supabaseClient = new SupabaseClient(SUPABASE_URL, SUPABASE_KEY);
-        $this->bucket = 'product-images'; // Supabase'de bucket adı
+        $this->bucket = 'product-images';
         $this->temp_dir = sys_get_temp_dir() . '/bandland_temp_images/';
-        
-        // Temp dizinini oluştur
+
         if (!file_exists($this->temp_dir)) {
             mkdir($this->temp_dir, 0755, true);
         }
     }
-    
-    /**
-     * GD extension kontrolü
-     */
-    private function isGDAvailable() {
+
+    private function isGDAvailable()
+    {
         return extension_loaded('gd') && function_exists('imagecreatefromjpeg');
     }
-    
-    /**
-     * Sistem bilgilerini kontrol et
-     */
-    public function checkSystemRequirements() {
+
+    public function checkSystemRequirements()
+    {
         $requirements = [
             'gd_extension' => extension_loaded('gd'),
             'imagecreatefromjpeg' => function_exists('imagecreatefromjpeg'),
@@ -69,15 +53,13 @@ class SupabaseImageManager {
             'curl' => extension_loaded('curl'),
             'fileinfo' => extension_loaded('fileinfo')
         ];
-        
+
         error_log("System Requirements Check: " . json_encode($requirements));
         return $requirements;
     }
-    
-    /**
-     * Resim yükle ve optimize et
-     */
-    public function uploadAndOptimize($file, $options = []) {
+
+    public function uploadAndOptimize($file, $options = [])
+    {
         $options = array_merge([
             'generate_thumbnail' => true,
             'generate_webp' => true,
@@ -86,47 +68,41 @@ class SupabaseImageManager {
             'max_height' => self::MAX_HEIGHT,
             'prefix' => ''
         ], $options);
-        
-        // Sistem gereksinimlerini kontrol et
+
         $requirements = $this->checkSystemRequirements();
         $gdAvailable = $requirements['gd_extension'] && $requirements['imagecreatefromjpeg'];
-        
+
         if (!$gdAvailable) {
             error_log("GD extension not available. Uploading original file only.");
             $options['generate_thumbnail'] = false;
             $options['generate_webp'] = false;
         }
-        
-        // Dosya güvenlik kontrolü
+
         $security = SecurityManager::getInstance();
         $validation_errors = $security->validateFileUpload($file, self::SUPPORTED_FORMATS);
-        
+
         if (!empty($validation_errors)) {
             return ['success' => false, 'errors' => $validation_errors];
         }
-        
+
         try {
-            // Unique dosya adı oluştur
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $filename = $options['prefix'] . uniqid() . '_' . time();
             $original_filename = $filename . '.' . $extension;
-            
-            // Temp dizine original dosyayı kaydet
+
             $temp_original_path = $this->temp_dir . $original_filename;
             if (!move_uploaded_file($file['tmp_name'], $temp_original_path)) {
                 return ['success' => false, 'errors' => ['Dosya yüklenemedi.']];
             }
-            
-            // Resim bilgilerini al
+
             $image_info = getimagesize($temp_original_path);
             if ($image_info === false) {
                 unlink($temp_original_path);
                 return ['success' => false, 'errors' => ['Geçersiz resim dosyası.']];
             }
-            
+
             $result = ['success' => true];
-            
-            // Original dosyayı Supabase'e yükle
+
             $original_result = $this->uploadToSupabase($temp_original_path, 'original/' . $original_filename);
             if ($original_result) {
                 $result['original'] = array_merge($original_result, [
@@ -136,24 +112,20 @@ class SupabaseImageManager {
                     'size' => filesize($temp_original_path)
                 ]);
             }
-            
-            // GD varsa optimize et
+
             if ($gdAvailable) {
-                // Optimize edilmiş versiyon oluştur
                 $optimized_result = $this->optimizeImage($temp_original_path, $filename, $extension, $options);
                 if ($optimized_result) {
                     $result['optimized'] = $optimized_result;
                 }
-                
-                // Thumbnail oluştur
+
                 if ($options['generate_thumbnail']) {
                     $thumbnail_result = $this->generateThumbnail($temp_original_path, $filename, $extension);
                     if ($thumbnail_result) {
                         $result['thumbnail'] = $thumbnail_result;
                     }
                 }
-                
-                // WebP versiyonu oluştur
+
                 if ($options['generate_webp'] && function_exists('imagewebp')) {
                     $webp_result = $this->generateWebP($temp_original_path, $filename);
                     if ($webp_result) {
@@ -161,86 +133,79 @@ class SupabaseImageManager {
                     }
                 }
             } else {
-                // GD yoksa, original dosyayı optimized olarak da kullan
                 $result['optimized'] = $result['original'];
                 error_log("GD extension not available. Using original file as optimized version.");
             }
-            
-            // Temp dosyayı temizle
+
             if (file_exists($temp_original_path)) {
                 unlink($temp_original_path);
             }
-            
+
             return $result;
-            
+
         } catch (Exception $e) {
             error_log("Supabase image upload error: " . $e->getMessage());
             return ['success' => false, 'errors' => ['Resim işleme hatası: ' . $e->getMessage()]];
         }
     }
-    
-    /**
-     * Resmi optimize et ve Supabase'e yükle
-     */
-    private function optimizeImage($source_path, $filename, $extension, $options) {
+
+    private function optimizeImage($source_path, $filename, $extension, $options)
+    {
         try {
             $optimized_filename = $filename . '_optimized.' . $extension;
             $temp_optimized_path = $this->temp_dir . $optimized_filename;
-            
-            // Kaynak resmi yükle
+
             $source_image = $this->loadImage($source_path, $extension);
             if (!$source_image) {
                 return false;
             }
-            
+
             $original_width = imagesx($source_image);
             $original_height = imagesy($source_image);
-            
-            // Yeni boyutları hesapla
+
             $new_dimensions = $this->calculateDimensions(
-                $original_width, 
-                $original_height, 
-                $options['max_width'], 
+                $original_width,
+                $original_height,
+                $options['max_width'],
                 $options['max_height']
             );
-            
-            // Yeni resim oluştur
+
             $optimized_image = imagecreatetruecolor($new_dimensions['width'], $new_dimensions['height']);
-            
-            // Şeffaflık desteği (PNG için)
+
             if ($extension === 'png') {
                 imagealphablending($optimized_image, false);
                 imagesavealpha($optimized_image, true);
                 $transparent = imagecolorallocatealpha($optimized_image, 255, 255, 255, 127);
                 imagefill($optimized_image, 0, 0, $transparent);
             }
-            
-            // Resmi yeniden boyutlandır
+
             imagecopyresampled(
-                $optimized_image, $source_image,
-                0, 0, 0, 0,
-                $new_dimensions['width'], $new_dimensions['height'],
-                $original_width, $original_height
+                $optimized_image,
+                $source_image,
+                0,
+                0,
+                0,
+                0,
+                $new_dimensions['width'],
+                $new_dimensions['height'],
+                $original_width,
+                $original_height
             );
-            
-            // Optimize edilmiş resmi temp'e kaydet
+
             $success = $this->saveImage($optimized_image, $temp_optimized_path, $extension, $options['quality']);
-            
+
             imagedestroy($source_image);
             imagedestroy($optimized_image);
-            
+
             if ($success) {
-                // Supabase'e yükle
                 $upload_result = $this->uploadToSupabase($temp_optimized_path, 'optimized/' . $optimized_filename);
-                
-                // Dosya boyutunu al
+
                 $file_size = 0;
                 if (file_exists($temp_optimized_path)) {
                     $file_size = filesize($temp_optimized_path);
-                    // Temp dosyayı temizle
                     unlink($temp_optimized_path);
                 }
-                
+
                 if ($upload_result) {
                     return array_merge($upload_result, [
                         'filename' => $optimized_filename,
@@ -250,72 +215,69 @@ class SupabaseImageManager {
                     ]);
                 }
             }
-            
+
             return false;
-            
+
         } catch (Exception $e) {
             error_log("Image optimization error: " . $e->getMessage());
             return false;
         }
     }
-    
-    /**
-     * Thumbnail oluştur ve Supabase'e yükle
-     */
-    private function generateThumbnail($source_path, $filename, $extension) {
+
+    private function generateThumbnail($source_path, $filename, $extension)
+    {
         try {
             $thumbnail_filename = $filename . '_thumb.' . $extension;
             $temp_thumbnail_path = $this->temp_dir . $thumbnail_filename;
-            
+
             $source_image = $this->loadImage($source_path, $extension);
             if (!$source_image) {
                 return false;
             }
-            
+
             $original_width = imagesx($source_image);
             $original_height = imagesy($source_image);
-            
-            // Kare thumbnail için crop hesapla
+
             $crop_size = min($original_width, $original_height);
             $crop_x = ($original_width - $crop_size) / 2;
             $crop_y = ($original_height - $crop_size) / 2;
-            
-            // Thumbnail oluştur
+
             $thumbnail = imagecreatetruecolor(self::THUMBNAIL_WIDTH, self::THUMBNAIL_HEIGHT);
-            
-            // Şeffaflık desteği
+
             if ($extension === 'png') {
                 imagealphablending($thumbnail, false);
                 imagesavealpha($thumbnail, true);
                 $transparent = imagecolorallocatealpha($thumbnail, 255, 255, 255, 127);
                 imagefill($thumbnail, 0, 0, $transparent);
             }
-            
-            // Crop ve resize
+
             imagecopyresampled(
-                $thumbnail, $source_image,
-                0, 0, $crop_x, $crop_y,
-                self::THUMBNAIL_WIDTH, self::THUMBNAIL_HEIGHT,
-                $crop_size, $crop_size
+                $thumbnail,
+                $source_image,
+                0,
+                0,
+                $crop_x,
+                $crop_y,
+                self::THUMBNAIL_WIDTH,
+                self::THUMBNAIL_HEIGHT,
+                $crop_size,
+                $crop_size
             );
-            
+
             $success = $this->saveImage($thumbnail, $temp_thumbnail_path, $extension, self::DEFAULT_QUALITY);
-            
+
             imagedestroy($source_image);
             imagedestroy($thumbnail);
-            
+
             if ($success) {
-                // Supabase'e yükle
                 $upload_result = $this->uploadToSupabase($temp_thumbnail_path, 'thumbnails/' . $thumbnail_filename);
-                
-                // Dosya boyutunu al
+
                 $file_size = 0;
                 if (file_exists($temp_thumbnail_path)) {
                     $file_size = filesize($temp_thumbnail_path);
-                    // Temp dosyayı temizle
                     unlink($temp_thumbnail_path);
                 }
-                
+
                 if ($upload_result) {
                     return array_merge($upload_result, [
                         'filename' => $thumbnail_filename,
@@ -325,31 +287,28 @@ class SupabaseImageManager {
                     ]);
                 }
             }
-            
+
             return false;
-            
+
         } catch (Exception $e) {
             error_log("Thumbnail generation error: " . $e->getMessage());
             return false;
         }
     }
-    
-    /**
-     * WebP versiyonu oluştur ve Supabase'e yükle
-     */
-    private function generateWebP($source_path, $filename) {
+
+    private function generateWebP($source_path, $filename)
+    {
         try {
             if (!function_exists('imagewebp')) {
                 return false;
             }
-            
+
             $webp_filename = $filename . '.webp';
             $temp_webp_path = $this->temp_dir . $webp_filename;
-            
-            // Kaynak resmin formatını belirle
+
             $image_info = getimagesize($source_path);
             $mime_type = $image_info['mime'];
-            
+
             switch ($mime_type) {
                 case 'image/jpeg':
                     $source_image = imagecreatefromjpeg($source_path);
@@ -363,27 +322,23 @@ class SupabaseImageManager {
                 default:
                     return false;
             }
-            
+
             if (!$source_image) {
                 return false;
             }
-            
-            // WebP olarak kaydet
+
             $success = imagewebp($source_image, $temp_webp_path, self::DEFAULT_QUALITY);
             imagedestroy($source_image);
-            
+
             if ($success) {
-                // Supabase'e yükle
                 $upload_result = $this->uploadToSupabase($temp_webp_path, 'webp/' . $webp_filename);
-                
-                // Dosya boyutunu al
+
                 $file_size = 0;
                 if (file_exists($temp_webp_path)) {
                     $file_size = filesize($temp_webp_path);
-                    // Temp dosyayı temizle
                     unlink($temp_webp_path);
                 }
-                
+
                 if ($upload_result) {
                     return array_merge($upload_result, [
                         'filename' => $webp_filename,
@@ -391,33 +346,28 @@ class SupabaseImageManager {
                     ]);
                 }
             }
-            
+
             return false;
-            
+
         } catch (Exception $e) {
             error_log("WebP generation error: " . $e->getMessage());
             return false;
         }
     }
-    
-    /**
-     * Dosyayı Supabase Storage'a yükle
-     */
-    private function uploadToSupabase($file_path, $storage_path) {
+
+    private function uploadToSupabase($file_path, $storage_path)
+    {
         try {
-            // Dosya içeriğini oku
             $file_content = file_get_contents($file_path);
             if ($file_content === false) {
                 return false;
             }
-            
-            // MIME type belirle (finfo alternatifi)
+
             if (function_exists('finfo_open')) {
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mime_type = finfo_file($finfo, $file_path);
                 finfo_close($finfo);
             } else {
-                // Fallback: extension'dan mime type belirle
                 $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
                 $mime_types = [
                     'jpg' => 'image/jpeg',
@@ -428,17 +378,14 @@ class SupabaseImageManager {
                 ];
                 $mime_type = $mime_types[$extension] ?? 'application/octet-stream';
             }
-            
-            // Supabase Storage API endpoint'i - basitleştirilmiş
-            $project_id = 'rfxleyiyvpygdpdbnmib'; // Supabase URL'den çıkarıldı
+
+            $project_id = 'rfxleyiyvpygdpdbnmib';
             $storage_url = "https://{$project_id}.supabase.co/storage/v1";
-            
+
             $upload_url = "{$storage_url}/object/{$this->bucket}/{$storage_path}";
-            
-            // Debug için URL'yi logla
+
             error_log("Supabase upload URL: " . $upload_url);
-            
-            // cURL ile yükle
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $upload_url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -449,27 +396,24 @@ class SupabaseImageManager {
                 'Content-Type: ' . $mime_type,
                 'apikey: ' . SUPABASE_KEY
             ]);
-            
-            // SSL ve cURL ayarları
+
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            
+
             $response = curl_exec($ch);
             $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curl_error = curl_error($ch);
             curl_close($ch);
-            
-            // cURL hatası varsa logla
+
             if ($curl_error) {
                 error_log("cURL Error: " . $curl_error);
             }
-            
+
             if ($http_code === 200 || $http_code === 201) {
-                // Public URL oluştur
                 $public_url = $storage_url . '/object/public/' . $this->bucket . '/' . $storage_path;
-                
+
                 return [
                     'url' => $public_url,
                     'path' => $storage_path,
@@ -479,27 +423,23 @@ class SupabaseImageManager {
                 error_log("Supabase upload failed: HTTP $http_code - $response");
                 return false;
             }
-            
+
         } catch (Exception $e) {
             error_log("Supabase upload error: " . $e->getMessage());
             return false;
         }
     }
-    
-    /**
-     * Supabase Storage'dan dosya sil
-     */
-    public function deleteFromSupabase($storage_path) {
+
+    public function deleteFromSupabase($storage_path)
+    {
         try {
-            // Supabase Storage API endpoint'i - basitleştirilmiş
-            $project_id = 'rfxleyiyvpygdpdbnmib'; // Supabase URL'den çıkarıldı
+            $project_id = 'rfxleyiyvpygdpdbnmib';
             $storage_url = "https://{$project_id}.supabase.co/storage/v1";
-            
+
             $delete_url = "{$storage_url}/object/{$this->bucket}/{$storage_path}";
-            
-            // Debug için URL'yi logla
+
             error_log("Supabase delete URL: " . $delete_url);
-            
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $delete_url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -508,23 +448,21 @@ class SupabaseImageManager {
                 'Authorization: Bearer ' . SUPABASE_KEY,
                 'apikey: ' . SUPABASE_KEY
             ]);
-            
+
             $response = curl_exec($ch);
             $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
-            
+
             return $http_code === 200;
-            
+
         } catch (Exception $e) {
             error_log("Supabase delete error: " . $e->getMessage());
             return false;
         }
     }
-    
-    /**
-     * Helper metodlar
-     */
-    private function loadImage($path, $extension) {
+
+    private function loadImage($path, $extension)
+    {
         switch (strtolower($extension)) {
             case 'jpg':
             case 'jpeg':
@@ -539,8 +477,9 @@ class SupabaseImageManager {
                 return false;
         }
     }
-    
-    private function saveImage($image, $path, $extension, $quality = self::DEFAULT_QUALITY) {
+
+    private function saveImage($image, $path, $extension, $quality = self::DEFAULT_QUALITY)
+    {
         switch (strtolower($extension)) {
             case 'jpg':
             case 'jpeg':
@@ -556,14 +495,15 @@ class SupabaseImageManager {
                 return false;
         }
     }
-    
-    private function calculateDimensions($original_width, $original_height, $max_width, $max_height) {
+
+    private function calculateDimensions($original_width, $original_height, $max_width, $max_height)
+    {
         $ratio = min($max_width / $original_width, $max_height / $original_height);
-        
+
         if ($ratio > 1) {
             $ratio = 1;
         }
-        
+
         return [
             'width' => round($original_width * $ratio),
             'height' => round($original_height * $ratio)
@@ -571,10 +511,8 @@ class SupabaseImageManager {
     }
 }
 
-/**
- * Global Supabase image manager fonksiyonu
- */
-function supabaseImageManager() {
+function supabaseImageManager()
+{
     return SupabaseImageManager::getInstance();
 }
 ?>

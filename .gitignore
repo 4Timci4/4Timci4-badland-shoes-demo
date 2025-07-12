@@ -1,5 +1,3 @@
-# VSCode ayar dizini
 /.vscode/
 
-# Sessions klasörü (geçici dosyalar)
 /sessions/

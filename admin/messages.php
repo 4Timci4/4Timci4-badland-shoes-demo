@@ -1,32 +1,29 @@
 <?php
-/**
- * Admin Panel - Gelen Mesajlar
- * İletişim formundan gelen mesajları yönetme sayfası
- */
+
 
 require_once 'config/auth.php';
 check_admin_auth();
 
-// Veritabanı bağlantısı
+
 require_once '../config/database.php';
 require_once '../services/ContactService.php';
 
 $contactService = new ContactService();
 
-// Sayfa bilgileri
+
 $page_title = 'Gelen Mesajlar';
 $breadcrumb_items = [
     ['title' => 'İletişim', 'url' => '#', 'icon' => 'fas fa-envelope'],
     ['title' => 'Gelen Mesajlar', 'url' => 'messages.php', 'icon' => 'fas fa-inbox']
 ];
 
-// Sayfalama parametreleri
+
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = 20;
 $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Mesaj silme işlemi
+
 if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['message_id'])) {
     if (verify_csrf_token($_POST['csrf_token'])) {
         $message_id = intval($_POST['message_id']);
@@ -40,23 +37,23 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['me
     }
 }
 
-// Mesajları getir
+
 $result = $contactService->getAllMessages($limit, $offset, $search);
 $messages = $result['messages'];
 $total = $result['total'];
 $total_pages = ceil($total / $limit);
 
-// Gerekli CSS ve JS
+
 $additional_css = [];
 $additional_js = [];
 
-// Header dahil et
+
 include 'includes/header.php';
 ?>
 
 <!-- Messages Content -->
 <div class="space-y-6">
-    
+
     <!-- Page Header -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -77,22 +74,20 @@ include 'includes/header.php';
         <form method="GET" class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1">
                 <div class="relative">
-                    <input type="text" 
-                           name="search" 
-                           value="<?= htmlspecialchars($search) ?>"
-                           placeholder="İsim, email veya konu ara..." 
-                           class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
+                        placeholder="İsim, email veya konu ara..."
+                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                     <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
                 </div>
             </div>
-            <button type="submit" 
-                    class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors">
+            <button type="submit"
+                class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors">
                 <i class="fas fa-search mr-2"></i>
                 Ara
             </button>
             <?php if ($search): ?>
-                <a href="messages.php" 
-                   class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
+                <a href="messages.php"
+                    class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
                     <i class="fas fa-times mr-2"></i>
                     Temizle
                 </a>
@@ -130,25 +125,26 @@ include 'includes/header.php';
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <h4 class="font-medium text-gray-900 mb-2">
                                         <i class="fas fa-comment-alt mr-2 text-gray-400"></i>
                                         <?= htmlspecialchars($message['subject']) ?>
                                     </h4>
                                     <p class="text-gray-600 line-clamp-2">
-                                        <?= htmlspecialchars(substr($message['message'], 0, 200)) ?><?= strlen($message['message']) > 200 ? '...' : '' ?>
+                                        <?= htmlspecialchars(substr($message['message'], 0, 200)) ?>        <?= strlen($message['message']) > 200 ? '...' : '' ?>
                                     </p>
                                 </div>
-                                
+
                                 <div class="flex items-center space-x-3">
                                     <button onclick="showMessageModal(<?= htmlspecialchars(json_encode($message)) ?>)"
-                                            class="text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors">
+                                        class="text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors">
                                         <i class="fas fa-eye mr-1"></i>
                                         Detayları Gör
                                     </button>
-                                    <button onclick="deleteMessage(<?= $message['id'] ?>, '<?= htmlspecialchars($message['name']) ?>')"
-                                            class="text-red-600 hover:text-red-700 font-medium text-sm transition-colors">
+                                    <button
+                                        onclick="deleteMessage(<?= $message['id'] ?>, '<?= htmlspecialchars($message['name']) ?>')"
+                                        class="text-red-600 hover:text-red-700 font-medium text-sm transition-colors">
                                         <i class="fas fa-trash mr-1"></i>
                                         Sil
                                     </button>
@@ -178,28 +174,28 @@ include 'includes/header.php';
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div class="flex items-center justify-between">
                 <div class="text-sm text-gray-700">
-                    Toplam <span class="font-medium"><?= number_format($total) ?></span> mesajdan 
-                    <span class="font-medium"><?= number_format($offset + 1) ?></span> - 
+                    Toplam <span class="font-medium"><?= number_format($total) ?></span> mesajdan
+                    <span class="font-medium"><?= number_format($offset + 1) ?></span> -
                     <span class="font-medium"><?= number_format(min($offset + $limit, $total)) ?></span> arası gösteriliyor
                 </div>
                 <nav class="flex items-center space-x-2">
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>" 
-                           class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <a href="?page=<?= $page - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>"
+                            class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     <?php endif; ?>
 
                     <?php for ($i = max(1, $page - 2); $i <= min($total_pages, $page + 2); $i++): ?>
-                        <a href="?page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?>" 
-                           class="px-3 py-2 <?= $i === $page ? 'bg-primary-600 text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100' ?> rounded-lg transition-colors">
+                        <a href="?page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?>"
+                            class="px-3 py-2 <?= $i === $page ? 'bg-primary-600 text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100' ?> rounded-lg transition-colors">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
 
                     <?php if ($page < $total_pages): ?>
-                        <a href="?page=<?= $page + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>" 
-                           class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <a href="?page=<?= $page + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>"
+                            class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     <?php endif; ?>
@@ -233,31 +229,32 @@ include 'includes/header.php';
                             <p id="modal-email" class="text-gray-900"></p>
                         </div>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Konu</label>
                         <p id="modal-subject" class="text-gray-900 font-medium"></p>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Gönderim Tarihi</label>
                         <p id="modal-date" class="text-gray-600"></p>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Mesaj</label>
-                        <div id="modal-message" class="bg-gray-50 rounded-lg p-4 text-gray-900 whitespace-pre-wrap"></div>
+                        <div id="modal-message" class="bg-gray-50 rounded-lg p-4 text-gray-900 whitespace-pre-wrap">
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="p-6 border-t border-gray-200 bg-gray-50">
                 <div class="flex justify-end space-x-3">
-                    <button onclick="closeMessageModal()" 
-                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button onclick="closeMessageModal()"
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                         Kapat
                     </button>
-                    <button onclick="deleteCurrentMessage()" 
-                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                    <button onclick="deleteCurrentMessage()"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
                         <i class="fas fa-trash mr-2"></i>
                         Mesajı Sil
                     </button>
@@ -275,65 +272,65 @@ include 'includes/header.php';
 </form>
 
 <script>
-let currentMessage = null;
+    let currentMessage = null;
 
-function showMessageModal(message) {
-    currentMessage = message;
-    
-    document.getElementById('modal-name').textContent = message.name;
-    document.getElementById('modal-email').textContent = message.email;
-    document.getElementById('modal-subject').textContent = message.subject;
-    document.getElementById('modal-message').textContent = message.message;
-    
-    const date = new Date(message.created_at);
-    document.getElementById('modal-date').textContent = date.toLocaleString('tr-TR');
-    
-    document.getElementById('messageModal').classList.remove('hidden');
-}
+    function showMessageModal(message) {
+        currentMessage = message;
 
-function closeMessageModal() {
-    document.getElementById('messageModal').classList.add('hidden');
-    currentMessage = null;
-}
+        document.getElementById('modal-name').textContent = message.name;
+        document.getElementById('modal-email').textContent = message.email;
+        document.getElementById('modal-subject').textContent = message.subject;
+        document.getElementById('modal-message').textContent = message.message;
 
-function deleteMessage(messageId, messageName) {
-    if (confirm(`"${messageName}" adlı kişiden gelen mesajı silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz.`)) {
-        document.getElementById('deleteMessageId').value = messageId;
-        document.getElementById('deleteForm').submit();
+        const date = new Date(message.created_at);
+        document.getElementById('modal-date').textContent = date.toLocaleString('tr-TR');
+
+        document.getElementById('messageModal').classList.remove('hidden');
     }
-}
 
-function deleteCurrentMessage() {
-    if (currentMessage) {
-        deleteMessage(currentMessage.id, currentMessage.name);
+    function closeMessageModal() {
+        document.getElementById('messageModal').classList.add('hidden');
+        currentMessage = null;
     }
-}
 
-// Modal dışına tıklandığında kapatma
-document.getElementById('messageModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeMessageModal();
+    function deleteMessage(messageId, messageName) {
+        if (confirm(`"${messageName}" adlı kişiden gelen mesajı silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz.`)) {
+            document.getElementById('deleteMessageId').value = messageId;
+            document.getElementById('deleteForm').submit();
+        }
     }
-});
 
-// ESC tuşu ile kapatma
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && !document.getElementById('messageModal').classList.contains('hidden')) {
-        closeMessageModal();
+    function deleteCurrentMessage() {
+        if (currentMessage) {
+            deleteMessage(currentMessage.id, currentMessage.name);
+        }
     }
-});
+
+
+    document.getElementById('messageModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeMessageModal();
+        }
+    });
+
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !document.getElementById('messageModal').classList.contains('hidden')) {
+            closeMessageModal();
+        }
+    });
 </script>
 
 <style>
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 </style>
 
 <?php
-// Footer dahil et
+
 include 'includes/footer.php';
 ?>

@@ -1,35 +1,32 @@
 <?php
-/**
- * Blog Yönetimi Sayfası
- * Modern, kullanıcı dostu blog yönetim paneli
- */
+
 
 require_once 'config/auth.php';
 check_admin_auth();
 
-// Veritabanı bağlantısı
+
 require_once '../config/database.php';
 require_once '../services/BlogService.php';
 
-// Sayfa bilgileri
+
 $page_title = 'Blog Yönetimi';
 $breadcrumb_items = [
     ['title' => 'Blog Yönetimi', 'url' => '#', 'icon' => 'fas fa-edit']
 ];
 
-// POST işlemleri
+
 if ($_POST) {
     $csrf_token = $_POST['csrf_token'] ?? '';
-    
+
     if (!verify_csrf_token($csrf_token)) {
         set_flash_message('error', 'Güvenlik hatası. Lütfen tekrar deneyin.');
     } else {
         $action = $_POST['action'] ?? '';
-        
+
         switch ($action) {
             case 'delete':
                 $blog_id = intval($_POST['blog_id'] ?? 0);
-                
+
                 if ($blog_id > 0) {
                     try {
                         $delete_response = database()->delete('blogs', ['id' => $blog_id]);
@@ -45,11 +42,11 @@ if ($_POST) {
                     set_flash_message('error', 'Geçersiz blog ID.');
                 }
                 break;
-                
+
             case 'toggle_status':
                 $blog_id = intval($_POST['blog_id'] ?? 0);
                 $new_status = $_POST['status'] === 'published' ? 'draft' : 'published';
-                
+
                 if ($blog_id > 0) {
                     try {
                         $update_response = database()->update('blogs', ['status' => $new_status], ['id' => $blog_id]);
@@ -65,14 +62,14 @@ if ($_POST) {
                 }
                 break;
         }
-        
-        // Redirect to prevent form resubmission
+
+
         header('Location: blogs.php');
         exit;
     }
 }
 
-// Blog yazılarını getir
+
 try {
     $blogService = new BlogService();
     $blogs = $blogService->getAllBlogs(50);
@@ -81,13 +78,13 @@ try {
     set_flash_message('error', 'Blog yazıları yüklenirken bir hata oluştu: ' . $e->getMessage());
 }
 
-// Header dahil et
+
 include 'includes/header.php';
 ?>
 
 <!-- Blog Management Content -->
 <div class="space-y-6">
-    
+
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -95,11 +92,13 @@ include 'includes/header.php';
             <p class="text-gray-600">Blog yazılarını yönetin ve düzenleyin</p>
         </div>
         <div class="mt-4 lg:mt-0 flex space-x-3">
-            <a href="blog-add.php" class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
+            <a href="blog-add.php"
+                class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Yeni Blog Yazısı
             </a>
-            <a href="../blog.php" target="_blank" class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+            <a href="../blog.php" target="_blank"
+                class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
                 <i class="fas fa-external-link-alt mr-2"></i>
                 Blog Sayfasını Gör
             </a>
@@ -114,7 +113,7 @@ include 'includes/header.php';
         $text_color = $flash_message['type'] === 'success' ? 'text-green-800' : 'text-red-800';
         $icon = $flash_message['type'] === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
         $icon_color = $flash_message['type'] === 'success' ? 'text-green-500' : 'text-red-500';
-    ?>
+        ?>
         <div class="<?= $bg_color ?> border rounded-xl p-4 flex items-center">
             <i class="fas <?= $icon ?> <?= $icon_color ?> mr-3"></i>
             <span class="<?= $text_color ?> font-medium"><?= htmlspecialchars($flash_message['message']) ?></span>
@@ -125,8 +124,8 @@ include 'includes/header.php';
     <?php if (!empty($blogs)): ?>
         <?php
         $total_blogs = count($blogs);
-        $published_blogs = count(array_filter($blogs, function($blog) { 
-            return ($blog['status'] ?? 'published') === 'published'; 
+        $published_blogs = count(array_filter($blogs, function ($blog) {
+            return ($blog['status'] ?? 'published') === 'published';
         }));
         $draft_blogs = $total_blogs - $published_blogs;
         ?>
@@ -142,7 +141,7 @@ include 'includes/header.php';
                     </div>
                 </div>
             </div>
-            
+
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                 <div class="flex items-center">
                     <div class="p-3 bg-green-100 rounded-xl">
@@ -154,7 +153,7 @@ include 'includes/header.php';
                     </div>
                 </div>
             </div>
-            
+
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                 <div class="flex items-center">
                     <div class="p-3 bg-orange-100 rounded-xl">
@@ -188,27 +187,31 @@ include 'includes/header.php';
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Blog Yazısı</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Durum</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tarih</th>
-                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">İşlemler</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Blog
+                                Yazısı</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Kategori</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Durum</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Tarih</th>
+                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                İşlemler</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <?php foreach ($blogs as $blog): 
+                        <?php foreach ($blogs as $blog):
                             $blog = (array) $blog;
                             $status = $blog['status'] ?? 'published';
-                        ?>
+                            ?>
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-4">
                                         <div class="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                                             <?php if (!empty($blog['image_url'])): ?>
-                                                <img src="<?= htmlspecialchars($blog['image_url']) ?>" 
-                                                     alt="<?= htmlspecialchars($blog['title']) ?>"
-                                                     class="w-full h-full object-cover"
-                                                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyNEgyNCIgc3Ryb2tlPSIjOEI5OEE1IiBzdHJva2Utd2lkdGg9IjIiLz4KPHA+'" >
+                                                <img src="<?= htmlspecialchars($blog['image_url']) ?>"
+                                                    alt="<?= htmlspecialchars($blog['title']) ?>" class="w-full h-full object-cover"
+                                                    onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyNEgyNCIgc3Ryb2tlPSIjOEI5OEE1IiBzdHJva2Utd2lkdGg9IjIiLz4KPHA+'">
                                             <?php else: ?>
                                                 <div class="w-full h-full flex items-center justify-center">
                                                     <i class="fas fa-image text-gray-400"></i>
@@ -227,7 +230,8 @@ include 'includes/header.php';
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                    <span
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
                                         <i class="fas fa-tag mr-1"></i>
                                         <?= htmlspecialchars($blog['category'] ?? 'Genel') ?>
                                     </span>
@@ -238,7 +242,8 @@ include 'includes/header.php';
                                         <input type="hidden" name="action" value="toggle_status">
                                         <input type="hidden" name="blog_id" value="<?= $blog['id'] ?>">
                                         <input type="hidden" name="status" value="<?= $status ?>">
-                                        <button type="submit" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors
+                                        <button type="submit"
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors
                                             <?= $status === 'published' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' ?>">
                                             <i class="fas <?= $status === 'published' ? 'fa-eye' : 'fa-eye-slash' ?> mr-1"></i>
                                             <?= $status === 'published' ? 'Yayında' : 'Taslak' ?>
@@ -255,25 +260,25 @@ include 'includes/header.php';
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <a href="../blog-detail.php?id=<?= $blog['id'] ?>" 
-                                           target="_blank"
-                                           class="inline-flex items-center justify-center w-20 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
+                                        <a href="../blog-detail.php?id=<?= $blog['id'] ?>" target="_blank"
+                                            class="inline-flex items-center justify-center w-20 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-eye mr-1"></i>
                                             Gör
                                         </a>
-                                        
-                                        <a href="blog-edit.php?id=<?= $blog['id'] ?>" 
-                                           class="inline-flex items-center justify-center w-20 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+
+                                        <a href="blog-edit.php?id=<?= $blog['id'] ?>"
+                                            class="inline-flex items-center justify-center w-20 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>
                                             Düzenle
                                         </a>
-                                        
-                                        <form method="POST" class="inline-block" onsubmit="return confirm('Bu blog yazısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
+
+                                        <form method="POST" class="inline-block"
+                                            onsubmit="return confirm('Bu blog yazısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
                                             <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="blog_id" value="<?= $blog['id'] ?>">
-                                            <button type="submit" 
-                                                    class="inline-flex items-center justify-center w-20 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
+                                            <button type="submit"
+                                                class="inline-flex items-center justify-center w-20 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
                                                 <i class="fas fa-trash mr-1"></i>
                                                 Sil
                                             </button>
@@ -293,8 +298,8 @@ include 'includes/header.php';
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Henüz blog yazısı yok</h3>
                 <p class="text-gray-600 mb-6">İlk blog yazınızı oluşturarak başlayın</p>
-                <a href="blog-add.php" 
-                   class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
+                <a href="blog-add.php"
+                    class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
                     <i class="fas fa-plus mr-2"></i>
                     İlk Blog Yazısını Ekle
                 </a>
@@ -305,28 +310,28 @@ include 'includes/header.php';
 
 <!-- JavaScript for enhanced UX -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Form submission loading states
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn && !submitBtn.onclick) {
-                const btnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i>İşleniyor...';
-                
-                // Re-enable after 3 seconds as fallback
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = btnText;
-                }, 3000);
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.onclick) {
+                    const btnText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i>İşleniyor...';
+
+
+                    setTimeout(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = btnText;
+                    }, 3000);
+                }
+            });
         });
     });
-});
 </script>
 
 <?php
-// Footer dahil et
+
 include 'includes/footer.php';
 ?>

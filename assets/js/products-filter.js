@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const productCountDisplay = document.getElementById('product-count-display');
 
     function fetchProducts(apiUrl, historyUrl, updateHistory = true) {
-        // Add a loading indicator
+        
         productGrid.style.opacity = '0.5';
 
         fetch(apiUrl, {
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return response.json();
         })
         .then(data => {
-            // Update content
+            
             if (productGrid) {
                 productGrid.innerHTML = data.products_html;
             }
@@ -32,17 +32,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 productCountDisplay.innerHTML = data.count_html;
             }
 
-            // Update browser history with the clean URL
+            
             if (updateHistory) {
                 history.pushState({path: historyUrl}, '', historyUrl);
             }
         })
         .catch(error => {
             console.error('Filtreleme hatası:', error);
-            // Optionally, show an error message to the user
+            
         })
         .finally(() => {
-            // Remove loading indicator
+            
             productGrid.style.opacity = '1';
         });
     }
@@ -58,10 +58,10 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchProducts(apiUrl, historyUrl);
     }
 
-    // Event Listeners
+    
     if (filterForm) {
         filterForm.addEventListener('change', function(e) {
-            // Sadece checkbox ve select değişikliklerini dinle
+            
             if (e.target.matches('input[type="checkbox"]') || e.target.matches('select')) {
                 handleFilterChange();
             }
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (paginationContainer) {
-        // Use event delegation for pagination links
+        
         paginationContainer.addEventListener('click', function (e) {
             if (e.target.tagName === 'A') {
                 e.preventDefault();
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     
-    // Handle browser back/forward buttons
+    
     window.addEventListener('popstate', function(event) {
         const historyUrl = (event.state && event.state.path) || location.href;
         const apiUrl = historyUrl.replace('products.php', 'api/ajax-products.php');

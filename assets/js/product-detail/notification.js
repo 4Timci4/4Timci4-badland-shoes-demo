@@ -1,8 +1,8 @@
-// Bildirim gösterme işlevselliği
+
 export function initializeNotifications() {
-    // Bildirim gösterme
+    
     function showNotification(message, type = 'info') {
-        // Mevcut bildirim varsa kaldır
+        
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
             existingNotification.remove();
@@ -18,7 +18,7 @@ export function initializeNotifications() {
         
         document.body.appendChild(notification);
         
-        // 3 saniye sonra kaldır
+        
         setTimeout(() => {
             notification.style.opacity = '0';
             setTimeout(() => {
@@ -27,7 +27,7 @@ export function initializeNotifications() {
         }, 3000);
     }
     
-    // Public API
+    
     return {
         showNotification: showNotification
     };

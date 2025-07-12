@@ -1,33 +1,23 @@
 <?php
-/**
- * User Profile Management Page
- *
- * Session tabanlı kimlik doğrulama ile korumalı kullanıcı profil sayfası
- */
 
-// Start output buffering to prevent session errors
 ob_start();
 
 require_once '../services/AuthService.php';
 $authService = new AuthService();
 
-// Session güvenlik kontrollerini yap ve giriş kontrolü
 $authService->checkSessionSecurity();
 if (!$authService->isLoggedIn()) {
     header('Location: ../login.php');
     exit;
 }
 
-// Kullanıcı bilgilerini al
 $currentUser = $authService->getCurrentUser();
-$user = $currentUser; // favorites.php için backward compatibility
+$user = $currentUser;
 $error_message = '';
 $success_message = '';
 
-// Profil bilgilerini al
 $user_profile = $authService->getUserProfile($currentUser['id']);
 
-// Profil güncelleme işlemi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $updateData = [
         'first_name' => $_POST['first_name'] ?? '',
@@ -35,16 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         'phone_number' => $_POST['phone_number'] ?? '',
         'gender' => $_POST['gender'] ?? ''
     ];
-    
+
     $result = $authService->updateUserProfile($currentUser['id'], $updateData);
-    
+
     if ($result['success']) {
         $success_message = $result['message'];
-        // Session ID'sini güvenli bir şekilde yenile
         SessionConfig::regenerateSession();
-        // Güncellenmiş kullanıcı bilgilerini al
         $currentUser = $authService->getCurrentUser();
-        // Güncellenmiş profil bilgilerini al
         $user_profile = $authService->getUserProfile($currentUser['id']);
     } else {
         $error_message = $result['message'];
@@ -53,8 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 ?>
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
-    <!-- Page transitions devre dışı bırak -->
     <meta name="page-transitions" content="disabled">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -63,21 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-100 loaded" data-disable-page-transitions="true">
     <?php include '../includes/header.php'; ?>
 
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div class="lg:grid lg:grid-cols-12 lg:gap-x-3">
+        <div class="lg:grid lg:grid-cols-12 lg:gap-x-3">
             <?php
-            // Aktif sayfayı belirle
             $active_page = 'profile';
-            // Ortak sidebar'ı dahil et
             include '../includes/sidebar.php';
             ?>
 
-            <!-- Main content -->
             <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
-                <!-- Profile Header -->
                 <div class="bg-white shadow sm:rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
                         <div class="flex items-center">
@@ -98,7 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </div>
                 </div>
 
-                <!-- Alert Messages -->
                 <?php if (!empty($error_message)): ?>
                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
                         <p class="font-bold">Hata</p>
@@ -113,54 +96,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </div>
                 <?php endif; ?>
 
-                <!-- Profil Formu -->
                 <form action="profile.php" method="POST">
-                    <!-- Kişisel Bilgiler Kartı -->
                     <div class="bg-white shadow sm:rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
                             <h3 class="text-lg leading-6 font-medium text-gray-900">Kişisel Bilgiler</h3>
                             <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                                 <div class="sm:col-span-3">
                                     <label for="first_name" class="block text-sm font-medium text-gray-700">Ad</label>
-                                    <input type="text" name="first_name" id="first_name" value="<?php echo htmlspecialchars($user_profile['first_name'] ?? ''); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <input type="text" name="first_name" id="first_name"
+                                        value="<?php echo htmlspecialchars($user_profile['first_name'] ?? ''); ?>"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                 </div>
                                 <div class="sm:col-span-3">
                                     <label for="last_name" class="block text-sm font-medium text-gray-700">Soyad</label>
-                                    <input type="text" name="last_name" id="last_name" value="<?php echo htmlspecialchars($user_profile['last_name'] ?? ''); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <input type="text" name="last_name" id="last_name"
+                                        value="<?php echo htmlspecialchars($user_profile['last_name'] ?? ''); ?>"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                 </div>
                                 <div class="sm:col-span-3">
                                     <label for="gender" class="block text-sm font-medium text-gray-700">Cinsiyet</label>
-                                    <select id="gender" name="gender" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <select id="gender" name="gender"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                         <option value="" <?php echo !isset($user_profile['gender']) ? 'selected' : ''; ?>>Seçiniz</option>
                                         <option value="Kadın" <?php echo ($user_profile['gender'] ?? '') === 'Kadın' ? 'selected' : ''; ?>>Kadın</option>
                                         <option value="Erkek" <?php echo ($user_profile['gender'] ?? '') === 'Erkek' ? 'selected' : ''; ?>>Erkek</option>
-                                        <option value="Belirtmek İstemiyorum" <?php echo ($user_profile['gender'] ?? '') === 'Belirtmek İstemiyorum' ? 'selected' : ''; ?>>Belirtmek İstemiyorum</option>
+                                        <option value="Belirtmek İstemiyorum" <?php echo ($user_profile['gender'] ?? '') === 'Belirtmek İstemiyorum' ? 'selected' : ''; ?>>Belirtmek İstemiyorum
+                                        </option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- İletişim Bilgileri Kartı -->
                     <div class="bg-white shadow sm:rounded-lg mt-6">
                         <div class="px-4 py-5 sm:p-6">
                             <h3 class="text-lg leading-6 font-medium text-gray-900">İletişim Bilgileri</h3>
                             <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                                 <div class="sm:col-span-4">
-                                    <label for="email" class="block text-sm font-medium text-gray-700">E-posta Adresi</label>
-                                    <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($currentUser['email']); ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-                                    <p class="mt-2 text-xs text-gray-500">E-posta adresinizi değiştirirseniz, yeni adresinize gönderilen linki onaylamanız gerekecektir.</p>
+                                    <label for="email" class="block text-sm font-medium text-gray-700">E-posta
+                                        Adresi</label>
+                                    <input type="email" name="email" id="email"
+                                        value="<?php echo htmlspecialchars($currentUser['email']); ?>"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <p class="mt-2 text-xs text-gray-500">E-posta adresinizi değiştirirseniz, yeni
+                                        adresinize gönderilen linki onaylamanız gerekecektir.</p>
                                 </div>
                                 <div class="sm:col-span-4">
-                                    <label for="phone_number" class="block text-sm font-medium text-gray-700">Telefon Numarası</label>
-                                    <input type="tel" name="phone_number" id="phone_number" value="<?php echo htmlspecialchars($user_profile['phone_number'] ?? ''); ?>" class="mt-1 block w-full">
+                                    <label for="phone_number" class="block text-sm font-medium text-gray-700">Telefon
+                                        Numarası</label>
+                                    <input type="tel" name="phone_number" id="phone_number"
+                                        value="<?php echo htmlspecialchars($user_profile['phone_number'] ?? ''); ?>"
+                                        class="mt-1 block w-full">
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex justify-end mt-6">
-                        <button type="submit" name="update_profile" value="1" class="bg-primary border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        <button type="submit" name="update_profile" value="1"
+                            class="bg-primary border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                             Bilgileri Güncelle
                         </button>
                     </div>
@@ -171,15 +165,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
     <?php include '../includes/footer.php'; ?>
 
-    <!-- CSS transition için stil -->
     <style>
         .tab-content {
             transition: opacity 0.3s ease;
         }
     </style>
 </body>
+
 </html>
 <?php
-// End output buffering and flush buffer
 ob_end_flush();
 ?>

@@ -1,6 +1,6 @@
-/* Ürün Detay Sayfası için Tailwind CSS ile özel stiller */
 
-/* Smooth transitions for images */
+
+
 #main-product-image {
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
@@ -9,7 +9,7 @@
     transform: scale(1.02);
 }
 
-/* Önizleme modu için stil */
+
 #main-product-image.preview-mode {
     opacity: 0.8 !important;
     transition: opacity 0.15s ease-in-out;
@@ -17,7 +17,7 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Color option hover effects */
+
 .color-option {
     transition: all 0.2s ease-in-out;
     position: relative;
@@ -33,7 +33,7 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
-/* Renk hover tooltip */
+
 .color-option:hover .color-tooltip {
     opacity: 1;
 }
@@ -43,7 +43,7 @@
     z-index: 10;
 }
 
-/* Size option smooth transitions */
+
 .size-option {
     transition: all 0.2s ease-in-out;
 }
@@ -53,7 +53,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Thumbnail smooth transitions */
+
 .thumbnail-item {
     transition: all 0.3s ease-in-out;
 }
@@ -63,7 +63,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Renk-beden grid stilleri */
+
 .variant-grid-item {
     transition: all 0.2s ease-in-out;
 }
@@ -74,7 +74,7 @@
     transform: translateY(-2px);
 }
 
-/* Önbelleğe alınmış görsel göstergesi */
+
 .cached-image-indicator {
     position: absolute;
     top: 5px;
@@ -91,7 +91,7 @@
     opacity: 1;
 }
 
-/* Loading skeleton animation */
+
 .image-skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
@@ -107,7 +107,7 @@
     }
 }
 
-/* Hızlı yükleme göstergesi animasyonu */
+
 @keyframes quickLoad {
     0% { opacity: 0.6; }
     50% { opacity: 0.8; }
@@ -118,7 +118,7 @@
     animation: quickLoad 0.2s ease-out;
 }
 
-/* Smooth fade for main image container */
+
 .main-image-container {
     position: relative;
     overflow: hidden;
@@ -142,7 +142,7 @@
     opacity: 1;
 }
 
-/* Sadece Tailwind CSS'de bulunmayan özel stiller burada */
+
 .thumbnail-images img.active,
 .thumbnail-images img:hover {
     border-color: var(--primary-color);

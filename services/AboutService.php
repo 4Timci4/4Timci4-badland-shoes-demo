@@ -2,14 +2,17 @@
 
 require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
-class AboutService {
+class AboutService
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = database();
     }
 
-    public function getAboutPageContent() {
+    public function getAboutPageContent()
+    {
         $settings = $this->getSettings();
         $values = $this->getContentBlocks('values');
         $team = $this->getContentBlocks('team');
@@ -21,7 +24,8 @@ class AboutService {
         ];
     }
 
-    public function getHomePageAboutSection() {
+    public function getHomePageAboutSection()
+    {
         try {
             $data = $this->db->select('about_settings', [], 'meta_key,meta_value');
 
@@ -39,7 +43,7 @@ class AboutService {
                     $result[$item['meta_key']] = $item['meta_value'];
                 }
             }
-            
+
             return $result;
         } catch (Exception $e) {
             error_log("Anasayfa Hakkımızda bölümü getirme hatası: " . $e->getMessage());
@@ -47,22 +51,19 @@ class AboutService {
         }
     }
 
-    /**
-     * Settings (about_settings) CRUD işlemleri
-     */
-    
-    // Setting güncelle
-    public function updateSetting($meta_key, $meta_value, $section = null) {
+
+    public function updateSetting($meta_key, $meta_value, $section = null)
+    {
         try {
             $data = [
                 'meta_value' => $meta_value,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
-            
+
             if ($section) {
                 $data['section'] = $section;
             }
-            
+
             $result = $this->db->update('about_settings', $data, ['meta_key' => $meta_key]);
             return $result !== false;
         } catch (Exception $e) {
@@ -71,8 +72,9 @@ class AboutService {
         }
     }
 
-    // Birden fazla setting'i güncelle
-    public function updateMultipleSettings($settings) {
+
+    public function updateMultipleSettings($settings)
+    {
         $success = true;
         foreach ($settings as $meta_key => $meta_value) {
             if (!$this->updateSetting($meta_key, $meta_value)) {
@@ -82,18 +84,14 @@ class AboutService {
         return $success;
     }
 
-    /**
-     * Content Blocks (about_content_blocks) CRUD işlemleri
-     */
-    
-    // Yeni content block oluştur
-    public function createContentBlock($data) {
+
+    public function createContentBlock($data)
+    {
         try {
-            // Son sıra numarasını al
             $lastOrder = $this->getLastSortOrder($data['section']);
             $data['sort_order'] = $lastOrder + 1;
             $data['created_at'] = date('Y-m-d H:i:s');
-            
+
             $result = $this->db->insert('about_content_blocks', $data);
             return $result !== false;
         } catch (Exception $e) {
@@ -102,8 +100,8 @@ class AboutService {
         }
     }
 
-    // Content block güncelle
-    public function updateContentBlock($id, $data) {
+    public function updateContentBlock($id, $data)
+    {
         try {
             $data['updated_at'] = date('Y-m-d H:i:s');
             $result = $this->db->update('about_content_blocks', $data, ['id' => intval($id)]);
@@ -114,8 +112,8 @@ class AboutService {
         }
     }
 
-    // Content block sil
-    public function deleteContentBlock($id) {
+    public function deleteContentBlock($id)
+    {
         try {
             $result = $this->db->delete('about_content_blocks', ['id' => intval($id)]);
             return $result !== false;
@@ -125,8 +123,8 @@ class AboutService {
         }
     }
 
-    // ID'ye göre content block getir
-    public function getContentBlockById($id) {
+    public function getContentBlockById($id)
+    {
         try {
             $result = $this->db->select('about_content_blocks', ['id' => intval($id)], '*', ['limit' => 1]);
             return !empty($result) ? $result[0] : null;
@@ -136,8 +134,8 @@ class AboutService {
         }
     }
 
-    // Content block sıralamasını güncelle
-    public function updateContentBlockOrder($section, $orderData) {
+    public function updateContentBlockOrder($section, $orderData)
+    {
         try {
             foreach ($orderData as $id => $order) {
                 $this->updateContentBlock($id, ['sort_order' => intval($order)]);
@@ -149,12 +147,9 @@ class AboutService {
         }
     }
 
-    /**
-     * Helper metodlar
-     */
-    
-    // Son sıra numarasını getir
-    private function getLastSortOrder($section) {
+
+    private function getLastSortOrder($section)
+    {
         try {
             $result = $this->db->select('about_content_blocks', ['section' => $section], 'sort_order', ['order' => 'sort_order DESC', 'limit' => 1]);
             return !empty($result) ? $result[0]['sort_order'] : 0;
@@ -164,13 +159,13 @@ class AboutService {
         }
     }
 
-    // İstatistikleri getir
-    public function getAboutStats() {
+    public function getAboutStats()
+    {
         try {
             $allSettings = $this->getSettings();
             $allValues = $this->getContentBlocks('values');
             $allTeam = $this->getContentBlocks('team');
-            
+
             return [
                 'total_settings' => count($allSettings),
                 'total_values' => count($allValues),
@@ -188,8 +183,8 @@ class AboutService {
         }
     }
 
-    // Son güncelleme tarihini getir
-    private function getLastUpdatedDate() {
+    private function getLastUpdatedDate()
+    {
         try {
             $result = $this->db->select('about_settings', [], 'updated_at', ['order' => 'updated_at DESC', 'limit' => 1]);
             return !empty($result) ? $result[0]['updated_at'] : null;
@@ -198,7 +193,8 @@ class AboutService {
         }
     }
 
-    private function getSettings() {
+    private function getSettings()
+    {
         try {
             $data = $this->db->select('about_settings', [], '*');
             $settings = [];
@@ -214,7 +210,8 @@ class AboutService {
         }
     }
 
-    private function getContentBlocks($section) {
+    private function getContentBlocks($section)
+    {
         try {
             return $this->db->select('about_content_blocks', ['section' => $section], '*', ['order' => 'sort_order ASC']);
         } catch (Exception $e) {
@@ -224,7 +221,7 @@ class AboutService {
     }
 }
 
-// Global helper function
-function aboutService() {
+function aboutService()
+{
     return new AboutService();
 }

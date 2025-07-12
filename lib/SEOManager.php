@@ -1,37 +1,27 @@
 <?php
-/**
- * SEO Yöneticisi
- * 
- * Meta tag yönetimi, Schema markup, OpenGraph ve Twitter Card desteği
- */
 
-class SEOManager {
+class SEOManager
+{
     private static $instance = null;
     private $meta_tags = [];
     private $structured_data = [];
     private $default_config = [];
-    
-    /**
-     * Singleton pattern
-     */
-    public static function getInstance() {
+
+    public static function getInstance()
+    {
         if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
-    /**
-     * Constructor
-     */
-    private function __construct() {
+
+    private function __construct()
+    {
         $this->setDefaultConfig();
     }
-    
-    /**
-     * Varsayılan SEO ayarlarını belirle
-     */
-    private function setDefaultConfig() {
+
+    private function setDefaultConfig()
+    {
         $this->default_config = [
             'site_name' => 'Bandland Shoes',
             'site_description' => 'Türkiye\'nin en kaliteli ayakkabı markası. Modern tasarım, konfor ve dayanıklılığı bir araya getiren ayakkabı koleksiyonları.',
@@ -47,65 +37,52 @@ class SEOManager {
             'revisit_after' => '1 days'
         ];
     }
-    
-    /**
-     * Sayfa başlığını ayarla
-     */
-    public function setTitle($title, $append_site_name = true) {
+
+    public function setTitle($title, $append_site_name = true)
+    {
         if ($append_site_name && $title !== $this->default_config['site_name']) {
             $title = $title . ' | ' . $this->default_config['site_name'];
         }
-        
+
         $this->meta_tags['title'] = htmlspecialchars($title);
         return $this;
     }
-    
-    /**
-     * Meta description ayarla
-     */
-    public function setDescription($description) {
+
+    public function setDescription($description)
+    {
         $description = strip_tags($description);
-        // Meta description idealinde 155-160 karakter arası olmalı
         if (strlen($description) > 160) {
             $description = substr($description, 0, 157) . '...';
         }
-        
+
         $this->meta_tags['description'] = htmlspecialchars($description);
         return $this;
     }
-    
-    /**
-     * Meta keywords ayarla
-     */
-    public function setKeywords($keywords) {
+
+    public function setKeywords($keywords)
+    {
         if (is_array($keywords)) {
             $keywords = implode(', ', $keywords);
         }
-        
+
         $this->meta_tags['keywords'] = htmlspecialchars($keywords);
         return $this;
     }
-    
-    /**
-     * Canonical URL ayarla
-     */
-    public function setCanonical($url) {
+
+    public function setCanonical($url)
+    {
         $this->meta_tags['canonical'] = htmlspecialchars($url);
         return $this;
     }
-    
-    /**
-     * Robots meta tag ayarla
-     */
-    public function setRobots($robots) {
+
+    public function setRobots($robots)
+    {
         $this->meta_tags['robots'] = htmlspecialchars($robots);
         return $this;
     }
-    
-    /**
-     * OpenGraph verilerini ayarla
-     */
-    public function setOpenGraph($data) {
+
+    public function setOpenGraph($data)
+    {
         $defaults = [
             'title' => $this->meta_tags['title'] ?? $this->default_config['site_name'],
             'description' => $this->meta_tags['description'] ?? $this->default_config['site_description'],
@@ -115,15 +92,13 @@ class SEOManager {
             'site_name' => $this->default_config['site_name'],
             'locale' => $this->default_config['locale']
         ];
-        
+
         $this->meta_tags['og'] = array_merge($defaults, $data);
         return $this;
     }
-    
-    /**
-     * Twitter Card verilerini ayarla
-     */
-    public function setTwitterCard($data) {
+
+    public function setTwitterCard($data)
+    {
         $defaults = [
             'card' => 'summary_large_image',
             'title' => $this->meta_tags['title'] ?? $this->default_config['site_name'],
@@ -131,28 +106,24 @@ class SEOManager {
             'image' => $this->default_config['default_image'],
             'site' => $this->default_config['twitter_username']
         ];
-        
+
         $this->meta_tags['twitter'] = array_merge($defaults, $data);
         return $this;
     }
-    
-    /**
-     * JSON-LD structured data ekle
-     */
-    public function addStructuredData($type, $data) {
+
+    public function addStructuredData($type, $data)
+    {
         $structured_data = [
             '@context' => 'https://schema.org',
             '@type' => $type
         ];
-        
+
         $this->structured_data[] = array_merge($structured_data, $data);
         return $this;
     }
-    
-    /**
-     * Organization schema ekle
-     */
-    public function addOrganizationSchema($data = []) {
+
+    public function addOrganizationSchema($data = [])
+    {
         $defaults = [
             'name' => $this->default_config['site_name'],
             'url' => $this->default_config['site_url'],
@@ -169,14 +140,12 @@ class SEOManager {
                 'availableLanguage' => 'Turkish'
             ]
         ];
-        
+
         return $this->addStructuredData('Organization', array_merge($defaults, $data));
     }
-    
-    /**
-     * Product schema ekle
-     */
-    public function addProductSchema($product_data) {
+
+    public function addProductSchema($product_data)
+    {
         $defaults = [
             '@type' => 'Product',
             'brand' => [
@@ -192,14 +161,12 @@ class SEOManager {
                 ]
             ]
         ];
-        
+
         return $this->addStructuredData('Product', array_merge($defaults, $product_data));
     }
-    
-    /**
-     * Article schema ekle (blog yazıları için)
-     */
-    public function addArticleSchema($article_data) {
+
+    public function addArticleSchema($article_data)
+    {
         $defaults = [
             '@type' => 'Article',
             'publisher' => [
@@ -219,14 +186,12 @@ class SEOManager {
                 '@id' => $this->getCurrentURL()
             ]
         ];
-        
+
         return $this->addStructuredData('Article', array_merge($defaults, $article_data));
     }
-    
-    /**
-     * BreadcrumbList schema ekle
-     */
-    public function addBreadcrumbSchema($breadcrumbs) {
+
+    public function addBreadcrumbSchema($breadcrumbs)
+    {
         $list_items = [];
         foreach ($breadcrumbs as $index => $breadcrumb) {
             $list_items[] = [
@@ -236,16 +201,14 @@ class SEOManager {
                 'item' => $breadcrumb['url']
             ];
         }
-        
+
         return $this->addStructuredData('BreadcrumbList', [
             'itemListElement' => $list_items
         ]);
     }
-    
-    /**
-     * LocalBusiness schema ekle
-     */
-    public function addLocalBusinessSchema($business_data = []) {
+
+    public function addLocalBusinessSchema($business_data = [])
+    {
         $defaults = [
             '@type' => 'LocalBusiness',
             'name' => $this->default_config['site_name'],
@@ -263,127 +226,113 @@ class SEOManager {
             'openingHoursSpecification' => [
                 '@type' => 'OpeningHoursSpecification',
                 'dayOfWeek' => [
-                    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+                    'Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                    'Saturday'
                 ],
                 'opens' => '10:00',
                 'closes' => '20:00'
             ]
         ];
-        
+
         return $this->addStructuredData('LocalBusiness', array_merge($defaults, $business_data));
     }
-    
-    /**
-     * Mevcut URL'yi al
-     */
-    private function getCurrentURL() {
+
+    private function getCurrentURL()
+    {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $uri = $_SERVER['REQUEST_URI'] ?? '';
-        
+
         return $protocol . '://' . $host . $uri;
     }
-    
-    /**
-     * Tüm meta tagları render et
-     */
-    public function renderMetaTags() {
+
+    public function renderMetaTags()
+    {
         $html = "\n";
-        
-        // Basic meta tags
+
         if (isset($this->meta_tags['title'])) {
             $html .= '<title>' . $this->meta_tags['title'] . "</title>\n";
         }
-        
+
         if (isset($this->meta_tags['description'])) {
             $html .= '<meta name="description" content="' . $this->meta_tags['description'] . '">' . "\n";
         }
-        
+
         if (isset($this->meta_tags['keywords'])) {
             $html .= '<meta name="keywords" content="' . $this->meta_tags['keywords'] . '">' . "\n";
         }
-        
-        // Robots
+
         $robots = $this->meta_tags['robots'] ?? $this->default_config['robots'];
         $html .= '<meta name="robots" content="' . $robots . '">' . "\n";
         $html .= '<meta name="googlebot" content="' . $this->default_config['googlebot'] . '">' . "\n";
-        
-        // Language and locale
+
         $html .= '<meta name="language" content="' . $this->default_config['language'] . '">' . "\n";
         $html .= '<meta property="og:locale" content="' . $this->default_config['locale'] . '">' . "\n";
-        
-        // Author
+
         $html .= '<meta name="author" content="' . $this->default_config['author'] . '">' . "\n";
-        
-        // Revisit
+
         $html .= '<meta name="revisit-after" content="' . $this->default_config['revisit_after'] . '">' . "\n";
-        
-        // Canonical URL
+
         if (isset($this->meta_tags['canonical'])) {
             $html .= '<link rel="canonical" href="' . $this->meta_tags['canonical'] . '">' . "\n";
         }
-        
-        // OpenGraph tags
+
         if (isset($this->meta_tags['og'])) {
             foreach ($this->meta_tags['og'] as $property => $content) {
                 $html .= '<meta property="og:' . $property . '" content="' . htmlspecialchars($content) . '">' . "\n";
             }
         }
-        
-        // Twitter Card tags
+
         if (isset($this->meta_tags['twitter'])) {
             foreach ($this->meta_tags['twitter'] as $name => $content) {
                 $html .= '<meta name="twitter:' . $name . '" content="' . htmlspecialchars($content) . '">' . "\n";
             }
         }
-        
-        // Additional SEO meta tags
+
         $html .= '<meta name="viewport" content="width=device-width, initial-scale=1.0">' . "\n";
         $html .= '<meta charset="UTF-8">' . "\n";
         $html .= '<meta http-equiv="X-UA-Compatible" content="IE=edge">' . "\n";
-        
+
         return $html;
     }
-    
-    /**
-     * Structured data JSON-LD render et
-     */
-    public function renderStructuredData() {
+
+    public function renderStructuredData()
+    {
         if (empty($this->structured_data)) {
             return '';
         }
-        
+
         $html = "\n" . '<script type="application/ld+json">' . "\n";
-        
+
         if (count($this->structured_data) === 1) {
             $html .= json_encode($this->structured_data[0], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         } else {
             $html .= json_encode($this->structured_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
-        
+
         $html .= "\n" . '</script>' . "\n";
-        
+
         return $html;
     }
-    
-    /**
-     * Sitemap oluştur
-     */
-    public function generateSitemap($urls = []) {
+
+    public function generateSitemap($urls = [])
+    {
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        // Ana sayfa
+
         $xml .= $this->addSitemapURL($this->default_config['site_url'], date('Y-m-d'), 'daily', '1.0');
-        
-        // Varsayılan sayfalar
+
         $default_pages = [
             '/products.php' => ['weekly', '0.9'],
             '/about.php' => ['monthly', '0.7'],
             '/blog.php' => ['weekly', '0.8'],
             '/contact.php' => ['monthly', '0.6']
         ];
-        
+
         foreach ($default_pages as $page => $settings) {
             $xml .= $this->addSitemapURL(
                 $this->default_config['site_url'] . $page,
@@ -392,8 +341,7 @@ class SEOManager {
                 $settings[1]
             );
         }
-        
-        // Ek URL'ler
+
         foreach ($urls as $url_data) {
             $xml .= $this->addSitemapURL(
                 $url_data['url'],
@@ -402,30 +350,26 @@ class SEOManager {
                 $url_data['priority'] ?? '0.5'
             );
         }
-        
+
         $xml .= '</urlset>';
-        
+
         return $xml;
     }
-    
-    /**
-     * Sitemap URL elementi ekle
-     */
-    private function addSitemapURL($url, $lastmod, $changefreq, $priority) {
+
+    private function addSitemapURL($url, $lastmod, $changefreq, $priority)
+    {
         $xml = "  <url>\n";
         $xml .= "    <loc>" . htmlspecialchars($url) . "</loc>\n";
         $xml .= "    <lastmod>" . $lastmod . "</lastmod>\n";
         $xml .= "    <changefreq>" . $changefreq . "</changefreq>\n";
         $xml .= "    <priority>" . $priority . "</priority>\n";
         $xml .= "  </url>\n";
-        
+
         return $xml;
     }
-    
-    /**
-     * Robots.txt oluştur
-     */
-    public function generateRobotsTxt($custom_rules = []) {
+
+    public function generateRobotsTxt($custom_rules = [])
+    {
         $robots = "User-agent: *\n";
         $robots .= "Allow: /\n";
         $robots .= "Disallow: /admin/\n";
@@ -434,30 +378,26 @@ class SEOManager {
         $robots .= "Disallow: /services/\n";
         $robots .= "Disallow: /includes/\n";
         $robots .= "\n";
-        
-        // Özel kurallar ekle
+
         foreach ($custom_rules as $rule) {
             $robots .= $rule . "\n";
         }
-        
+
         $robots .= "\n";
         $robots .= "Sitemap: " . $this->default_config['site_url'] . "/sitemap.xml\n";
-        
+
         return $robots;
     }
-    
-    /**
-     * SEO analiz raporu oluştur
-     */
-    public function generateSEOReport($content, $url) {
+
+    public function generateSEOReport($content, $url)
+    {
         $report = [
             'score' => 0,
             'issues' => [],
             'suggestions' => [],
             'good_practices' => []
         ];
-        
-        // Title analizi
+
         if (isset($this->meta_tags['title'])) {
             $title_length = strlen($this->meta_tags['title']);
             if ($title_length >= 30 && $title_length <= 60) {
@@ -471,8 +411,7 @@ class SEOManager {
         } else {
             $report['issues'][] = 'Başlık etiketi eksik';
         }
-        
-        // Description analizi
+
         if (isset($this->meta_tags['description'])) {
             $desc_length = strlen($this->meta_tags['description']);
             if ($desc_length >= 120 && $desc_length <= 160) {
@@ -487,8 +426,7 @@ class SEOManager {
         } else {
             $report['issues'][] = 'Meta description eksik';
         }
-        
-        // H1 analizi
+
         if (preg_match('/<h1[^>]*>(.*?)<\/h1>/i', $content, $matches)) {
             $h1_count = preg_match_all('/<h1[^>]*>/i', $content);
             if ($h1_count === 1) {
@@ -500,11 +438,10 @@ class SEOManager {
         } else {
             $report['issues'][] = 'H1 etiketi eksik';
         }
-        
-        // Image alt text analizi
+
         $images = preg_match_all('/<img[^>]*>/i', $content, $img_matches);
         $images_with_alt = preg_match_all('/<img[^>]*alt=["\'][^"\']*["\'][^>]*>/i', $content);
-        
+
         if ($images > 0) {
             $alt_ratio = ($images_with_alt / $images) * 100;
             if ($alt_ratio >= 90) {
@@ -517,8 +454,7 @@ class SEOManager {
                 $report['issues'][] = 'Çoğu resimde alt text eksik';
             }
         }
-        
-        // Internal links analizi
+
         $internal_links = preg_match_all('/<a[^>]*href=["\'][^"\']*["\'][^>]*>/i', $content);
         if ($internal_links >= 3) {
             $report['good_practices'][] = 'Yeterli internal link mevcut';
@@ -526,11 +462,10 @@ class SEOManager {
         } else {
             $report['suggestions'][] = 'Daha fazla internal link eklenebilir';
         }
-        
-        // Content length analizi
+
         $text_content = strip_tags($content);
         $word_count = str_word_count($text_content);
-        
+
         if ($word_count >= 300) {
             $report['good_practices'][] = 'İçerik uzunluğu yeterli (' . $word_count . ' kelime)';
             $report['score'] += 15;
@@ -540,27 +475,23 @@ class SEOManager {
         } else {
             $report['issues'][] = 'İçerik çok kısa (' . $word_count . ' kelime)';
         }
-        
-        // Schema markup analizi
+
         if (!empty($this->structured_data)) {
             $report['good_practices'][] = 'Structured data (Schema.org) mevcut';
             $report['score'] += 15;
         } else {
             $report['suggestions'][] = 'Structured data eklenebilir';
         }
-        
-        // OpenGraph analizi
+
         if (isset($this->meta_tags['og'])) {
             $report['good_practices'][] = 'OpenGraph meta tagları mevcut';
             $report['score'] += 10;
         } else {
             $report['suggestions'][] = 'Social media için OpenGraph tagları eklenebilir';
         }
-        
-        // Score normalleştirme
+
         $report['score'] = min(100, $report['score']);
-        
-        // Overall assessment
+
         if ($report['score'] >= 80) {
             $report['assessment'] = 'Mükemmel';
         } elseif ($report['score'] >= 60) {
@@ -570,14 +501,12 @@ class SEOManager {
         } else {
             $report['assessment'] = 'Geliştirilmeli';
         }
-        
+
         return $report;
     }
 }
 
-/**
- * Global SEO manager fonksiyonu
- */
-function seo() {
+function seo()
+{
     return SEOManager::getInstance();
 }

@@ -1,4 +1,3 @@
-<!-- Breadcrumb -->
 <section class="bg-gray-50 py-4 border-b">
     <div class="max-w-7xl mx-auto px-5">
         <nav class="text-sm">

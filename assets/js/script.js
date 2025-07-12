@@ -1,13 +1,13 @@
-// Sayfa yüklendiğinde çalışacak fonksiyonlar
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Slider işlevselliği
+    
     initSlider();
     
-    // Mobil menü işlevselliği
+    
     initMobileMenu();
 });
 
-// Slider fonksiyonu
+
 function initSlider() {
     const slides = document.querySelectorAll('.slide');
     const dots = document.querySelectorAll('.dot');
@@ -60,16 +60,16 @@ function initSlider() {
     dots.forEach((dot, index) => {
         dot.addEventListener('click', () => {
             showSlide(index);
-            startSlider(); // Kullanıcı etkileşiminden sonra sayacı sıfırla
+            startSlider(); 
         });
     });
 
-    // İlk slaytı göster ve başlat
+    
     showSlide(0);
     startSlider();
 }
 
-// Mobil menü işlevselliği
+
 function initMobileMenu() {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
@@ -81,7 +81,7 @@ function initMobileMenu() {
     }
 }
 
-// Ürün filtreleme işlevselliği (Daha sonra eklenebilir)
+
 function filterProducts(category) {
     const products = document.querySelectorAll('.product-card');
     

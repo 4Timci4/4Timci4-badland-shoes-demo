@@ -1,16 +1,14 @@
-/*--------------------------------------------------------------
-# Blog Sayfası Stilleri
---------------------------------------------------------------*/
 
-/* Genel Ayarlar */
+
+
 body {
-    background-color: #f9fafb; /* Açık gri arka plan */
-    color: #374151; /* Koyu gri metin */
+    background-color: #f9fafb; 
+    color: #374151; 
 }
 
-/* Banner */
+
 .page-banner {
-    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80') no-repeat center center;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https:
     background-size: cover;
     padding: 6rem 0;
     text-align: center;
@@ -30,7 +28,7 @@ body {
     opacity: 0.9;
 }
 
-/* Blog Bölümü */
+
 .blog-section {
     padding: 3rem 0;
 }
@@ -41,7 +39,7 @@ body {
     gap: 2rem;
 }
 
-/* Blog Kartı */
+
 .blog-card {
     background-color: #ffffff;
     border-radius: 0.75rem;
@@ -134,7 +132,7 @@ body {
 }
 
 .read-more:hover {
-    color: #c2185b; /* Primary rengin koyu tonu */
+    color: #c2185b; 
     gap: 0.75rem;
 }
 
@@ -142,7 +140,7 @@ body {
     transform: translateX(4px);
 }
 
-/* Sayfalama */
+
 .pagination {
     display: flex;
     justify-content: center;
@@ -195,7 +193,7 @@ body {
     border-color: var(--primary-color, #e91e63);
 }
 
-/* Responsive Tasarım */
+
 @media (max-width: 768px) {
     .page-banner {
         padding: 4rem 0;

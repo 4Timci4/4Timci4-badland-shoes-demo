@@ -1,5 +1,5 @@
 <?php
-// Session yönetimini etkinleştir
+
 require_once 'services/AuthService.php';
 $authService = new AuthService();
 
@@ -11,7 +11,7 @@ $contactService = new ContactService();
 $security = security();
 $contact_info = $contactService->getContactInfo();
 
-// Form gönderildi mi kontrol et
+
 $form_submitted = false;
 $form_success = false;
 $form_errors = [];
@@ -19,17 +19,17 @@ $form_errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
     $form_submitted = true;
     
-    // Rate limiting kontrolü
-    if (!$security->checkRateLimit('contact_form', 5, 3600)) { // 5 istek/saat
+
+    if (!$security->checkRateLimit('contact_form', 5, 3600)) {
         $form_errors[] = 'Çok fazla istek gönderdiniz. Lütfen bir saat sonra tekrar deneyin.';
     } else {
-        // CSRF token kontrolü
+
         $csrf_token = $_POST['csrf_token'] ?? '';
         if (!$security->verifyCSRFToken($csrf_token, 'contact_form')) {
             $form_errors[] = 'Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.';
             $security->logSecurityEvent('csrf_failure', 'Contact form CSRF token verification failed');
         } else {
-            // Suspicious activity kontrolü
+
             $suspicious_alerts = $security->detectSuspiciousActivity($_POST);
             if (!empty($suspicious_alerts)) {
                 $form_errors[] = 'Güvenlik nedeniyle form gönderilemiyor. Lütfen girdiğiniz bilgileri kontrol edin.';
@@ -38,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
                         'Suspicious activity detected in contact form', $alert);
                 }
             } else {
-                // Form verilerini güvenli şekilde al ve doğrula
+
                 $name = $security->sanitizeInput($_POST['name'] ?? '', 'string');
                 $email = $security->sanitizeInput($_POST['email'] ?? '', 'email');
                 $subject = $security->sanitizeInput($_POST['subject'] ?? '', 'string');
                 $message = $security->sanitizeInput($_POST['message'] ?? '', 'string');
                 
-                // Validation kuralları
+
                 $validation_rules = [
                     'name' => [
                         'required' => true,
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
                         $form_errors = array_merge($form_errors, $field_errors);
                     }
                 } else {
-                    // Form verisini gönder
+
                     $form_data = [
                         'name' => $name,
                         'email' => $email,
@@ -108,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
 include 'includes/header.php'; 
 ?>
 
-<!-- Page Banner -->
 <section class="bg-gradient-to-r from-primary to-purple-600 text-white py-16">
     <div class="max-w-7xl mx-auto px-5 text-center">
         <h1 class="text-5xl font-bold mb-4"><?php echo htmlspecialchars($contact_info['banner']['title'] ?? 'İletişim'); ?></h1>
@@ -116,7 +115,6 @@ include 'includes/header.php';
     </div>
 </section>
 
-<!-- Breadcrumb -->
 <section class="bg-gray-50 py-4 border-b">
     <div class="max-w-7xl mx-auto px-5">
         <nav class="text-sm">
@@ -129,12 +127,10 @@ include 'includes/header.php';
     </div>
 </section>
 
-<!-- Contact Content -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-5">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
-            <!-- İletişim Bilgileri -->
             <div class="space-y-8">
                 <div>
                     <h2 class="text-3xl font-bold text-secondary mb-4"><?php echo htmlspecialchars($contact_info['contact']['title'] ?? 'İletişim Bilgileri'); ?></h2>
@@ -142,7 +138,6 @@ include 'includes/header.php';
                 </div>
                 
                 <div class="space-y-6">
-                    <!-- Adres -->
                     <div class="flex items-start space-x-4">
                         <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-map-marker-alt text-primary text-lg"></i>
@@ -153,7 +148,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                     
-                    <!-- Telefon -->
                     <div class="flex items-start space-x-4">
                         <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-phone text-primary text-lg"></i>
@@ -167,7 +161,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                     
-                    <!-- E-posta -->
                     <div class="flex items-start space-x-4">
                         <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-envelope text-primary text-lg"></i>
@@ -181,7 +174,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                     
-                    <!-- Çalışma Saatleri -->
                     <div class="flex items-start space-x-4">
                         <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-clock text-primary text-lg"></i>
@@ -196,7 +188,6 @@ include 'includes/header.php';
                     </div>
                 </div>
                 
-                <!-- Sosyal Medya -->
                 <div class="pt-8">
                     <h3 class="font-semibold text-secondary mb-4">Sosyal Medya</h3>
                     <div class="flex space-x-4">
@@ -214,12 +205,10 @@ include 'includes/header.php';
                 </div>
             </div>
             
-            <!-- İletişim Formu -->
             <div class="bg-gray-50 p-8 rounded-xl">
                 <h2 class="text-3xl font-bold text-secondary mb-6"><?php echo htmlspecialchars($contact_info['form']['title'] ?? 'Bize Mesaj Gönderin'); ?></h2>
                 
                 <?php if ($form_submitted && $form_success): ?>
-                    <!-- Başarı Mesajı -->
                     <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
                         <div class="flex items-center space-x-3">
                             <i class="fas fa-check-circle text-green-500 text-xl"></i>
@@ -233,7 +222,6 @@ include 'includes/header.php';
                         </button>
                     </div>
                 <?php elseif ($form_submitted && !empty($form_errors)): ?>
-                    <!-- Hata Mesajları -->
                     <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
                         <div class="flex items-start space-x-3">
                             <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
@@ -289,7 +277,6 @@ include 'includes/header.php';
     </div>
 </section>
 
-<!-- Harita -->
 <section class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-5">
         <div class="text-center mb-12">

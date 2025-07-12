@@ -6,11 +6,11 @@ $error_message = '';
 $success_message = '';
 $token = $_REQUEST['token'] ?? '';
 
-// Token kontrolü
+
 if (empty($token)) {
     $error_message = 'Geçersiz şifre sıfırlama linki.';
 } else {
-    // Token geçerlilik kontrolü (basit kontrol)
+
     if (strlen($token) < 32) {
         $error_message = 'Geçersiz şifre sıfırlama token\'ı.';
     }
@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
 ?>
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-50">
     <?php include 'includes/header.php'; ?>
 
@@ -72,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
                     <span class="block sm:inline"><?php echo htmlspecialchars($success_message); ?></span>
                     <div class="mt-3">
-                        <a href="login.php" class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">
+                        <a href="login.php"
+                            class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">
                             Giriş Yap
                         </a>
                     </div>
@@ -80,32 +83,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
             <?php endif; ?>
 
             <?php if (empty($success_message) && empty($error_message)): ?>
-                <form method="POST" action="reset-password.php?token=<?php echo htmlspecialchars($token); ?>" class="mt-8 space-y-6">
+                <form method="POST" action="reset-password.php?token=<?php echo htmlspecialchars($token); ?>"
+                    class="mt-8 space-y-6">
                     <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
-                    
+
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700">Yeni Şifre</label>
                         <input type="password" id="password" name="password" required
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                               placeholder="Yeni şifrenizi girin" minlength="6">
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                            placeholder="Yeni şifrenizi girin" minlength="6">
                     </div>
 
                     <div>
-                        <label for="password_confirm" class="block text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</label>
+                        <label for="password_confirm" class="block text-sm font-medium text-gray-700">Yeni Şifre
+                            (Tekrar)</label>
                         <input type="password" id="password_confirm" name="password_confirm" required
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                               placeholder="Yeni şifrenizi tekrar girin" minlength="6">
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                            placeholder="Yeni şifrenizi tekrar girin" minlength="6">
                     </div>
 
                     <div>
                         <button type="submit"
-                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                             Şifremi Güncelle
                         </button>
                     </div>
                 </form>
             <?php endif; ?>
-            
+
             <div class="text-sm text-center mt-4">
                 <a href="login.php" class="font-medium text-primary hover:text-primary-dark">
                     Giriş ekranına geri dön
@@ -116,4 +121,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
 
     <?php include 'includes/footer.php'; ?>
 </body>
+
 </html>
