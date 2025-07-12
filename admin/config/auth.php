@@ -236,6 +236,22 @@ function get_admin_menu() {
             ]
         ],
         [
+            'title' => 'E-Posta Yönetimi',
+            'icon' => 'fas fa-at',
+            'submenu' => [
+                [
+                    'title' => 'SMTP Ayarları',
+                    'url' => 'email-settings.php',
+                    'active' => is_active_page('email-settings.php')
+                ],
+                [
+                    'title' => 'E-posta Şablonları',
+                    'url' => 'email-templates.php',
+                    'active' => is_active_page('email-templates.php')
+                ]
+            ]
+        ],
+        [
             'title' => 'Admin Yönetimi',
             'icon' => 'fas fa-users-cog',
             'submenu' => [
