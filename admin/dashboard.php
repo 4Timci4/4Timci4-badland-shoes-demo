@@ -164,6 +164,16 @@ include 'includes/header.php';
                     </div>
                 </a>
 
+                <a href="genders.php" class="group block p-6 border-2 border-dashed border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all duration-300">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-venus-mars text-purple-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-900 mb-2">Cinsiyet Yönet</h4>
+                        <p class="text-gray-600 text-sm">Cinsiyet kategorilerini yönet</p>
+                    </div>
+                </a>
+
             </div>
         </div>
     </div>
@@ -214,7 +224,7 @@ include 'includes/header.php';
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-semibold text-gray-900 mb-1 truncate"><?= htmlspecialchars($product['name']) ?></h4>
                                     <p class="text-gray-600 text-sm mb-2">
-                                        <?= htmlspecialchars($product['categories']['name'] ?? 'Kategorisiz') ?> • Stok: Bilinmiyor
+                                        <?= htmlspecialchars($product['category_name']) ?> • Stok: <?= number_format($product['total_stock']) ?>
                                     </p>
                                     <div class="flex items-center justify-end">
                                         <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">

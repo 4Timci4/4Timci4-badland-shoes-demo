@@ -325,7 +325,7 @@ function get_dashboard_stats() {
 }
 
 /**
- * Son eklenen ürünleri getir
+ * Son eklenen ürünleri getir (kategoriler, resimler ve stok bilgileri ile)
  */
 function get_recent_products($limit = 5) {
     require_once __DIR__ . '/../../config/database.php';
@@ -333,6 +333,35 @@ function get_recent_products($limit = 5) {
     try {
         $db = database();
         $products = $db->select('product_models', [], '*', ['order' => 'created_at DESC', 'limit' => $limit]);
+        
+        // Her ürün için ek bilgileri getir
+        foreach ($products as &$product) {
+            // Kategori bilgisini getir
+            $product_categories = $db->select('product_categories', ['product_id' => $product['id']], 'category_id', ['limit' => 1]);
+            if (!empty($product_categories)) {
+                $category = $db->select('categories', ['id' => $product_categories[0]['category_id']], 'name', ['limit' => 1]);
+                $product['category_name'] = $category[0]['name'] ?? 'Kategorisiz';
+            } else {
+                $product['category_name'] = 'Kategorisiz';
+            }
+            
+            // İlk resmi getir
+            $images = $db->select('product_images',
+                ['model_id' => $product['id']],
+                'image_url',
+                ['order' => 'id ASC', 'limit' => 1]
+            );
+            $product['image_url'] = $images[0]['image_url'] ?? 'https://via.placeholder.com/64';
+            
+            // Toplam stok bilgisini getir
+            $variants = $db->select('product_variants', ['model_id' => $product['id']], 'stock_quantity');
+            $total_stock = 0;
+            foreach ($variants as $variant) {
+                $total_stock += (int)$variant['stock_quantity'];
+            }
+            $product['total_stock'] = $total_stock;
+        }
+        
         return $products;
     } catch (Exception $e) {
         error_log("Recent products error: " . $e->getMessage());
