@@ -199,6 +199,11 @@ if (isset($seo)) {
             const mobileMenu = document.getElementById('mobile-menu');
 
             if (mobileMenuButton && mobileMenu) {
+                // Sayfa yüklendiğinde menünün kesinlikle kapalı olmasını sağla
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('show');
+                mobileMenuButton.setAttribute('aria-expanded', 'false');
+
                 // Eğer buton zaten event listener'a sahipse, yeni ekleme
                 if (mobileMenuButton.hasAttribute('data-menu-initialized')) {
                     return;

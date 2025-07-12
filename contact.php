@@ -108,8 +108,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
 include 'includes/header.php'; 
 ?>
 
-<section class="bg-gradient-to-r from-primary to-purple-600 text-white py-16">
-    <div class="max-w-7xl mx-auto px-5 text-center">
+<section class="relative bg-gradient-to-r from-primary to-purple-600 text-white py-16 overflow-hidden">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'); opacity: 0.3;"></div>
+    <div class="relative max-w-7xl mx-auto px-5 text-center">
         <h1 class="text-5xl font-bold mb-4"><?php echo htmlspecialchars($contact_info['banner']['title'] ?? 'İletişim'); ?></h1>
         <p class="text-xl text-white/90"><?php echo htmlspecialchars($contact_info['banner']['subtitle'] ?? 'Bizimle iletişime geçin'); ?></p>
     </div>

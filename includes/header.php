@@ -566,4 +566,22 @@ if (!empty($breadcrumbs)) {
             </nav>
         </div>
     </header>
+
+    <!-- Mobil menü güvenlik scripti -->
+    <script>
+        // Sayfa yüklendiğinde mobil menünün kesinlikle kapalı olmasını sağla
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+
+            if (mobileMenu && mobileMenuButton) {
+                // Menüyü zorla kapat
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('show');
+                mobileMenu.style.display = 'none';
+                mobileMenuButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+    </script>
+
     <main>
