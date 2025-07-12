@@ -53,7 +53,7 @@ $collections = $seasonalCollectionsService->getActiveCollections();
 
 <!-- Sezonluk Koleksiyonlar -->
 <section class="py-20 bg-white">
-    <div class="max-w-7xl mx-auto px-5">
+    <div class="max-w-screen-xl mx-auto px-5">
         <div class="text-center mb-16">
             <h2 class="text-4xl font-display font-bold mb-3 text-secondary">Sezonluk Koleksiyonlar</h2>
             <p class="text-gray-600">Her mevsime özel, stilinizi tamamlayacak tasarımlar.</p>
@@ -91,7 +91,7 @@ $aboutService = new AboutService();
 $homeAbout = $aboutService->getHomePageAboutSection();
 ?>
 <section class="py-20 bg-white">
-    <div class="max-w-7xl mx-auto px-5">
+    <div class="max-w-screen-xl mx-auto px-5">
         <div class="flex flex-col lg:flex-row items-center gap-12">
             <div class="flex-1">
                 <img src="<?php echo htmlspecialchars($homeAbout['story_image_url'] ?? ''); ?>" alt="Mağaza" class="w-2/3 mx-auto rounded-lg shadow-lg">

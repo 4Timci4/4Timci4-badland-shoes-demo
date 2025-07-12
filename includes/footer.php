@@ -6,7 +6,7 @@ $footer_info = $contactService->getFooterInfo();
 ?>
     </main>
     <footer class="bg-dark text-white pt-12 pb-5">
-        <div class="max-w-7xl mx-auto px-5">
+        <div class="max-w-screen-xl mx-auto px-5">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <div class="space-y-4">
                     <h2 class="text-2xl font-semibold"><?= htmlspecialchars($footer_info['footer']['site_title'] ?? 'Schön') ?><span class="text-primary">.</span></h2>
