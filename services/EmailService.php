@@ -173,7 +173,7 @@ class EmailService {
      * @param array $placeholders Değiştirilecek anahtar-değer çiftleri
      * @return string Değiştirilmiş metin
      */
-    private function replacePlaceholders($content, $placeholders) {
+    public function replacePlaceholders($content, $placeholders) {
         foreach ($placeholders as $key => $value) {
             $content = str_replace('{{' . $key . '}}', htmlspecialchars($value), $content);
         }

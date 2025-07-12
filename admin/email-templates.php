@@ -396,6 +396,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Editör kontrol işlemini başlat
     checkEditorReady();
+
+    // Test E-postası Gönderme
+    document.getElementById('test-email-btn')?.addEventListener('click', function() {
+        const toEmail = prompt('Test e-postasını göndermek istediğiniz adresi girin:', 'test@example.com');
+        if (toEmail) {
+            sendAjaxRequest('send_test_email', { to_email: toEmail });
+        }
+    });
+
+    // Taslak Kaydetme
+    document.getElementById('save-draft-btn')?.addEventListener('click', function() {
+        sendAjaxRequest('save_draft');
+    });
+
+    function sendAjaxRequest(action, additionalData = {}) {
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+        formData.append('action', action);
+        formData.append('body_html', tinymce.get('html-editor').getContent());
+        formData.append('body_text', document.getElementById('body_text').value);
+
+        for (const key in additionalData) {
+            formData.append(key, additionalData[key]);
+        }
+
+        fetch('ajax/email_template_actions.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                if (data.last_saved) {
+                    document.getElementById('last-saved').innerText = data.last_saved;
+                }
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('AJAX Hatası:', error);
+            alert('İstek gönderilirken bir hata oluştu.');
+        });
+    }
 });
 </script>
 <?php include 'includes/footer.php'; ?>
