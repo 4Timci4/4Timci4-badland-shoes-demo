@@ -1,10 +1,37 @@
 <?php
 require_once __DIR__ . '/../lib/SEOManager.php';
 require_once __DIR__ . '/../services/AuthService.php';
+require_once __DIR__ . '/../services/GenderService.php';
+require_once __DIR__ . '/../services/CategoryService.php';
 
 $current_page = basename($_SERVER['PHP_SELF']);
 $seo = seo();
 $authService = new AuthService();
+
+// Mega menü için cinsiyet ve kategori verilerini çek
+$genderService = gender_service();
+$categoryService = category_service();
+
+$mega_menu_genders = $genderService->getGendersWithProductCounts();
+$mega_menu_categories = $categoryService->getCategoriesWithProductCountsOptimized(true);
+
+// Cinsiyetlere göre kategorileri grupla
+$gender_categories = [];
+foreach ($mega_menu_genders as $gender) {
+    $gender_categories[$gender['slug']] = [
+        'id' => $gender['id'],
+        'name' => $gender['name'],
+        'slug' => $gender['slug'],
+        'product_count' => $gender['product_count'],
+        'categories' => []
+    ];
+}
+
+// Her kategorinin hangi cinsiyetlere ait olduğunu bulmak için products tablosunu sorgulamak yerine
+// kategorileri tüm cinsiyetler için gösterelim (daha pratik bir yaklaşım)
+foreach ($mega_menu_genders as $gender) {
+    $gender_categories[$gender['slug']]['categories'] = array_slice($mega_menu_categories, 0, 8); // Her cinsiyet için ilk 8 kategoriyi göster
+}
 
 // Session güvenlik kontrollerini yap
 $authService->checkSessionSecurity();
@@ -226,7 +253,129 @@ if (!empty($breadcrumbs)) {
                 </div>
                 <nav class="hidden md:flex items-center space-x-6">
                     <a href="/index.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'index.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Ana Sayfa</a>
-                    <a href="/products.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'products.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Ürünler</a>
+                    
+                    <!-- Mega Dropdown Menü -->
+                    <div x-data="{
+                        open: false,
+                        activeGender: '<?php echo !empty($mega_menu_genders) ? $mega_menu_genders[0]['slug'] : 'kadin'; ?>',
+                        openTimeout: null,
+                        closeTimeout: null
+                    }" class="relative group">
+                        <a href="/products.php"
+                           @mouseenter="clearTimeout(closeTimeout); openTimeout = setTimeout(() => open = true, 150)"
+                           @mouseleave="clearTimeout(openTimeout); closeTimeout = setTimeout(() => open = false, 300)"
+                           class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 flex items-center gap-1 <?php echo ($current_page == 'products.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">
+                            Ürünler
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
+                        </a>
+                        
+                        <!-- Mega Dropdown -->
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform scale-95"
+                             x-transition:enter-end="opacity-100 transform scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 transform scale-100"
+                             x-transition:leave-end="opacity-0 transform scale-95"
+                             @mouseenter="clearTimeout(closeTimeout); clearTimeout(openTimeout)"
+                             @mouseleave="closeTimeout = setTimeout(() => open = false, 300)"
+                             class="absolute left-1/2 transform -translate-x-1/2 mt-2 w-screen max-w-6xl bg-white rounded-lg shadow-2xl border border-gray-100 z-50"
+                             style="display: none;">
+                            
+                            <div class="p-8">
+                                <div class="grid grid-cols-12 gap-8">
+                                    <!-- Sol Taraf - Cinsiyet Seçimi -->
+                                    <div class="col-span-3">
+                                        <h3 class="text-lg font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">CİNSİYET</h3>
+                                        <div class="space-y-2">
+                                            <?php foreach ($gender_categories as $slug => $gender): ?>
+                                                <button @click="activeGender = '<?php echo $slug; ?>'"
+                                                        class="w-full text-left px-4 py-3 rounded-lg transition-all duration-200 group/gender"
+                                                        :class="activeGender === '<?php echo $slug; ?>' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-50 hover:text-primary'">
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="font-medium"><?php echo htmlspecialchars($gender['name']); ?></span>
+                                                        <span class="text-xs px-2 py-1 rounded-full"
+                                                              :class="activeGender === '<?php echo $slug; ?>' ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-100 text-gray-500 group-hover/gender:bg-primary group-hover/gender:text-white'">
+                                                            <?php echo $gender['product_count']; ?>
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        
+                                        <!-- Tüm Ürünler Linki -->
+                                        <div class="mt-6 pt-4 border-t border-gray-200">
+                                            <a href="/products.php" class="block w-full text-center px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium">
+                                                Tüm Ürünleri Gör
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Orta Kısım - Kategoriler -->
+                                    <div class="col-span-6">
+                                        <?php foreach ($gender_categories as $slug => $gender): ?>
+                                            <div x-show="activeGender === '<?php echo $slug; ?>'"
+                                                 x-transition:enter="transition ease-out duration-200"
+                                                 x-transition:enter-start="opacity-0 transform translate-y-2"
+                                                 x-transition:enter-end="opacity-100 transform translate-y-0">
+                                                <h3 class="text-lg font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">
+                                                    <?php echo strtoupper(htmlspecialchars($gender['name'])); ?> KATEGORİLERİ
+                                                </h3>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <?php foreach ($gender['categories'] as $category): ?>
+                                                        <a href="/products.php?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
+                                                           class="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-primary hover:bg-primary hover:text-white transition-all duration-200 group/cat">
+                                                            <div>
+                                                                <span class="font-medium text-sm"><?php echo htmlspecialchars($category['category_name']); ?></span>
+                                                            </div>
+                                                            <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 group-hover/cat:bg-white group-hover/cat:bg-opacity-20 group-hover/cat:text-white">
+                                                                <?php echo $category['product_count']; ?>
+                                                            </span>
+                                                        </a>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                
+                                                <!-- Cinsiyet Bazlı Tüm Kategoriler Linki -->
+                                                <div class="mt-4">
+                                                    <a href="/products.php?genders[]=<?php echo $slug; ?>"
+                                                       class="inline-flex items-center text-primary hover:text-primary-dark font-medium text-sm transition-colors duration-200">
+                                                        Tüm <?php echo htmlspecialchars($gender['name']); ?> Ürünleri
+                                                        <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    
+                                    <!-- Sağ Taraf - Öne Çıkan Ürünler veya Banner -->
+                                    <div class="col-span-3">
+                                        <h3 class="text-lg font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">ÖNE ÇIKANLAR</h3>
+                                        <div class="space-y-4">
+                                            <div class="bg-gradient-to-br from-primary to-pink-500 rounded-lg p-6 text-white text-center">
+                                                <div class="mb-3">
+                                                    <i class="fas fa-fire text-2xl mb-2"></i>
+                                                    <h4 class="font-bold text-lg">Yeni Koleksiyon</h4>
+                                                </div>
+                                                <p class="text-sm mb-4 opacity-90">2025 Bahar koleksiyonumuz yayında!</p>
+                                                <a href="/products.php?featured=1" class="inline-block bg-white text-primary px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
+                                                    Keşfet
+                                                </a>
+                                            </div>
+                                            
+                                            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                                <div class="mb-3">
+                                                    <i class="fas fa-truck text-primary text-xl mb-2"></i>
+                                                    <h4 class="font-semibold text-gray-900">Ücretsiz Kargo</h4>
+                                                </div>
+                                                <p class="text-xs text-gray-600">250₺ ve üzeri alışverişlerde</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <a href="/about.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'about.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Hakkımızda</a>
                     <a href="/blog.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'blog.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Blog</a>
                     <a href="/contact.php" class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'contact.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">İletişim</a>
@@ -286,9 +435,77 @@ if (!empty($breadcrumbs)) {
         </div>
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
-            <nav class="flex flex-col p-4 space-y-2">
+            <nav class="flex flex-col p-4 space-y-2" x-data="{ openProducts: false, activeMobileGender: '<?php echo !empty($mega_menu_genders) ? $mega_menu_genders[0]['slug'] : 'kadin'; ?>' }">
                 <a href="/index.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'index.php') ? 'bg-primary text-white' : ''; ?>">Ana Sayfa</a>
-                <a href="/products.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'products.php') ? 'bg-primary text-white' : ''; ?>">Ürünler</a>
+                
+                <!-- Mobil Ürünler Dropdown -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button @click="openProducts = !openProducts"
+                            class="w-full flex items-center justify-between text-left text-gray-600 hover:text-primary p-3 transition-colors <?php echo ($current_page == 'products.php') ? 'bg-primary text-white' : ''; ?>">
+                        <span class="font-medium">Ürünler</span>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': openProducts }"></i>
+                    </button>
+                    
+                    <div x-show="openProducts"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 max-h-0"
+                         x-transition:enter-end="opacity-100 max-h-96"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 max-h-96"
+                         x-transition:leave-end="opacity-0 max-h-0"
+                         class="bg-gray-50 overflow-hidden"
+                         style="display: none;">
+                        
+                        <!-- Mobil Cinsiyet Seçimi -->
+                        <div class="border-b border-gray-200 p-3">
+                            <div class="grid grid-cols-<?php echo count($gender_categories); ?> gap-1">
+                                <?php foreach ($gender_categories as $slug => $gender): ?>
+                                    <button @click="activeMobileGender = '<?php echo $slug; ?>'"
+                                            class="px-3 py-2 text-xs rounded-lg transition-all duration-200"
+                                            :class="activeMobileGender === '<?php echo $slug; ?>' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-primary hover:text-white'">
+                                        <?php echo htmlspecialchars($gender['name']); ?>
+                                        <span class="block text-xs opacity-75">(<?php echo $gender['product_count']; ?>)</span>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Mobil Kategoriler -->
+                        <?php foreach ($gender_categories as $slug => $gender): ?>
+                            <div x-show="activeMobileGender === '<?php echo $slug; ?>'" class="p-3">
+                                <div class="space-y-2">
+                                    <!-- Bu cinsiyetin tüm ürünleri -->
+                                    <a href="/products.php?genders[]=<?php echo $slug; ?>"
+                                       class="block p-2 bg-primary text-white rounded-lg text-center text-sm font-medium hover:bg-primary-dark transition-colors">
+                                        Tüm <?php echo htmlspecialchars($gender['name']); ?> Ürünleri
+                                    </a>
+                                    
+                                    <!-- Kategoriler -->
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <?php foreach (array_slice($gender['categories'], 0, 6) as $category): ?>
+                                            <a href="/products.php?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
+                                               class="block p-2 bg-white border border-gray-200 rounded-lg text-xs text-center hover:border-primary hover:bg-primary hover:text-white transition-all duration-200">
+                                                <span class="font-medium"><?php echo htmlspecialchars($category['category_name']); ?></span>
+                                                <span class="block text-xs opacity-75 mt-1">(<?php echo $category['product_count']; ?>)</span>
+                                            </a>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                        
+                        <!-- Tüm Ürünler ve Öne Çıkanlar -->
+                        <div class="border-t border-gray-200 p-3 space-y-2">
+                            <a href="/products.php" class="block p-2 bg-gray-900 text-white rounded-lg text-center text-sm font-medium hover:bg-gray-800 transition-colors">
+                                Tüm Ürünleri Gör
+                            </a>
+                            <a href="/products.php?featured=1" class="block p-2 bg-gradient-to-r from-primary to-pink-500 text-white rounded-lg text-center text-sm font-medium hover:from-primary-dark hover:to-pink-600 transition-all">
+                                Öne Çıkanlar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
                 <a href="/about.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'about.php') ? 'bg-primary text-white' : ''; ?>">Hakkımızda</a>
                 <a href="/blog.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'blog.php') ? 'bg-primary text-white' : ''; ?>">Blog</a>
                 <a href="/contact.php" class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'contact.php') ? 'bg-primary text-white' : ''; ?>">İletişim</a>
