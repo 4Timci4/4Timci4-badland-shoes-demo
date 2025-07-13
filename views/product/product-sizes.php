@@ -1,6 +1,6 @@
 <div class="size-selection">
     <h3 class="text-lg font-semibold text-secondary mb-3">Beden Seçimi:</h3>
-    <div class="flex flex-wrap" style="max-width: 320px;">
+    <div class="flex flex-wrap max-w-full sm:max-w-sm">
         <?php
         $product_size_ids = [];
         foreach ($product['variants'] as $variant) {

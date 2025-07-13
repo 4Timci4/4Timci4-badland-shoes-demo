@@ -225,6 +225,26 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
         header nav a {
             transition: all 0.3s ease;
         }
+
+        /* Mobile menu body scroll lock */
+        body.mobile-menu-open {
+            overflow: hidden;
+        }
+
+        /* Mobile menu improvements */
+        .mobile-menu-overlay {
+            backdrop-filter: blur(4px);
+        }
+
+        /* Smooth transitions for mobile menu */
+        .mobile-menu {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .mobile-menu::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 
@@ -239,6 +259,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                             class="h-8 w-auto">
                     </a>
                 </div>
+                <!-- Desktop Navigation -->
                 <nav class="hidden md:flex items-center space-x-6">
                     <a href="/index.php"
                         class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'index.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Ana
@@ -377,7 +398,14 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                     <a href="/contact.php"
                         class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'contact.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">İletişim</a>
                 </nav>
+
                 <div class="flex items-center space-x-4">
+                    <!-- Mobile Menu Button -->
+                    <button x-data="{ mobileMenuOpen: false }"
+                        @click="mobileMenuOpen = !mobileMenuOpen; $dispatch('mobile-menu-toggle', { open: mobileMenuOpen })"
+                        class="md:hidden flex items-center justify-center w-10 h-10 text-gray-600 hover:text-primary focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
                     <?php if ($is_logged_in): ?>
 
                         <div x-data="{ open: false }" class="relative">
@@ -430,6 +458,171 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                 <a href="/register.php"
                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Kayıt Ol</a>
                             </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div x-data="{ mobileMenuOpen: false }"
+            @mobile-menu-toggle.window="mobileMenuOpen = $event.detail.open; document.body.classList.toggle('mobile-menu-open', mobileMenuOpen)"
+            x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden mobile-menu-overlay" style="display: none;"
+            @click="mobileMenuOpen = false; $dispatch('mobile-menu-toggle', { open: false })">
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-data="{
+                mobileMenuOpen: false,
+                activeSubmenu: null,
+                activeGender: '<?php echo !empty($mega_menu_genders) ? $mega_menu_genders[0]['slug'] : 'kadin'; ?>'
+             }"
+            @mobile-menu-toggle.window="mobileMenuOpen = $event.detail.open; if (!mobileMenuOpen) { activeSubmenu = null; }"
+            x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-300 transform"
+            x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="translate-x-0"
+            x-transition:leave-end="-translate-x-full"
+            class="fixed top-0 left-0 w-80 h-full bg-white shadow-xl z-50 md:hidden overflow-y-auto"
+            style="display: none;" @click.stop>
+
+            <!-- Mobile Menu Header -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <img src="<?php echo htmlspecialchars($site_logo); ?>"
+                    alt="<?php echo htmlspecialchars($settingsService->getSiteSetting('site_name', 'Bandland Shoes')); ?> Logo"
+                    class="h-8 w-auto">
+                <button @click="mobileMenuOpen = false; $dispatch('mobile-menu-toggle', { open: false })"
+                    class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-primary">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu Content -->
+            <div class="p-4">
+                <!-- Main Navigation -->
+                <nav class="space-y-2">
+                    <a href="/index.php"
+                        class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'index.php') ? 'bg-primary text-white' : ''; ?>">
+                        <i class="fas fa-home w-5 mr-3"></i>Ana Sayfa
+                    </a>
+
+                    <!-- Products with Submenu -->
+                    <div class="relative">
+                        <button @click="activeSubmenu = activeSubmenu === 'products' ? null : 'products'"
+                            class="w-full flex items-center justify-between py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'products.php') ? 'bg-primary text-white' : ''; ?>">
+                            <span><i class="fas fa-shopping-bag w-5 mr-3"></i>Ürünler</span>
+                            <i class="fas fa-chevron-down text-sm transition-transform duration-200"
+                                :class="{ 'rotate-180': activeSubmenu === 'products' }"></i>
+                        </button>
+
+                        <div x-show="activeSubmenu === 'products'" x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 max-h-0" x-transition:enter-end="opacity-100 max-h-96"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 max-h-96" x-transition:leave-end="opacity-0 max-h-0"
+                            class="overflow-hidden" style="display: none;">
+                            <div class="mt-2 ml-4 space-y-2">
+                                <a href="/products.php"
+                                    class="block py-2 px-4 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors">
+                                    Tüm Ürünler
+                                </a>
+
+                                <!-- Gender Categories -->
+                                <?php foreach ($gender_categories as $slug => $gender): ?>
+                                    <div class="border-l-2 border-gray-100 pl-4">
+                                        <div class="py-2">
+                                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                                <?php echo htmlspecialchars($gender['name']); ?>
+                                                (<?php echo $gender['product_count']; ?>)
+                                            </span>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <a href="/products.php?genders[]=<?php echo $slug; ?>"
+                                                class="block py-1 px-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary rounded transition-colors">
+                                                Tüm <?php echo htmlspecialchars($gender['name']); ?> Ürünleri
+                                            </a>
+                                            <?php foreach (array_slice($gender['categories'], 0, 4) as $category): ?>
+                                                <a href="/products.php?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
+                                                    class="block py-1 px-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary rounded transition-colors">
+                                                    <?php echo htmlspecialchars($category['category_name']); ?>
+                                                    (<?php echo $category['product_count']; ?>)
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+
+                                <div class="pt-2 border-t border-gray-100">
+                                    <a href="/products.php?featured=1"
+                                        class="block py-2 px-4 text-sm text-primary font-medium hover:bg-primary hover:text-white rounded-lg transition-colors">
+                                        <i class="fas fa-fire mr-2"></i>Öne Çıkanlar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="/about.php"
+                        class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'about.php') ? 'bg-primary text-white' : ''; ?>">
+                        <i class="fas fa-info-circle w-5 mr-3"></i>Hakkımızda
+                    </a>
+
+                    <a href="/blog.php"
+                        class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'blog.php') ? 'bg-primary text-white' : ''; ?>">
+                        <i class="fas fa-blog w-5 mr-3"></i>Blog
+                    </a>
+
+                    <a href="/contact.php"
+                        class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'contact.php') ? 'bg-primary text-white' : ''; ?>">
+                        <i class="fas fa-envelope w-5 mr-3"></i>İletişim
+                    </a>
+                </nav>
+
+                <!-- User Section -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <?php if ($is_logged_in): ?>
+                        <div class="space-y-2">
+                            <div class="flex items-center px-4 py-3 bg-gray-50 rounded-lg">
+                                <i class="fas fa-user-circle text-2xl text-primary mr-3"></i>
+                                <div>
+                                    <div class="font-medium text-gray-900 text-sm">
+                                        <?php echo htmlspecialchars($current_user['full_name'] ?? $current_user['email']); ?>
+                                    </div>
+                                    <div class="text-xs text-gray-500">Hoş geldiniz</div>
+                                </div>
+                            </div>
+
+                            <a href="/user/profile.php"
+                                class="block py-2 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors">
+                                <i class="fas fa-user w-5 mr-3"></i>Profilim
+                            </a>
+
+                            <a href="/user/profile.php?tab=favorites"
+                                class="block py-2 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors">
+                                <i class="fas fa-heart w-5 mr-3"></i>Favorilerim
+                            </a>
+
+                            <form action="/logout.php" method="POST" class="w-full">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                <button type="submit"
+                                    class="w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5 mr-3"></i>Çıkış Yap
+                                </button>
+                            </form>
+                        </div>
+                    <?php else: ?>
+                        <div class="space-y-2">
+                            <a href="/login.php"
+                                class="block py-3 px-4 bg-primary text-white text-center rounded-lg hover:bg-primary-dark transition-colors font-medium">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+                            </a>
+
+                            <a href="/register.php"
+                                class="block py-3 px-4 border border-primary text-primary text-center rounded-lg hover:bg-primary hover:text-white transition-colors font-medium">
+                                <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
+                            </a>
                         </div>
                     <?php endif; ?>
                 </div>

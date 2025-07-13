@@ -127,8 +127,9 @@ include 'includes/header.php';
                 </p>
             <?php endif; ?>
 
-            <div class="flex items-center justify-between border-t border-b border-gray-200 py-6">
-                <div class="flex items-center space-x-4">
+            <div
+                class="flex flex-col lg:flex-row lg:items-center lg:justify-between border-t border-b border-gray-200 py-6 space-y-4 lg:space-y-0">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                     <span class="text-sm font-medium text-gray-700">Paylaş:</span>
                     <div class="flex space-x-2">
                         <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']); ?>"
@@ -152,7 +153,7 @@ include 'includes/header.php';
                 </div>
 
                 <?php if (!empty($tags)): ?>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                         <span class="text-sm font-medium text-gray-700">Etiketler:</span>
                         <div class="flex flex-wrap gap-1">
                             <?php foreach ($tags as $tag): ?>
@@ -205,12 +206,12 @@ include 'includes/header.php';
         </div>
 
         <footer class="mt-16 pt-8 border-t border-gray-200">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div class="text-sm text-gray-600">
                     Son güncelleme: <?php echo date('d F Y', strtotime($post['created_at'])); ?>
                 </div>
 
-                <div class="flex items-center space-x-3">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
                     <span class="text-sm font-medium text-gray-700">Bu yazıyı beğendiniz mi?</span>
                     <div class="flex space-x-2">
                         <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']); ?>"

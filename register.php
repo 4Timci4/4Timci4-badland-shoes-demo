@@ -141,10 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <div class="flex items-center">
+                    <div class="flex items-start">
                         <input id="terms" name="terms" type="checkbox" required
-                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <label for="terms" class="ml-2 block text-sm text-gray-900">
+                            class="h-4 w-4 mt-1 text-primary focus:ring-primary border-gray-300 rounded flex-shrink-0">
+                        <label for="terms" class="ml-3 block text-sm text-gray-900 leading-relaxed">
                             <a href="#" class="text-primary hover:underline">Hizmet Şartları</a>'nı ve <a href="#"
                                 class="text-primary hover:underline">Gizlilik Politikası</a>'nı okudum ve kabul ediyorum.
                         </label>

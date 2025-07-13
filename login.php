@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                     <div class="flex items-center">
                         <input id="remember-me" name="remember-me" type="checkbox"
                             class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">

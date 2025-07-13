@@ -12,7 +12,7 @@ include 'includes/header.php';
         style="background-image: url('https://images.unsplash.com/photo-1434056886845-dac89ffe9b56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80'); opacity: 0.3;">
     </div>
     <div class="relative max-w-7xl mx-auto px-5 text-center">
-        <h1 class="text-5xl font-bold mb-4">Blog</h1>
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Blog</h1>
         <p class="text-xl text-white/90">Ayakkabı dünyası hakkında en güncel bilgiler, trendler ve ipuçları</p>
     </div>
 </section>

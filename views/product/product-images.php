@@ -50,7 +50,7 @@
 
     <?php if (!empty($current_images) && count($current_images) > 1): ?>
         <div class="thumbnail-images">
-            <div class="grid grid-cols-4 gap-2" id="thumbnail-container">
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" id="thumbnail-container">
                 <?php foreach ($current_images as $index => $image): ?>
                     <div class="thumbnail-item relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer border-2 transition-all duration-200 <?php echo $index === 0 ? 'border-blue-500 border-opacity-100' : 'border-transparent hover:border-gray-300'; ?>"
                         data-image-id="<?php echo $image['id']; ?>"
@@ -98,11 +98,12 @@
 </div>
 
 <div id="image-zoom-modal"
-    class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-content-center">
-    <div class="relative max-w-screen-lg max-h-screen-lg mx-auto p-4">
-        <button type="button" class="absolute top-4 right-4 text-white text-2xl z-10 hover:text-gray-300"
+    class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-center p-4">
+    <div class="relative w-full h-full max-w-4xl max-h-full flex items-center justify-center">
+        <button type="button"
+            class="absolute top-4 right-4 text-white text-2xl z-10 hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
             onclick="closeImageZoom()">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
         </button>

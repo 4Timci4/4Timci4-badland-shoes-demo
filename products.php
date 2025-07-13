@@ -72,9 +72,9 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
         </div>
     </section>
 
-    <section class="bg-white py-12">
+    <section class="bg-white py-8 md:py-12">
         <div class="max-w-7xl mx-auto px-5 text-center">
-            <h1 class="text-5xl font-bold text-secondary mb-4 tracking-tight">AYAKKABI KOLEKSİYONU</h1>
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-secondary mb-4 tracking-tight">AYAKKABI KOLEKSİYONU</h1>
         </div>
     </section>
 
@@ -82,11 +82,39 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
         <div class="max-w-7xl mx-auto px-5">
             <form method="GET" action="products.php" id="filter-form">
                 <input type="hidden" name="limit" value="<?php echo htmlspecialchars($limit); ?>">
+                
+                <!-- Mobile Filter Toggle Button -->
+                <div class="lg:hidden mb-6">
+                    <button type="button" id="mobile-filter-toggle"
+                            class="w-full flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <span class="flex items-center">
+                            <i class="fas fa-filter mr-2"></i>
+                            <span class="font-medium">Filtrele</span>
+                            <span class="ml-2 text-sm text-gray-600">(<?php echo count(array_filter([$category_filters, $gender_filters, $featured_filter])); ?> aktif)</span>
+                        </span>
+                        <i class="fas fa-chevron-down transition-transform duration-200" id="filter-chevron"></i>
+                    </button>
+                </div>
+
                 <div class="flex flex-col lg:flex-row gap-8">
                     
                     <aside class="lg:w-1/4">
-                        <div class="bg-gray-50 p-6 rounded-lg">
-                            <h3 class="text-xl font-bold text-secondary mb-6">FİLTRELE</h3>
+                        <!-- Mobile Filter Overlay -->
+                        <div id="mobile-filter-overlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+                        
+                        <!-- Filter Panel -->
+                        <div id="filter-panel" class="lg:block hidden lg:relative fixed lg:top-auto lg:left-auto lg:w-auto lg:h-auto lg:z-auto lg:transform-none
+                                    top-0 left-0 w-full h-full z-50 transform -translate-x-full transition-transform duration-300 ease-in-out">
+                            <div class="bg-gray-50 p-6 rounded-lg lg:rounded-lg rounded-none h-full lg:h-auto overflow-y-auto">
+                                <!-- Mobile Close Button -->
+                                <div class="lg:hidden flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                                    <h3 class="text-xl font-bold text-secondary">FİLTRELE</h3>
+                                    <button type="button" id="close-mobile-filter" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800">
+                                        <i class="fas fa-times text-lg"></i>
+                                    </button>
+                                </div>
+                                
+                                <h3 class="hidden lg:block text-xl font-bold text-secondary mb-6">FİLTRELE</h3>
                             
                             <div class="space-y-6">
                             <div class="border-b pb-6">
@@ -130,6 +158,12 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                            class="mr-3 text-primary focus:ring-primary rounded">
                                     <span class="text-gray-700 font-medium">Öne Çıkanlar</span>
                                 </label>
+                                <!-- Mobile Apply Button -->
+                                <div class="lg:hidden mt-6 pt-4 border-t border-gray-200">
+                                    <button type="submit" class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors">
+                                        Filtreleri Uygula
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </aside>
@@ -240,6 +274,66 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
     </section>
     
     <?php include 'includes/footer.php'; ?>
+    
+    <script>
+        // Mobile Filter Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileFilterToggle = document.getElementById('mobile-filter-toggle');
+            const filterPanel = document.getElementById('filter-panel');
+            const mobileFilterOverlay = document.getElementById('mobile-filter-overlay');
+            const closeMobileFilter = document.getElementById('close-mobile-filter');
+            const filterChevron = document.getElementById('filter-chevron');
+
+            function openMobileFilter() {
+                filterPanel.classList.remove('hidden', '-translate-x-full');
+                filterPanel.classList.add('translate-x-0');
+                mobileFilterOverlay.classList.remove('hidden');
+                filterChevron.classList.add('rotate-180');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMobileFilterPanel() {
+                filterPanel.classList.add('-translate-x-full');
+                filterPanel.classList.remove('translate-x-0');
+                mobileFilterOverlay.classList.add('hidden');
+                filterChevron.classList.remove('rotate-180');
+                document.body.style.overflow = '';
+                
+                setTimeout(() => {
+                    filterPanel.classList.add('hidden');
+                }, 300);
+            }
+
+            if (mobileFilterToggle) {
+                mobileFilterToggle.addEventListener('click', openMobileFilter);
+            }
+
+            if (closeMobileFilter) {
+                closeMobileFilter.addEventListener('click', closeMobileFilterPanel);
+            }
+
+            if (mobileFilterOverlay) {
+                mobileFilterOverlay.addEventListener('click', closeMobileFilterPanel);
+            }
+
+            // Close filter on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !filterPanel.classList.contains('hidden')) {
+                    closeMobileFilterPanel();
+                }
+            });
+
+            // Auto-submit form when filters change (desktop only)
+            const filterInputs = document.querySelectorAll('#filter-panel input[type="checkbox"], #filter-panel select');
+            filterInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    if (window.innerWidth >= 1024) { // Only auto-submit on desktop
+                        document.getElementById('filter-form').submit();
+                    }
+                });
+            });
+        });
+    </script>
     
     <script src="assets/js/script.js"></script>
     <script src="assets/js/products-filter.js" defer></script>

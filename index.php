@@ -28,7 +28,7 @@ $collections = $seasonalCollectionsService->getActiveCollections();
 
                 <div class="relative z-10 h-full flex items-center justify-center text-center text-white">
                     <div class="slide-content max-w-4xl px-5">
-                        <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5">
+                        <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-5">
                             <?php echo htmlspecialchars($slide['title']); ?>
                         </h2>
                         <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
