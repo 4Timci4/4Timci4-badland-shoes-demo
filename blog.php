@@ -36,8 +36,8 @@ include 'includes/header.php';
 
                 $testResponse = database()->count('blogs');
                 echo '<pre class="text-sm mt-2">';
-                echo 'Bağlantı testi: ' . (is_numeric($testResponse) && $testResponse >= 0 ? 'BAŞARILI' : 'BAŞARISIZ') . "\n";
-                echo 'Toplam blog sayısı: ' . $testResponse . "\n";
+                echo "Bağlantı testi: " . (is_numeric($testResponse) && $testResponse >= 0 ? 'BAŞARILI' : 'BAŞARISIZ') . "\n";
+                echo "Toplam blog sayısı: {$testResponse}\n";
                 echo '</pre>';
                 echo '</div>';
             }
@@ -59,7 +59,7 @@ include 'includes/header.php';
                 echo '<div class="mb-4 p-4 bg-blue-100 border border-blue-400 rounded">';
                 echo '<h3 class="font-bold text-blue-800">Blog Verisi Debug</h3>';
                 echo '<pre class="text-sm mt-2">';
-                echo 'Sayfa: ' . $page . "\n";
+                echo "Sayfa: {$page}\n";
                 echo 'Kategori: ' . ($category ?: 'Hepsi') . "\n";
                 echo 'Etiket: ' . ($tag ?: 'Hepsi') . "\n";
                 echo 'Toplam yazı: ' . $blogData['total'] . "\n";
@@ -146,12 +146,12 @@ include 'includes/header.php';
                     $post = (array) $post;
 
 
-                    $post['id'] = $post['id'] ?? 0;
-                    $post['title'] = $post['title'] ?? 'Başlık Yok';
-                    $post['excerpt'] = $post['excerpt'] ?? 'Özet yok...';
-                    $post['image_url'] = $post['image_url'] ?? '/assets/images/placeholder.svg';
-                    $post['category'] = $post['category'] ?? 'Genel';
-                    $post['created_at'] = $post['created_at'] ?? date('Y-m-d H:i:s');
+                    $post['id'] ??= 0;
+                    $post['title'] ??= 'Başlık Yok';
+                    $post['excerpt'] ??= 'Özet yok...';
+                    $post['image_url'] ??= '/assets/images/placeholder.svg';
+                    $post['category'] ??= 'Genel';
+                    $post['created_at'] ??= date('Y-m-d H:i:s');
                     ?>
                     <div class="blog-card bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                         <a href="/blog-detail.php?id=<?php echo $post['id']; ?>" class="block">

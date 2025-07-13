@@ -10,12 +10,12 @@ require_once '../services/SettingsService.php';
 
 
 $settingsService = new SettingsService();
-$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 12;
-$category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
-$gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
-$sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
-$featured_filter = isset($_GET['featured']) ? (bool) $_GET['featured'] : null;
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$limit = max(1, (int) ($_GET['limit'] ?? 12));
+$category_filters = (array) ($_GET['categories'] ?? []);
+$gender_filters = (array) ($_GET['genders'] ?? []);
+$sort_filter = $_GET['sort'] ?? 'created_at-desc';
+$featured_filter = filter_var($_GET['featured'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
 
 $category_service = category_service();
@@ -34,7 +34,7 @@ $products_result = $product_api_service->getProductsForApi([
 
 $products = $products_result['products'];
 $total_products = $products_result['total'];
-$total_pages = isset($products_result['pages']) ? $products_result['pages'] : ceil($total_products / $limit);
+$total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
 
 // Infinite scroll için ürün HTML'ini oluştur
 ob_start();
