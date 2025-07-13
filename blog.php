@@ -86,32 +86,32 @@ include 'includes/header.php';
         }
         ?>
 
-        <div class="mb-8">
+        <div class="mb-8" id="category-filters">
             <div class="flex flex-wrap gap-3 justify-center">
-                <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'tag' => $tag])); ?>"
-                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo !$category ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
+                <button type="button" data-category=""
+                    class="category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 cursor-pointer <?php echo !$category ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Tüm Kategoriler
-                </a>
-                <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Trendler', 'tag' => $tag])); ?>"
-                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Trendler' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
+                </button>
+                <button type="button" data-category="Trendler"
+                    class="category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 cursor-pointer <?php echo $category === 'Trendler' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Trendler
-                </a>
-                <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Sağlık', 'tag' => $tag])); ?>"
-                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Sağlık' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
+                </button>
+                <button type="button" data-category="Sağlık"
+                    class="category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 cursor-pointer <?php echo $category === 'Sağlık' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Sağlık
-                </a>
-                <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Moda', 'tag' => $tag])); ?>"
-                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Moda' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
+                </button>
+                <button type="button" data-category="Moda"
+                    class="category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 cursor-pointer <?php echo $category === 'Moda' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Moda
-                </a>
-                <a href="?<?php echo http_build_query(array_filter(['page' => 1, 'category' => 'Bakım', 'tag' => $tag])); ?>"
-                    class="px-6 py-3 rounded-full border font-medium transition-all duration-300 <?php echo $category === 'Bakım' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
+                </button>
+                <button type="button" data-category="Bakım"
+                    class="category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 cursor-pointer <?php echo $category === 'Bakım' ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'; ?>">
                     Bakım
-                </a>
+                </button>
             </div>
         </div>
 
-        <div class="blog-grid">
+        <div class="blog-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="blog-grid">
             <?php if (empty($posts)): ?>
                 <div class="col-span-full">
                     <div class="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
@@ -190,7 +190,7 @@ include 'includes/header.php';
         </div>
 
         <?php if ($totalPages > 1): ?>
-            <div class="pagination flex justify-center items-center mt-12 gap-2">
+            <div class="pagination flex justify-center items-center mt-12 gap-2" id="blog-pagination">
                 <?php if ($page > 1): ?>
                     <a href="?<?php echo http_build_query(array_filter(['page' => $page - 1, 'category' => $category, 'tag' => $tag])); ?>"
                         class="prev flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300">
@@ -228,16 +228,140 @@ include 'includes/header.php';
             </div>
         <?php endif; ?>
 
-        <?php if (!$debug): ?>
-            <div class="mt-8 text-center">
-                <a href="?debug=1" class="text-sm text-gray-500 hover:text-gray-700">
-                    🔧 Debug modunu etkinleştir
-                </a>
-            </div>
-        <?php endif; ?>
     </div>
 </section>
 
 <link rel="stylesheet" href="/assets/css/blog.css?v=<?php echo time(); ?>">
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const categoryFilters = document.getElementById('category-filters');
+        const blogGrid = document.getElementById('blog-grid');
+        const blogPagination = document.getElementById('blog-pagination');
+
+        let currentCategory = '<?php echo htmlspecialchars($category ?? ''); ?>';
+        let currentTag = '<?php echo htmlspecialchars($tag ?? ''); ?>';
+
+        function fetchBlogs(apiUrl, historyUrl, updateHistory = true) {
+            // Blog grid'e loading efekti ekle
+            if (blogGrid) {
+                blogGrid.style.opacity = '0.5';
+            }
+
+            fetch(apiUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Blog grid'i güncelle
+                    if (blogGrid) {
+                        blogGrid.innerHTML = data.blog_html;
+                    }
+
+                    // Pagination'ı güncelle
+                    if (blogPagination) {
+                        if (data.pagination_html.trim()) {
+                            blogPagination.innerHTML = data.pagination_html;
+                            blogPagination.style.display = 'flex';
+                        } else {
+                            blogPagination.style.display = 'none';
+                        }
+                    }
+
+                    // Kategori butonlarının aktif durumunu güncelle
+                    updateCategoryButtons(currentCategory);
+
+                    // History'yi güncelle
+                    if (updateHistory) {
+                        history.pushState({ path: historyUrl }, '', historyUrl);
+                    }
+
+                    // Sayfanın en üstüne yumuşak scroll
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                })
+                .catch(error => {
+                    console.error('Blog yükleme hatası:', error);
+                })
+                .finally(() => {
+                    if (blogGrid) {
+                        blogGrid.style.opacity = '1';
+                    }
+                });
+        }
+
+        function updateCategoryButtons(activeCategory) {
+            const categoryButtons = document.querySelectorAll('.category-filter');
+            categoryButtons.forEach(button => {
+                const buttonCategory = button.getAttribute('data-category');
+
+                if (buttonCategory === activeCategory) {
+                    // Aktif kategori
+                    button.className = 'category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 bg-primary text-white border-primary shadow-md';
+                } else {
+                    // Pasif kategori
+                    button.className = 'category-filter px-6 py-3 rounded-full border font-medium transition-all duration-300 bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400';
+                }
+            });
+        }
+
+        // Kategori filtrelerine tıklama event'i
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('category-filter')) {
+                e.preventDefault();
+
+                const category = e.target.getAttribute('data-category');
+                currentCategory = category;
+
+                const params = new URLSearchParams();
+                params.set('page', '1');
+                if (category) {
+                    params.set('category', category);
+                }
+                if (currentTag) {
+                    params.set('tag', currentTag);
+                }
+
+                const historyUrl = `?${params.toString()}`;
+                const apiUrl = `/api/ajax-blog.php?${params.toString()}`;
+
+                fetchBlogs(apiUrl, historyUrl);
+            }
+        });
+
+        // Pagination linklerine tıklama event'i
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('#blog-pagination a')) {
+                e.preventDefault();
+
+                const link = e.target.closest('a');
+                const historyUrl = link.getAttribute('href');
+
+                if (historyUrl) {
+                    const apiUrl = historyUrl.replace('?', '/api/ajax-blog.php?');
+                    fetchBlogs(apiUrl, historyUrl);
+                }
+            }
+        });
+
+        // Browser back/forward butonları için
+        window.addEventListener('popstate', function (event) {
+            const historyUrl = (event.state && event.state.path) || location.href;
+            const apiUrl = historyUrl.includes('?')
+                ? historyUrl.replace('?', '/api/ajax-blog.php?')
+                : '/api/ajax-blog.php';
+            fetchBlogs(apiUrl, historyUrl, false);
+        });
+    });
+</script>
 
 <?php include 'includes/footer.php'; ?>
