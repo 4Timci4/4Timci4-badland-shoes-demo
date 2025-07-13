@@ -119,6 +119,13 @@ switch ($current_page) {
 if (!empty($breadcrumbs)) {
     $seo->addBreadcrumbSchema($breadcrumbs);
 }
+
+require_once __DIR__ . '/../services/SettingsService.php';
+$settingsService = new SettingsService();
+$primary_color = $settingsService->getSiteSetting('primary_color', '#e91e63');
+$secondary_color = $settingsService->getSiteSetting('secondary_color', '#333');
+$site_logo = $settingsService->getSiteSetting('site_logo', '/assets/images/mt-logo.png');
+$site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico');
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -126,8 +133,8 @@ if (!empty($breadcrumbs)) {
 <head>
     <?php echo $seo->renderMetaTags(); ?>
 
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="<?php echo htmlspecialchars($site_favicon); ?>">
+    <link rel="shortcut icon" type="image/x-icon" href="<?php echo htmlspecialchars($site_favicon); ?>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,8 +150,8 @@ if (!empty($breadcrumbs)) {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#e91e63',
-                        secondary: '#333',
+                        primary: '<?php echo $primary_color; ?>',
+                        secondary: '<?php echo $secondary_color; ?>',
                         light: '#f4f4f4',
                         dark: '#222',
                         brand: '#8BFD87'
@@ -227,7 +234,9 @@ if (!empty($breadcrumbs)) {
             <div class="flex justify-between items-center py-4">
                 <div class="logo">
                     <a href="/index.php">
-                        <img src="/assets/images/mt-logo.png" alt="Bandland Shoes Logo" class="h-8 w-auto">
+                        <img src="<?php echo htmlspecialchars($site_logo); ?>"
+                            alt="<?php echo htmlspecialchars($settingsService->getSiteSetting('site_name', 'Bandland Shoes')); ?> Logo"
+                            class="h-8 w-auto">
                     </a>
                 </div>
                 <nav class="hidden md:flex items-center space-x-6">

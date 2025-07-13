@@ -30,7 +30,7 @@ class ContactService
 
 
                 foreach ($data as $item) {
-                    if ($item['section'] === 'footer') {
+                    if ($item['section'] === 'footer' && $item['field'] !== 'copyright_text') {
                         $footer_info['footer'][$item['field']] = $item['value'];
                     } elseif ($item['section'] === 'footer_links') {
                         $footer_info['links'][$item['field']] = $item['value'];

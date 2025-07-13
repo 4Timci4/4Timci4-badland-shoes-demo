@@ -26,8 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $footer_data = [
                 'footer' => [
                     'site_title' => $_POST['site_title'] ?? '',
-                    'site_description' => $_POST['site_description'] ?? '',
-                    'copyright_text' => $_POST['copyright_text'] ?? ''
+                    'site_description' => $_POST['site_description'] ?? ''
                 ],
                 'links' => [
                     'home_text' => $_POST['home_text'] ?? '',
@@ -488,12 +487,6 @@ include 'includes/header.php';
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Site Başlığı</label>
                                 <input type="text" name="site_title"
                                     value="<?= htmlspecialchars($footer_info['footer']['site_title'] ?? '') ?>"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Telif Hakkı Metni</label>
-                                <input type="text" name="copyright_text"
-                                    value="<?= htmlspecialchars($footer_info['footer']['copyright_text'] ?? '') ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                             </div>
                         </div>

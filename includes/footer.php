@@ -1,8 +1,11 @@
 <?php
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/services/ContactService.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/services/SettingsService.php';
 $contactService = new ContactService();
+$settingsService = new SettingsService();
 $footer_info = $contactService->getFooterInfo();
+$copyright_text = $settingsService->getSiteSetting('footer_copyright', '© 2025 Schön. Tüm hakları saklıdır.');
 ?>
 </main>
 <footer class="bg-dark text-white pt-12 pb-5">
@@ -59,7 +62,7 @@ $footer_info = $contactService->getFooterInfo();
         </div>
         <div class="border-t border-gray-600 pt-5">
             <p class="text-center text-gray-400">
-                <?= htmlspecialchars($footer_info['footer']['copyright_text'] ?? '© 2025 Schön. Tüm hakları saklıdır.') ?>
+                <?= htmlspecialchars($copyright_text) ?>
             </p>
         </div>
     </div>
