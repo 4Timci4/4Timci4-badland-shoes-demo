@@ -50,8 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'blogs_per_page' => $_POST['blogs_per_page'] ?? '',
                 'maintenance_mode' => isset($_POST['maintenance_mode']) ? 'true' : 'false',
                 'site_language' => $_POST['site_language'] ?? '',
-                'timezone' => $_POST['timezone'] ?? '',
-                'comments_enabled' => isset($_POST['comments_enabled']) ? 'true' : 'false'
+                'timezone' => $_POST['timezone'] ?? ''
             ];
 
             if ($settingsService->updateMultipleSettings($technical_settings, 'technical')) {
@@ -254,15 +253,6 @@ include 'includes/header.php';
                                     class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
                             </div>
 
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <label class="font-medium text-gray-900">Yorum Sistemi</label>
-                                    <p class="text-sm text-gray-600">Blog yazılarında yorum yapılabilsin</p>
-                                </div>
-                                <input type="checkbox" name="comments_enabled"
-                                    <?= ($technical_settings['comments_enabled'] ?? 'true') === 'true' ? 'checked' : '' ?>
-                                    class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
-                            </div>
                         </div>
                     </div>
 

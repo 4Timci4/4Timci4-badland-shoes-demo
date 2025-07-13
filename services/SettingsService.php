@@ -59,21 +59,27 @@ class SettingsService
 
     public function getSettingsByGroup($group)
     {
-        try {
-            $result = $this->db->select('site_settings', ['setting_group' => $group], '*', ['order' => 'setting_key ASC']);
+        require_once __DIR__ . '/../config/cache.php';
 
-            if (!empty($result)) {
-                $settings = [];
-                foreach ($result as $setting) {
-                    $settings[$setting['setting_key']] = $setting['setting_value'];
+        $cacheKey = "settings_{$group}";
+
+        return CacheConfig::get($cacheKey, function () use ($group) {
+            try {
+                $result = $this->db->select('site_settings', ['setting_group' => $group], '*', ['order' => 'setting_key ASC']);
+
+                if (!empty($result)) {
+                    $settings = [];
+                    foreach ($result as $setting) {
+                        $settings[$setting['setting_key']] = $setting['setting_value'];
+                    }
+                    return $settings;
                 }
-                return $settings;
+            } catch (Exception $e) {
+                error_log("Grup ayarları getirme hatası: " . $e->getMessage());
             }
-        } catch (Exception $e) {
-            error_log("Grup ayarları getirme hatası: " . $e->getMessage());
-        }
 
-        return [];
+            return [];
+        });
     }
 
 
@@ -85,6 +91,12 @@ class SettingsService
             if ($this->updateSiteSetting($key, $value, $group)) {
                 $success_count++;
             }
+        }
+
+        if ($success_count > 0) {
+            require_once __DIR__ . '/../config/cache.php';
+            $cacheKey = "settings_{$group}";
+            CacheConfig::clear($cacheKey);
         }
 
         return $success_count > 0;
@@ -200,7 +212,6 @@ class SettingsService
             'maintenance_mode' => 'false',
             'site_language' => 'tr',
             'timezone' => 'Europe/Istanbul',
-            'comments_enabled' => 'true',
 
 
             'meta_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
