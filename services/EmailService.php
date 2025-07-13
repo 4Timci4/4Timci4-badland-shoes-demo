@@ -49,7 +49,7 @@ class EmailService
         }
     }
 
-    public function sendEmail($to, $subject, $body, $altBody = '')
+    public function sendEmail($to, $subject, $body, $altBody = ''): array
     {
         try {
             $this->mailer->addAddress($to);
@@ -160,7 +160,7 @@ class EmailService
         return $this->settingsService->updateMultipleSettings($settings, 'email');
     }
 
-    public function sendTestEmail($to)
+    public function sendTestEmail($to): array
     {
         $subject = 'SMTP Test E-postası';
         $body = '

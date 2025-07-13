@@ -255,25 +255,39 @@ class SEOManager
 
     public function renderMetaTags()
     {
+        if (!isset($this->meta_tags['og'])) {
+            $this->setOpenGraph([]);
+        }
+        if (!isset($this->meta_tags['twitter'])) {
+            $this->setTwitterCard([]);
+        }
+
         $html = "\n";
 
-        if (isset($this->meta_tags['title'])) {
-            $html .= '<title>' . $this->meta_tags['title'] . "</title>\n";
+        $title = $this->meta_tags['title'] ?? $this->getSetting('default_title', $this->getSetting('site_name'));
+        if ($title) {
+            $html .= '<title>' . htmlspecialchars($title) . "</title>\n";
         }
 
-        if (isset($this->meta_tags['description'])) {
-            $html .= '<meta name="description" content="' . $this->meta_tags['description'] . '">' . "\n";
+        $description = $this->meta_tags['description'] ?? $this->getSetting('default_description', $this->getSetting('site_description'));
+        if ($description) {
+            $html .= '<meta name="description" content="' . htmlspecialchars($description) . '">' . "\n";
         }
 
-        $robots = $this->meta_tags['robots'] ?? $this->getSetting('robots');
-        $html .= '<meta name="robots" content="' . $robots . '">' . "\n";
+        $robots = $this->meta_tags['robots'] ?? $this->getSetting('robots', 'index, follow');
+        if ($robots) {
+            $html .= '<meta name="robots" content="' . htmlspecialchars($robots) . '">' . "\n";
+        }
 
-        $html .= '<meta name="language" content="' . $this->getSetting('language') . '">' . "\n";
-        $html .= '<meta property="og:locale" content="' . $this->getSetting('og_locale', 'tr_TR') . '">' . "\n";
+        $html .= '<meta name="language" content="' . htmlspecialchars($this->getSetting('language', 'tr')) . '">' . "\n";
+        $html .= '<meta property="og:locale" content="' . htmlspecialchars($this->getSetting('og_locale', 'tr_TR')) . '">' . "\n";
 
-        $html .= '<meta name="author" content="' . $this->getSetting('author') . '">' . "\n";
+        $author = $this->meta_tags['author'] ?? $this->getSetting('author', 'Bandland Shoes');
+        if ($author) {
+            $html .= '<meta name="author" content="' . htmlspecialchars($author) . '">' . "\n";
+        }
 
-        if (isset($this->meta_tags['canonical'])) {
+        if ($this->getSetting('canonical_enabled', 'true') === 'true' && isset($this->meta_tags['canonical'])) {
             $html .= '<link rel="canonical" href="' . $this->meta_tags['canonical'] . '">' . "\n";
         }
 

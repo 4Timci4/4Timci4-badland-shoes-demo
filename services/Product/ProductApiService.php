@@ -232,7 +232,7 @@ class ProductApiService
         return $result;
     }
 
-    public function getSimilarProducts($product_id, $limit = 5)
+    public function getSimilarProducts($product_id, $limit = 5): array
     {
         $start_time = microtime(true);
 

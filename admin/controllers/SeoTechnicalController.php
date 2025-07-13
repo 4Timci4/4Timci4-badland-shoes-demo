@@ -6,9 +6,11 @@
 
 require_once 'BaseSeoController.php';
 
-class SeoTechnicalController extends BaseSeoController {
-    
-    public function handleRequest() {
+class SeoTechnicalController extends BaseSeoController
+{
+
+    public function handleRequest()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_technical_seo_settings') {
             $this->updateTechnicalSettings();
         }
@@ -17,13 +19,11 @@ class SeoTechnicalController extends BaseSeoController {
     /**
      * Teknik SEO ayarlarını güncelle
      */
-    private function updateTechnicalSettings() {
+    private function updateTechnicalSettings()
+    {
         $technicalKeys = [
-            'canonical_enabled', 
-            'sitemap_enabled', 
-            'schema_enabled', 
-            'breadcrumbs_enabled', 
-            'amp_enabled'
+            'canonical_enabled',
+            'schema_enabled'
         ];
 
         $this->updateSettingsAndRespond(
@@ -38,10 +38,11 @@ class SeoTechnicalController extends BaseSeoController {
     /**
      * View için gerekli verileri hazırla
      */
-    public function getViewData() {
+    public function getViewData()
+    {
         $technicalSettings = $this->settingsService->getSeoSettingsByType('technical');
         $defaultSeo = $this->settingsService->getDefaultSeoSettings();
-        
+
         return $this->mergeWithDefaults($technicalSettings, $defaultSeo, 'technical');
     }
 }

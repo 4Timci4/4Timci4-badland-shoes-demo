@@ -139,6 +139,12 @@ class SettingsService
                 $result = $this->db->insert('seo_settings', $data);
             }
 
+            if ($result !== false) {
+                require_once __DIR__ . '/../config/cache.php';
+                $cacheKey = "seo_settings_{$type}";
+                CacheConfig::clear($cacheKey);
+            }
+
             return $result !== false;
         } catch (Exception $e) {
             error_log("SEO ayarı güncelleme hatası: " . $e->getMessage());
@@ -149,24 +155,29 @@ class SettingsService
 
     public function getSeoSettingsByType($type)
     {
-        try {
-            $result = $this->db->select('seo_settings', ['setting_type' => $type], '*', ['order' => 'setting_key ASC']);
+        require_once __DIR__ . '/../config/cache.php';
+        $cacheKey = "seo_settings_{$type}";
 
-            if (!empty($result)) {
-                $settings = [];
-                foreach ($result as $setting) {
-                    $settings[$setting['setting_key']] = [
-                        'value' => $setting['setting_value'],
-                        'is_active' => $setting['is_active']
-                    ];
+        return CacheConfig::get($cacheKey, function () use ($type) {
+            try {
+                $result = $this->db->select('seo_settings', ['setting_type' => $type], '*', ['order' => 'setting_key ASC']);
+
+                if (!empty($result)) {
+                    $settings = [];
+                    foreach ($result as $setting) {
+                        $settings[$setting['setting_key']] = [
+                            'value' => $setting['setting_value'],
+                            'is_active' => $setting['is_active']
+                        ];
+                    }
+                    return $settings;
                 }
-                return $settings;
+            } catch (Exception $e) {
+                error_log("SEO tip ayarları getirme hatası: " . $e->getMessage());
             }
-        } catch (Exception $e) {
-            error_log("SEO tip ayarları getirme hatası: " . $e->getMessage());
-        }
 
-        return [];
+            return [];
+        });
     }
 
 

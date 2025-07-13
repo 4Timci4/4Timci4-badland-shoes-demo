@@ -46,14 +46,14 @@ if ($is_logged_in) {
 
 switch ($current_page) {
     case 'index.php':
-        $seo->setTitle('Bandland Shoes | Türkiye\'nin En Kaliteli Ayakkabı Markası', false)
-            ->setDescription('Modern tasarım, konfor ve dayanıklılığı bir araya getiren ayakkabı koleksiyonları. En trend modeller ve uygun fiyatlarla.')
-            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/')
+        // Varsayılan SEO ayarlarının (veritabanından gelen) kullanılmasını sağlamak için
+        // özel setTitle ve setDescription çağrıları kaldırıldı.
+        // SEOManager artık bu sayfa için varsayılanları otomatik olarak kullanacak.
+        $seo->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/')
             ->setOpenGraph([
                 'type' => 'website',
                 'image' => '/assets/images/og-homepage.jpg'
-            ])
-            ->setTwitterCard([]);
+            ]);
         break;
 
     case 'products.php':
