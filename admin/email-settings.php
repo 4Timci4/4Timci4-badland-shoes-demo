@@ -84,7 +84,7 @@ include 'includes/header.php';
 
     <?php render_flash_message(); ?>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- SMTP Settings Form -->
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <form method="POST">

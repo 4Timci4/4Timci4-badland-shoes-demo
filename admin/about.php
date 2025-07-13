@@ -28,8 +28,6 @@ if ($_POST) {
             case 'update_settings':
 
                 $settings_to_update = [
-                    'story_title' => trim($_POST['story_title'] ?? ''),
-                    'story_subtitle' => trim($_POST['story_subtitle'] ?? ''),
                     'story_content_title' => trim($_POST['story_content_title'] ?? ''),
                     'story_content_p1' => trim($_POST['story_content_p1'] ?? ''),
                     'story_content_p2' => trim($_POST['story_content_p2'] ?? ''),
@@ -113,14 +111,15 @@ include 'includes/header.php';
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Hakkımızda Yönetimi</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Hakkımızda Yönetimi</h1>
             <p class="text-gray-600">Hakkımızda sayfasının tüm içeriğini yönetin</p>
         </div>
-        <div class="mt-4 lg:mt-0 flex space-x-3">
+        <div class="mt-4 lg:mt-0">
             <a href="../about.php" target="_blank"
-                class="inline-flex items-center px-6 py-3 bg-green-100 text-green-700 font-semibold rounded-xl hover:bg-green-200 transition-colors">
+                class="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-green-100 text-green-700 font-semibold rounded-xl hover:bg-green-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-external-link-alt mr-2"></i>
-                Hakkımızda Sayfasını Gör
+                <span class="hidden sm:inline">Hakkımızda Sayfasını Gör</span>
+                <span class="sm:hidden">Sayfayı Gör</span>
             </a>
         </div>
     </div>
@@ -229,29 +228,8 @@ include 'includes/header.php';
                     <input type="hidden" name="current_tab" value="general">
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                        <!-- Story Section -->
                         <div class="space-y-6">
                             <h3 class="text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">Hikaye Bölümü</h3>
-
-                            <div>
-                                <label for="story_title" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-heading mr-2"></i>Ana Başlık
-                                </label>
-                                <input type="text" id="story_title" name="story_title"
-                                    value="<?= htmlspecialchars($settings['story_title'] ?? '') ?>"
-                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                            </div>
-
-                            <div>
-                                <label for="story_subtitle" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-text-height mr-2"></i>Alt Başlık
-                                </label>
-                                <input type="text" id="story_subtitle" name="story_subtitle"
-                                    value="<?= htmlspecialchars($settings['story_subtitle'] ?? '') ?>"
-                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-                            </div>
-
                             <div>
                                 <label for="story_content_title" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-quote-left mr-2"></i>İçerik Başlığı
@@ -260,7 +238,6 @@ include 'includes/header.php';
                                     value="<?= htmlspecialchars($settings['story_content_title'] ?? '') ?>"
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
-
                             <div>
                                 <label for="story_image_url" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-image mr-2"></i>Hikaye Resmi URL'si
@@ -270,12 +247,9 @@ include 'includes/header.php';
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
                         </div>
-
-                        <!-- Values and Team Sections -->
                         <div class="space-y-6">
                             <h3 class="text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">Bölüm Başlıkları
                             </h3>
-
                             <div>
                                 <label for="values_title" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-star mr-2"></i>Değerlerimiz Başlığı
@@ -284,7 +258,6 @@ include 'includes/header.php';
                                     value="<?= htmlspecialchars($settings['values_title'] ?? '') ?>"
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
-
                             <div>
                                 <label for="values_subtitle" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-text-height mr-2"></i>Değerlerimiz Alt Başlığı
@@ -293,7 +266,6 @@ include 'includes/header.php';
                                     value="<?= htmlspecialchars($settings['values_subtitle'] ?? '') ?>"
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
-
                             <div>
                                 <label for="team_title" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-users mr-2"></i>Ekibimiz Başlığı
@@ -302,7 +274,6 @@ include 'includes/header.php';
                                     value="<?= htmlspecialchars($settings['team_title'] ?? '') ?>"
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             </div>
-
                             <div>
                                 <label for="team_subtitle" class="block text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-text-height mr-2"></i>Ekibimiz Alt Başlığı
@@ -365,12 +336,13 @@ include 'includes/header.php';
             <!-- Values Tab -->
             <div id="values-tab" class="tab-content <?= $active_tab !== 'values' ? 'hidden' : '' ?>">
                 <div class="space-y-6">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                         <h3 class="text-lg font-bold text-gray-900">Değerlerimiz</h3>
                         <a href="about-content-add.php?section=values"
                             class="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors text-sm">
                             <i class="fas fa-plus mr-2"></i>
-                            Yeni Değer Ekle
+                            <span class="hidden sm:inline">Yeni Değer Ekle</span>
+                            <span class="sm:hidden">Ekle</span>
                         </a>
                     </div>
 
@@ -379,7 +351,7 @@ include 'includes/header.php';
                             <?php foreach ($values as $value): ?>
                                 <div class="content-block-item bg-gray-50 border border-gray-200 rounded-xl p-4 hover:bg-gray-100 transition-colors cursor-move"
                                     data-block-id="<?= $value['id'] ?>">
-                                    <div class="flex items-center space-x-4">
+                                    <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                                         <!-- Drag Handle -->
                                         <div class="flex-shrink-0">
                                             <i class="fas fa-grip-vertical text-gray-400 cursor-move"></i>
@@ -403,23 +375,26 @@ include 'includes/header.php';
                                         </div>
 
                                         <!-- Actions -->
-                                        <div class="flex-shrink-0 flex space-x-2">
+                                        <div
+                                            class="flex-shrink-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
                                             <a href="about-content-edit.php?id=<?= $value['id'] ?>"
-                                                class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                                                class="inline-flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
                                                 <i class="fas fa-edit mr-1"></i>
-                                                Düzenle
+                                                <span class="hidden sm:inline">Düzenle</span>
+                                                <span class="sm:hidden">Düzenle</span>
                                             </a>
 
-                                            <form method="POST" class="inline-block"
+                                            <form method="POST" class="inline-block w-full sm:w-auto"
                                                 onsubmit="return confirm('Bu değeri silmek istediğinizden emin misiniz?')">
                                                 <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                 <input type="hidden" name="action" value="delete_content_block">
                                                 <input type="hidden" name="block_id" value="<?= $value['id'] ?>">
                                                 <input type="hidden" name="current_tab" value="values">
                                                 <button type="submit"
-                                                    class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                                                    class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
                                                     <i class="fas fa-trash mr-1"></i>
-                                                    Sil
+                                                    <span class="hidden sm:inline">Sil</span>
+                                                    <span class="sm:hidden">Sil</span>
                                                 </button>
                                             </form>
                                         </div>
@@ -448,12 +423,13 @@ include 'includes/header.php';
             <!-- Team Tab -->
             <div id="team-tab" class="tab-content <?= $active_tab !== 'team' ? 'hidden' : '' ?>">
                 <div class="space-y-6">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                         <h3 class="text-lg font-bold text-gray-900">Ekip Üyeleri</h3>
                         <a href="about-content-add.php?section=team"
                             class="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors text-sm">
                             <i class="fas fa-plus mr-2"></i>
-                            Yeni Ekip Üyesi Ekle
+                            <span class="hidden sm:inline">Yeni Ekip Üyesi Ekle</span>
+                            <span class="sm:hidden">Ekle</span>
                         </a>
                     </div>
 
@@ -462,7 +438,7 @@ include 'includes/header.php';
                             <?php foreach ($team as $member): ?>
                                 <div class="content-block-item bg-gray-50 border border-gray-200 rounded-xl p-4 hover:bg-gray-100 transition-colors cursor-move"
                                     data-block-id="<?= $member['id'] ?>">
-                                    <div class="flex items-center space-x-4">
+                                    <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                                         <!-- Drag Handle -->
                                         <div class="flex-shrink-0">
                                             <i class="fas fa-grip-vertical text-gray-400 cursor-move"></i>
@@ -497,23 +473,26 @@ include 'includes/header.php';
                                         </div>
 
                                         <!-- Actions -->
-                                        <div class="flex-shrink-0 flex space-x-2">
+                                        <div
+                                            class="flex-shrink-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
                                             <a href="about-content-edit.php?id=<?= $member['id'] ?>"
-                                                class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                                                class="inline-flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
                                                 <i class="fas fa-edit mr-1"></i>
-                                                Düzenle
+                                                <span class="hidden sm:inline">Düzenle</span>
+                                                <span class="sm:hidden">Düzenle</span>
                                             </a>
 
-                                            <form method="POST" class="inline-block"
+                                            <form method="POST" class="inline-block w-full sm:w-auto"
                                                 onsubmit="return confirm('Bu ekip üyesini silmek istediğinizden emin misiniz?')">
                                                 <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                 <input type="hidden" name="action" value="delete_content_block">
                                                 <input type="hidden" name="block_id" value="<?= $member['id'] ?>">
                                                 <input type="hidden" name="current_tab" value="team">
                                                 <button type="submit"
-                                                    class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                                                    class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
                                                     <i class="fas fa-trash mr-1"></i>
-                                                    Sil
+                                                    <span class="hidden sm:inline">Sil</span>
+                                                    <span class="sm:hidden">Sil</span>
                                                 </button>
                                             </form>
                                         </div>

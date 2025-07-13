@@ -97,14 +97,14 @@ include 'includes/header.php';
     <!-- Tabs Navigation -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="border-b border-gray-200">
-            <nav class="flex space-x-8 px-6">
+            <nav class="flex flex-col sm:flex-row sm:space-x-8 px-4 sm:px-6">
                 <button onclick="showTab('general')" id="tab-general"
-                    class="tab-button py-4 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600">
+                    class="tab-button py-3 sm:py-4 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600 text-center flex-grow sm:flex-grow-0">
                     <i class="fas fa-globe mr-2"></i>
                     Site Bilgileri
                 </button>
                 <button onclick="showTab('technical')" id="tab-technical"
-                    class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    class="tab-button py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 text-center flex-grow sm:flex-grow-0">
                     <i class="fas fa-cogs mr-2"></i>
                     Teknik Ayarlar
                 </button>

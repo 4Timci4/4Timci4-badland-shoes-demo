@@ -91,14 +91,14 @@ include 'includes/header.php';
 <div class="space-y-6">
 
     <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Yeni Slider</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Yeni Slider</h1>
             <p class="text-gray-600">Ana sayfa için yeni bir slider oluşturun</p>
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="sliders.php"
-                class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+                class="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Slider Listesine Dön
             </a>
@@ -127,7 +127,7 @@ include 'includes/header.php';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- Main Content Area -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
 
                 <!-- Title and Description -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -183,9 +183,9 @@ include 'includes/header.php';
                                 <i class="fas fa-link mr-2"></i>Buton Linki *
                             </label>
                             <input type="text" id="button_url" name="button_url" required
-                                value="<?= htmlspecialchars($_POST['button_url'] ?? '') ?>" placeholder="/products.php veya https:
-                                   class=" w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2
-                                focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                value="<?= htmlspecialchars($_POST['button_url'] ?? '') ?>"
+                                placeholder="/products.php veya https://"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Dahili sayfa için "/" ile başlayın, harici link için
                                 "https:
                         </div>
@@ -221,7 +221,7 @@ include 'includes/header.php';
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="space-y-6 order-1 lg:order-2">
 
                 <!-- Publish Options -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -264,9 +264,9 @@ include 'includes/header.php';
                                 <i class="fas fa-image mr-2"></i>Arka Plan Resmi (Opsiyonel)
                             </label>
                             <input type="url" id="image_url" name="image_url"
-                                value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>" placeholder="https:
-                                   class=" w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2
-                                focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>"
+                                placeholder="https://example.com/image.jpg"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Unsplash, Pexels gibi sitelerden resim URL'si</p>
                         </div>
 

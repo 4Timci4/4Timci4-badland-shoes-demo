@@ -81,14 +81,14 @@ include 'includes/header.php';
 <div class="space-y-6">
 
     <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Ürün Yönetimi</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Ürün Yönetimi</h1>
             <p class="text-gray-600">Tüm ürünlerinizi görüntüleyin, düzenleyin ve yönetin</p>
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="product-add.php"
-                class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
+                class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
                 <i class="fas fa-plus mr-2"></i>
                 Yeni Ürün Ekle
             </a>
@@ -111,7 +111,7 @@ include 'includes/header.php';
     <?php endif; ?>
 
     <!-- Results Summary -->
-    <div class="flex items-center justify-between text-sm text-gray-600">
+    <div class="flex flex-col sm:flex-row items-center justify-between text-sm text-gray-600 gap-4">
         <div>
             <span class="font-semibold"><?= number_format($total_products) ?></span> ürün bulundu
         </div>
@@ -129,23 +129,28 @@ include 'includes/header.php';
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Ürün
+                            <th
+                                class="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Ürün
                             </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 Cinsiyet</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 Kategori</th>
                             <th
-                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-22">
+                                class="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-22">
                                 Durum</th>
-                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="px-4 sm:px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 İşlemler</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($products as $product): ?>
                             <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
+                                <td class="px-4 sm:px-6 py-4">
                                     <div class="flex items-center space-x-4">
                                         <div
                                             class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -169,7 +174,7 @@ include 'includes/header.php';
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="hidden md:table-cell px-6 py-4">
                                     <?php
 
                                     if (!empty($product['genders'])):
@@ -187,14 +192,14 @@ include 'includes/header.php';
                                         <span class="text-gray-400 text-sm">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="hidden lg:table-cell px-6 py-4">
                                     <span
                                         class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         <i class="fas fa-box mr-1"></i>
                                         <?= htmlspecialchars($product['categories']['name'] ?? 'Kategorisiz') ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="hidden sm:table-cell px-6 py-4">
                                     <form method="POST" class="inline-block"
                                         onsubmit="return confirm('Ürün durumunu değiştirmek istediğinizden emin misiniz?')">
                                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
@@ -209,20 +214,20 @@ include 'includes/header.php';
                                         </button>
                                     </form>
                                 </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end space-x-2">
+                                <td class="px-4 sm:px-6 py-4 text-right">
+                                    <div class="flex flex-col sm:flex-row items-center justify-end gap-2">
                                         <a href="product-edit.php?id=<?= $product['id'] ?>"
-                                            class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                            class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>
                                             Düzenle
                                         </a>
-                                        <form method="POST" class="inline-block"
+                                        <form method="POST" class="inline-block w-full sm:w-auto"
                                             onsubmit="return confirm('Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
                                             <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
                                             <button type="submit"
-                                                class="inline-flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
+                                                class="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
                                                 <i class="fas fa-trash mr-1"></i>
                                                 Sil
                                             </button>

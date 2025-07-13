@@ -27,10 +27,6 @@ include 'includes/header.php';
 <section class="py-3 bg-white">
     <div class="max-w-7xl mx-auto px-5">
         <div class="text-center mb-10">
-            <h2 class="text-4xl font-bold mb-3 text-secondary">
-                <?php echo htmlspecialchars($settings['story_title'] ?? ''); ?>
-            </h2>
-            <p class="text-gray-600"><?php echo htmlspecialchars($settings['story_subtitle'] ?? ''); ?></p>
         </div>
 
         <div class="flex flex-col lg:flex-row items-center gap-12">

@@ -87,13 +87,13 @@ include 'includes/header.php';
 
         <!-- Page Header -->
         <div class="mb-8">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Yeni Admin Ekle</h1>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Yeni Admin Ekle</h1>
                     <p class="mt-2 text-sm text-gray-600">Sisteme yeni yönetici kullanıcısı ekleyin</p>
                 </div>
                 <a href="admins.php"
-                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center transition-colors">
+                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center justify-center transition-colors text-sm sm:text-base">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Geri Dön
                 </a>
@@ -110,13 +110,13 @@ include 'includes/header.php';
                         <p class="text-sm mt-1">Yeni admin kullanıcısı sisteme eklendi ve giriş yapabilir.</p>
                     </div>
                 </div>
-                <div class="mt-4 flex space-x-3">
+                <div class="mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                     <a href="admins.php"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-center">
                         Admin Listesine Dön
                     </a>
                     <a href="admin-add.php"
-                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors text-center">
                         Başka Admin Ekle
                     </a>
                 </div>
@@ -152,7 +152,7 @@ include 'includes/header.php';
                 <form method="POST" class="p-6 space-y-6">
                     <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Kullanıcı Adı -->
                         <div>
                             <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
@@ -191,7 +191,7 @@ include 'includes/header.php';
                             placeholder="örnek: admin@example.com">
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Şifre -->
                         <div>
                             <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
@@ -243,13 +243,14 @@ include 'includes/header.php';
                     </div>
 
                     <!-- Submit Buttons -->
-                    <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <div
+                        class="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
                         <a href="admins.php"
-                            class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                            class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors text-center">
                             İptal
                         </a>
                         <button type="submit"
-                            class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors flex items-center">
+                            class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center">
                             <i class="fas fa-save mr-2"></i>
                             Admin Oluştur
                         </button>

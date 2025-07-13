@@ -48,14 +48,14 @@ include 'includes/header.php';
 
         <!-- Page Header -->
         <div class="mb-8">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Admin Yönetimi</h1>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Admin Yönetimi</h1>
                     <p class="mt-2 text-sm text-gray-600">Sistem yöneticilerini görüntüleyin ve yönetin</p>
                 </div>
                 <div class="flex space-x-4">
                     <a href="admin-add.php"
-                        class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium flex items-center transition-colors">
+                        class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center transition-colors text-sm sm:text-base">
                         <i class="fas fa-plus mr-2"></i>
                         Yeni Admin Ekle
                     </a>
@@ -75,7 +75,7 @@ include 'includes/header.php';
         <?php endif; ?>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -122,7 +122,7 @@ include 'includes/header.php';
 
         <!-- Admin Table -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200">
+            <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
                 <h2 class="text-xl font-semibold text-gray-900">Admin Kullanıcıları</h2>
             </div>
 
@@ -130,16 +130,16 @@ include 'includes/header.php';
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Admin</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Durum</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Son Giriş</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kayıt Tarihi</th>
                             <th
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 İşlemler</th>
                         </tr>
                     </thead>
@@ -156,7 +156,7 @@ include 'includes/header.php';
                         <?php else: ?>
                             <?php foreach ($admins as $admin): ?>
                                 <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
                                                 <div
@@ -178,10 +178,23 @@ include 'includes/header.php';
                                                 </div>
                                                 <div class="text-sm text-gray-500">@<?= htmlspecialchars($admin['username']) ?>
                                                 </div>
+                                                <div class="md:hidden mt-2 text-xs">
+                                                     <?php if ($admin['is_active']): ?>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-800">
+                                                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                                                            Aktif
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-800">
+                                                            <span class="w-1.5 h-1.5 bg-red-400 rounded-full mr-1.5"></span>
+                                                            Pasif
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                                         <?php if ($admin['is_active']): ?>
                                             <span
                                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -196,7 +209,7 @@ include 'includes/header.php';
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <?php if ($admin['last_login_at']): ?>
                                             <div class="flex flex-col">
                                                 <span><?= date('d.m.Y', strtotime($admin['last_login_at'])) ?></span>
@@ -207,17 +220,17 @@ include 'includes/header.php';
                                             <span class="text-gray-400">Hiç giriş yapmadı</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <div class="flex flex-col">
                                             <span><?= date('d.m.Y', strtotime($admin['created_at'])) ?></span>
                                             <span
                                                 class="text-xs text-gray-500"><?= date('H:i', strtotime($admin['created_at'])) ?></span>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <div class="flex justify-center space-x-2">
+                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <div class="flex justify-center items-center space-x-2">
                                             <a href="admin-edit.php?id=<?= $admin['id'] ?>"
-                                                class="text-primary-600 hover:text-primary-900 transition-colors"
+                                                class="text-primary-600 hover:text-primary-900 transition-colors p-2 rounded-full hover:bg-gray-100"
                                                 title="Düzenle">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -225,7 +238,7 @@ include 'includes/header.php';
                                             <?php if ($admin['id'] != $current_admin['id']): ?>
                                                 <button
                                                     onclick="confirmDelete(<?= $admin['id'] ?>, '<?= htmlspecialchars($admin['username']) ?>')"
-                                                    class="text-red-600 hover:text-red-900 transition-colors" title="Sil">
+                                                    class="text-red-600 hover:text-red-900 transition-colors p-2 rounded-full hover:bg-gray-100" title="Sil">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             <?php endif; ?>

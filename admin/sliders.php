@@ -96,7 +96,7 @@ include 'includes/header.php';
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Slider Yönetimi</h1>
             <p class="text-gray-600">Ana sayfa sliderlarını yönetin ve düzenleyin</p>
         </div>
-        <div class="mt-4 lg:mt-0 flex space-x-3">
+        <div class="mt-4 lg:mt-0 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             <a href="slider-add.php"
                 class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
@@ -186,13 +186,12 @@ include 'includes/header.php';
         <?php if (!empty($sliders)): ?>
             <div id="sliders-list" class="divide-y divide-gray-100">
                 <?php foreach ($sliders as $slider): ?>
-                    <div class="slider-item p-6 hover:bg-gray-50 transition-colors cursor-move"
-                        data-slider-id="<?= $slider['id'] ?>">
-                        <div class="flex items-center space-x-6">
+                    <div class="slider-item p-6 hover:bg-gray-50 transition-colors" data-slider-id="<?= $slider['id'] ?>">
+                        <div class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-6">
 
                             <!-- Drag Handle -->
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center cursor-move">
+                            <div class="flex-shrink-0 cursor-move self-start md:self-center">
+                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                                     <i class="fas fa-grip-vertical text-gray-400"></i>
                                 </div>
                             </div>
@@ -244,11 +243,12 @@ include 'includes/header.php';
 
                             <!-- Actions -->
                             <div class="flex-shrink-0">
-                                <div class="flex items-center space-x-2">
+                                <div
+                                    class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                                     <a href="slider-edit.php?id=<?= $slider['id'] ?>"
-                                        class="inline-flex items-center justify-center w-20 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
-                                        <i class="fas fa-edit mr-1"></i>
-                                        Düzenle
+                                        class="inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                        <i class="fas fa-edit mr-2"></i>
+                                        <span>Düzenle</span>
                                     </a>
 
                                     <form method="POST" class="inline-block"
@@ -257,9 +257,9 @@ include 'includes/header.php';
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="slider_id" value="<?= $slider['id'] ?>">
                                         <button type="submit"
-                                            class="inline-flex items-center justify-center w-20 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
-                                            <i class="fas fa-trash mr-1"></i>
-                                            Sil
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
+                                            <i class="fas fa-trash mr-2"></i>
+                                            <span>Sil</span>
                                         </button>
                                     </form>
                                 </div>

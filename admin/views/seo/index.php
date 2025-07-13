@@ -6,7 +6,7 @@
 
 // Controller'ları dahil et
 require_once 'controllers/SeoMetaController.php';
-require_once 'controllers/SeoSocialController.php'; 
+require_once 'controllers/SeoSocialController.php';
 require_once 'controllers/SeoAnalyticsController.php';
 require_once 'controllers/SeoTechnicalController.php';
 
@@ -31,7 +31,7 @@ $technicalSettings = $technicalController->getViewData();
 
 <!-- SEO Settings Content -->
 <div class="space-y-6">
-    
+
     <!-- Page Header -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -45,28 +45,24 @@ $technicalSettings = $technicalController->getViewData();
     <!-- Tabs Navigation -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="border-b border-gray-200">
-            <nav class="flex space-x-8 px-6">
-                <button onclick="showTab('meta')" 
-                        id="tab-meta" 
-                        class="tab-button py-4 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600">
+            <nav class="flex flex-wrap sm:space-x-8 px-4 sm:px-6">
+                <button onclick="showTab('meta')" id="tab-meta"
+                    class="tab-button py-3 sm:py-4 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600 text-center flex-grow sm:flex-grow-0">
                     <i class="fas fa-tags mr-2"></i>
                     Meta Ayarları
                 </button>
-                <button onclick="showTab('social')" 
-                        id="tab-social" 
-                        class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <button onclick="showTab('social')" id="tab-social"
+                    class="tab-button py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 text-center flex-grow sm:flex-grow-0">
                     <i class="fas fa-share-alt mr-2"></i>
                     Sosyal Medya
                 </button>
-                <button onclick="showTab('analytics')" 
-                        id="tab-analytics" 
-                        class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <button onclick="showTab('analytics')" id="tab-analytics"
+                    class="tab-button py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 text-center flex-grow sm:flex-grow-0">
                     <i class="fas fa-chart-line mr-2"></i>
                     Analytics
                 </button>
-                <button onclick="showTab('technical')" 
-                        id="tab-technical" 
-                        class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <button onclick="showTab('technical')" id="tab-technical"
+                    class="tab-button py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 text-center flex-grow sm:flex-grow-0">
                     <i class="fas fa-cogs mr-2"></i>
                     Teknik SEO
                 </button>
@@ -96,32 +92,32 @@ $technicalSettings = $technicalController->getViewData();
 </div>
 
 <script>
-function showTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
-    });
-    
-    // Remove active styles from all tab buttons
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('border-primary-500', 'text-primary-600');
-        button.classList.add('border-transparent', 'text-gray-500');
-    });
-    
-    // Show selected tab content
-    document.getElementById('content-' + tabName).classList.remove('hidden');
-    
-    // Add active styles to selected tab button
-    const activeButton = document.getElementById('tab-' + tabName);
-    activeButton.classList.remove('border-transparent', 'text-gray-500');
-    activeButton.classList.add('border-primary-500', 'text-primary-600');
-}
+    function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
 
-// Check URL hash to show correct tab
-document.addEventListener('DOMContentLoaded', function() {
-    const hash = window.location.hash.substring(1);
-    if (['social', 'analytics', 'technical'].includes(hash)) {
-        showTab(hash);
+        // Remove active styles from all tab buttons
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('border-primary-500', 'text-primary-600');
+            button.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        // Show selected tab content
+        document.getElementById('content-' + tabName).classList.remove('hidden');
+
+        // Add active styles to selected tab button
+        const activeButton = document.getElementById('tab-' + tabName);
+        activeButton.classList.remove('border-transparent', 'text-gray-500');
+        activeButton.classList.add('border-primary-500', 'text-primary-600');
     }
-});
+
+    // Check URL hash to show correct tab
+    document.addEventListener('DOMContentLoaded', function () {
+        const hash = window.location.hash.substring(1);
+        if (['social', 'analytics', 'technical'].includes(hash)) {
+            showTab(hash);
+        }
+    });
 </script>

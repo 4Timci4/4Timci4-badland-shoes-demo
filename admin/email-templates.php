@@ -71,7 +71,7 @@ include 'includes/header.php';
 
     <?php render_flash_message(); ?>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-4 border-b">
@@ -92,7 +92,7 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <div class="lg:col-span-3">
+        <div class="md:col-span-2 lg:col-span-3">
             <?php if ($edit_mode && $edit_template): ?>
                 <form method="POST" class="bg-white rounded-2xl shadow-lg border border-gray-100">
                     <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
@@ -106,7 +106,7 @@ include 'includes/header.php';
 
                     <div class="p-6">
                         <div class="border-b border-gray-200 mb-6">
-                            <nav class="-mb-px flex space-x-8">
+                            <nav class="-mb-px flex flex-wrap space-x-8">
                                 <button type="button"
                                     class="tab-btn active py-2 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600"
                                     data-tab="content">
@@ -243,7 +243,7 @@ include 'includes/header.php';
                     </div>
 
                     <div class="p-6 bg-gray-50 border-t">
-                        <div class="flex items-center justify-between">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div class="flex items-center space-x-4">
                                 <button type="button" id="test-email-btn"
                                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -251,13 +251,13 @@ include 'includes/header.php';
                                 </button>
                                 <span class="text-sm text-gray-500">Son kayıt: <span id="last-saved">-</span></span>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
                                 <button type="button" id="save-draft-btn"
-                                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                    class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                                     <i class="fas fa-save mr-2"></i>Taslak Kaydet
                                 </button>
                                 <button type="submit"
-                                    class="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                     <i class="fas fa-check mr-2"></i>Şablonu Kaydet
                                 </button>
                             </div>

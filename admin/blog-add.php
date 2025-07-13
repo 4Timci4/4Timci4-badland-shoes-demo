@@ -90,14 +90,14 @@ include 'includes/header.php';
 <div class="space-y-6">
 
     <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Yeni Blog Yazısı</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Yeni Blog Yazısı</h1>
             <p class="text-gray-600">Yeni bir blog yazısı oluşturun ve yayınlayın</p>
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="blogs.php"
-                class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+                class="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Blog Listesine Dön
             </a>
@@ -126,7 +126,7 @@ include 'includes/header.php';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- Main Content Area -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
 
                 <!-- Title and Excerpt -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -186,7 +186,7 @@ include 'includes/header.php';
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="space-y-6 order-1 lg:order-2">
 
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                     <div class="p-6">
@@ -252,9 +252,9 @@ include 'includes/header.php';
                                 <i class="fas fa-image mr-2"></i>Resim URL'si
                             </label>
                             <input type="url" id="image_url" name="image_url"
-                                value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>" placeholder="https:
-                                   class=" w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2
-                                focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>"
+                                placeholder="https://example.com/image.jpg"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Unsplash, Pexels gibi sitelerden resim URL'si
                                 kullanabilirsiniz</p>
                         </div>

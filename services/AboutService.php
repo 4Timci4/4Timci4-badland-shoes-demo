@@ -77,6 +77,9 @@ class AboutService
     {
         $success = true;
         foreach ($settings as $meta_key => $meta_value) {
+            if ($meta_key === 'story_title' || $meta_key === 'story_subtitle') {
+                continue;
+            }
             if (!$this->updateSetting($meta_key, $meta_value)) {
                 $success = false;
             }

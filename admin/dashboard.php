@@ -23,7 +23,7 @@ include 'includes/header.php';
 
 <div class="space-y-8">
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
         <div
             class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
@@ -120,7 +120,7 @@ include 'includes/header.php';
             <p class="text-gray-600 text-sm">Yaygın işlemler için hızlı erişim</p>
         </div>
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
                 <a href="product-add.php"
                     class="group block p-6 border-2 border-dashed border-primary-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition-all duration-300">
@@ -174,7 +174,7 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div class="flex items-center justify-between p-6 border-b border-gray-100">
@@ -219,7 +219,8 @@ include 'includes/header.php';
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-semibold text-gray-900 mb-1 truncate">
-                                        <?= htmlspecialchars($product['name']) ?></h4>
+                                        <?= htmlspecialchars($product['name']) ?>
+                                    </h4>
                                     <p class="text-gray-600 text-sm mb-2">
                                         <?= htmlspecialchars($product['category_name']) ?> • Stok:
                                         <?= number_format($product['total_stock']) ?>
@@ -292,9 +293,11 @@ include 'includes/header.php';
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="font-semibold text-gray-900 mb-2 truncate">
-                                            <?= htmlspecialchars($blog['title']) ?></h4>
+                                            <?= htmlspecialchars($blog['title']) ?>
+                                        </h4>
                                         <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                            <?= htmlspecialchars($blog['excerpt']) ?></p>
+                                            <?= htmlspecialchars($blog['excerpt']) ?>
+                                        </p>
                                         <div class="flex items-center justify-between">
                                             <span
                                                 class="text-xs text-<?= $color ?>-700 bg-<?= $color ?>-50 px-2 py-1 rounded-full font-medium"><?= htmlspecialchars($blog['category']) ?></span>

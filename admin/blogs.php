@@ -86,19 +86,19 @@ include 'includes/header.php';
 <div class="space-y-6">
 
     <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Blog Yönetimi</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Blog Yönetimi</h1>
             <p class="text-gray-600">Blog yazılarını yönetin ve düzenleyin</p>
         </div>
-        <div class="mt-4 lg:mt-0 flex space-x-3">
+        <div class="mt-4 lg:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <a href="blog-add.php"
-                class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">
+                class="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors text-sm sm:text-base">
                 <i class="fas fa-plus mr-2"></i>
                 Yeni Blog Yazısı
             </a>
             <a href="../blog.php" target="_blank"
-                class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+                class="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-external-link-alt mr-2"></i>
                 Blog Sayfasını Gör
             </a>
@@ -129,7 +129,7 @@ include 'includes/header.php';
         }));
         $draft_blogs = $total_blogs - $published_blogs;
         ?>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                 <div class="flex items-center">
                     <div class="p-3 bg-blue-100 rounded-xl">
@@ -170,8 +170,8 @@ include 'includes/header.php';
 
     <!-- Blog List -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div class="p-6 border-b border-gray-100">
-            <div class="flex items-center justify-between">
+        <div class="p-4 sm:p-6 border-b border-gray-100">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div>
                     <h3 class="text-xl font-bold text-gray-900 mb-1">Blog Yazıları</h3>
                     <p class="text-gray-600 text-sm">Tüm blog yazılarınızın listesi</p>
@@ -187,15 +187,21 @@ include 'includes/header.php';
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Blog
+                            <th
+                                class="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Blog
                                 Yazısı</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 Kategori</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 Durum</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 Tarih</th>
-                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <th
+                                class="px-4 sm:px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 İşlemler</th>
                         </tr>
                     </thead>
@@ -205,9 +211,10 @@ include 'includes/header.php';
                             $status = $blog['status'] ?? 'published';
                             ?>
                             <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
+                                <td class="px-4 sm:px-6 py-4">
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                                        <div
+                                            class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                                             <?php if (!empty($blog['image_url'])): ?>
                                                 <img src="<?= htmlspecialchars($blog['image_url']) ?>"
                                                     alt="<?= htmlspecialchars($blog['title']) ?>" class="w-full h-full object-cover"
@@ -222,21 +229,21 @@ include 'includes/header.php';
                                             <h4 class="font-semibold text-gray-900 truncate">
                                                 <?= htmlspecialchars($blog['title']) ?>
                                             </h4>
-                                            <p class="text-sm text-gray-500 mt-1 line-clamp-2">
+                                            <p class="hidden md:block text-sm text-gray-500 mt-1 line-clamp-2">
                                                 <?= htmlspecialchars($blog['excerpt'] ?? '') ?>
                                             </p>
                                             <p class="text-xs text-gray-400 mt-1">ID: #<?= $blog['id'] ?></p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="hidden md:table-cell px-6 py-4">
                                     <span
                                         class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
                                         <i class="fas fa-tag mr-1"></i>
                                         <?= htmlspecialchars($blog['category'] ?? 'Genel') ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="hidden sm:table-cell px-6 py-4">
                                     <form method="POST" class="inline-block">
                                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                         <input type="hidden" name="action" value="toggle_status">
@@ -250,7 +257,7 @@ include 'includes/header.php';
                                         </button>
                                     </form>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="hidden lg:table-cell px-6 py-4">
                                     <div class="text-sm text-gray-900">
                                         <?= date('d M Y', strtotime($blog['created_at'])) ?>
                                     </div>
@@ -258,29 +265,30 @@ include 'includes/header.php';
                                         <?= date('H:i', strtotime($blog['created_at'])) ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end space-x-2">
+                                <td class="px-4 sm:px-6 py-4 text-right">
+                                    <div
+                                        class="flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                                         <a href="../blog-detail.php?id=<?= $blog['id'] ?>" target="_blank"
-                                            class="inline-flex items-center justify-center w-20 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
+                                            class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-eye mr-1"></i>
-                                            Gör
+                                            <span class="hidden sm:inline">Gör</span>
                                         </a>
 
                                         <a href="blog-edit.php?id=<?= $blog['id'] ?>"
-                                            class="inline-flex items-center justify-center w-20 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                            class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>
-                                            Düzenle
+                                            <span class="hidden sm:inline">Düzenle</span>
                                         </a>
 
-                                        <form method="POST" class="inline-block"
+                                        <form method="POST" class="inline-block w-full sm:w-auto"
                                             onsubmit="return confirm('Bu blog yazısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
                                             <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="blog_id" value="<?= $blog['id'] ?>">
                                             <button type="submit"
-                                                class="inline-flex items-center justify-center w-20 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
+                                                class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
                                                 <i class="fas fa-trash mr-1"></i>
-                                                Sil
+                                                <span class="hidden sm:inline">Sil</span>
                                             </button>
                                         </form>
                                     </div>

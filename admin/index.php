@@ -1,53 +1,37 @@
 <?php
-
-
-
 require_once '../services/AdminAuthService.php';
 
 $authService = new AdminAuthService();
-
 
 if ($authService->isLoggedIn()) {
     header('Location: dashboard.php');
     exit;
 }
 
-
 if ($authService->checkTimeout()) {
     $timeout_message = 'Oturumunuz zaman aşımına uğradı. Lütfen tekrar giriş yapın.';
 }
-
 
 $logout_message = '';
 if (isset($_GET['logout'])) {
     $logout_message = 'Başarıyla çıkış yaptınız.';
 }
 
-
 if (isset($_GET['timeout'])) {
     $timeout_message = 'Oturumunuz zaman aşımına uğradı. Lütfen tekrar giriş yapın.';
 }
 
-
-
-
 if ($_POST) {
-
     $admin_data = $authService->getAdminById(1);
 
     if ($admin_data) {
-
         $authService->createSession($admin_data);
-
-
         header('Location: dashboard.php');
         exit;
     } else {
-
         $error = 'Varsayılan admin kullanıcısı bulunamadı!';
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -58,44 +42,46 @@ if ($_POST) {
     <title>Admin Panel - Giriş</title>
 
     <!-- Tailwind CSS -->
-    <script src="https:
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
-    <link rel=" stylesheet" href="https:
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href=" https: <!-- Tailwind Config -->
-        <script>
-            tailwind.config = {
-                theme: {
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
                 extend: {
-                colors: {
-                primary: {
-                50: '#f0f0ff',
-            100: '#e0e1ff',
-            200: '#c7c8ff',
-            300: '#9e95f5',
-            400: '#7367f0',
-            500: '#5a52d6',
-            600: '#4b46c7',
-            700: '#3e3ba3',
-            800: '#35327a',
-            900: '#2e2b5e',
+                    colors: {
+                        primary: {
+                            50: '#f0f0ff',
+                            100: '#e0e1ff',
+                            200: '#c7c8ff',
+                            300: '#9e95f5',
+                            400: '#7367f0',
+                            500: '#5a52d6',
+                            600: '#4b46c7',
+                            700: '#3e3ba3',
+                            800: '#35327a',
+                            900: '#2e2b5e',
                         }
                     },
-            fontFamily: {
-                'inter': ['Inter', 'system-ui', 'sans-serif'],
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif'],
                     },
-            animation: {
-                'float': 'float 6s ease-in-out infinite',
-            'gradient': 'gradient 15s ease infinite',
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'gradient': 'gradient 15s ease infinite',
                     },
-            keyframes: {
-                float: {
-                '0%, 100%': {transform: 'translateY(0px) rotate(0deg)' },
-            '50%': {transform: 'translateY(-20px) rotate(180deg)' }
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-20px) rotate(180deg)' }
                         },
-            gradient: {
-                '0%, 100%': {'background-position': '0% 50%' },
-            '50%': {'background-position': '100% 50%' }
+                        gradient: {
+                            '0%, 100%': { 'background-position': '0% 50%' },
+                            '50%': { 'background-position': '100% 50%' }
                         }
                     }
                 }
@@ -249,69 +235,60 @@ if ($_POST) {
 
     <!-- JavaScript -->
     <script>
-
         function togglePassword() {
             const passwordInput = document.getElementById('password');
-        const toggleIcon = document.getElementById('toggleIcon');
+            const toggleIcon = document.getElementById('toggleIcon');
 
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-        toggleIcon.classList.remove('fa-eye');
-        toggleIcon.classList.add('fa-eye-slash');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
             } else {
-            passwordInput.type = 'password';
-        toggleIcon.classList.remove('fa-eye-slash');
-        toggleIcon.classList.add('fa-eye');
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
             }
         }
 
-
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
             const loginBtn = document.getElementById('loginBtn');
-        const loginBtnText = document.getElementById('loginBtnText');
-        const loadingSpinner = document.getElementById('loadingSpinner');
+            const loginBtnText = document.getElementById('loginBtnText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
 
-
-        loginBtn.disabled = true;
-        loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
-        loginBtnText.classList.add('hidden');
-        loadingSpinner.classList.remove('hidden');
+            loginBtn.disabled = true;
+            loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            loginBtnText.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
         });
 
-        
         document.querySelectorAll('input').forEach(input => {
             input.addEventListener('focus', function () {
                 this.parentElement.classList.add('transform', 'scale-[1.02]');
             });
 
-        input.addEventListener('blur', function() {
-            this.parentElement.classList.remove('transform', 'scale-[1.02]');
+            input.addEventListener('blur', function () {
+                this.parentElement.classList.remove('transform', 'scale-[1.02]');
             });
         });
 
-
-        document.addEventListener('keydown', function(e) {
-            
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 const form = document.getElementById('loginForm');
-        if (document.activeElement.tagName === 'INPUT') {
-            form.submit();
+                if (document.activeElement.tagName === 'INPUT') {
+                    form.submit();
                 }
             }
 
-
-        if (e.key === 'Escape') {
-            document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('username').focus();
+            if (e.key === 'Escape') {
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('username').focus();
             }
         });
 
-
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             document.getElementById('username').focus();
         });
-
     </script>
 </body>
 

@@ -104,12 +104,12 @@ include 'includes/header.php';
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Yeni <?= $section_name ?></h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Yeni <?= $section_name ?></h1>
             <p class="text-gray-600"><?= $section_name ?> bölümüne yeni içerik ekleyin</p>
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="about.php?tab=<?= $section ?>"
-                class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+                class="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-arrow-left mr-2"></i>
                 <?= $section_name ?> Listesine Dön
             </a>
@@ -138,7 +138,7 @@ include 'includes/header.php';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- Main Content Area -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
 
                 <!-- Basic Information -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -207,15 +207,15 @@ include 'includes/header.php';
                             <div class="mt-4">
                                 <p class="text-sm font-semibold text-gray-700 mb-2">Önizleme:</p>
                                 <div id="icon-preview"
-                                    class="w-16 h-16 bg-primary-100 rounded-xl flex items-center justify-center">
-                                    <i id="preview-icon" class="text-primary-600 text-2xl"></i>
+                                    class="w-16 h-16 sm:w-20 sm:h-20 bg-primary-100 rounded-xl flex items-center justify-center mx-auto sm:mx-0">
+                                    <i id="preview-icon" class="text-primary-600 text-2xl sm:text-3xl"></i>
                                 </div>
                             </div>
 
                             <!-- Common Icons -->
                             <div class="mt-6">
                                 <p class="text-sm font-semibold text-gray-700 mb-3">Popüler İkonlar:</p>
-                                <div class="grid grid-cols-6 gap-3">
+                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                     <?php
                                     $common_icons = [
                                         'fas fa-star',
@@ -234,9 +234,10 @@ include 'includes/header.php';
                                     foreach ($common_icons as $icon_class):
                                         ?>
                                         <button type="button"
-                                            class="icon-option w-12 h-12 bg-gray-100 hover:bg-primary-100 rounded-lg flex items-center justify-center transition-colors"
+                                            class="icon-option w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 hover:bg-primary-100 rounded-lg flex items-center justify-center transition-colors"
                                             data-icon="<?= $icon_class ?>">
-                                            <i class="<?= $icon_class ?> text-gray-600 hover:text-primary-600"></i>
+                                            <i
+                                                class="<?= $icon_class ?> text-gray-600 hover:text-primary-600 text-sm sm:text-base"></i>
                                         </button>
                                     <?php endforeach; ?>
                                 </div>
@@ -258,9 +259,9 @@ include 'includes/header.php';
                                     <i class="fas fa-image mr-2"></i>Resim URL'si
                                 </label>
                                 <input type="url" id="image_url" name="image_url"
-                                    value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>" placeholder="https:
-                                   class=" w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2
-                                    focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                    value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>"
+                                    placeholder="https://example.com/image.jpg"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                                 <p class="text-xs text-gray-500 mt-1">Unsplash, gravatar gibi sitelerden profil resmi URL'si
                                 </p>
                             </div>
@@ -268,7 +269,8 @@ include 'includes/header.php';
                             <!-- Image Preview -->
                             <div id="image-preview" class="mt-4 hidden">
                                 <p class="text-sm font-semibold text-gray-700 mb-2">Önizleme:</p>
-                                <div class="w-20 h-20 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    class="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-full overflow-hidden mx-auto sm:mx-0">
                                     <img id="preview-img" src="" alt="Önizleme" class="w-full h-full object-cover">
                                 </div>
                             </div>
@@ -278,7 +280,7 @@ include 'includes/header.php';
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="space-y-6 order-1 lg:order-2">
 
                 <!-- Save Options -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -382,7 +384,7 @@ include 'includes/header.php';
             imageUrlInput.addEventListener('input', function () {
                 const url = this.value.trim();
                 if (url && (url.startsWith('http:
-                previewImg.src = url;
+                        previewImg.src = url;
                 previewImg.onload = function () {
                     imagePreview.classList.remove('hidden');
                 };
@@ -392,7 +394,7 @@ include 'includes/header.php';
             } else {
                 imagePreview.classList.add('hidden');
             }
-        });
+                });
 
 
         if (imageUrlInput.value) {

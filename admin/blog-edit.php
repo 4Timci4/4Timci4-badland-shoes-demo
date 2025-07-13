@@ -152,9 +152,9 @@ include 'includes/header.php';
 <div class="space-y-6">
 
     <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Blog Yazısı Düzenle
             </h1>
             <p class="text-gray-600">
@@ -162,14 +162,14 @@ include 'includes/header.php';
                 güncelleyin
             </p>
         </div>
-        <div class="mt-4 lg:mt-0 flex space-x-3">
+        <div class="mt-4 lg:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <a href="blogs.php"
-                class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Blog Listesi
             </a>
             <a href="../blog-detail.php?id=<?= $blog_id ?>" target="_blank"
-                class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                class="inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-external-link-alt mr-2"></i>
                 Önizle
             </a>
@@ -236,7 +236,7 @@ include 'includes/header.php';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- Main Content Area -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
 
                 <!-- Title and Excerpt -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -255,7 +255,8 @@ include 'includes/header.php';
                                 placeholder="Örn: 2025 Yaz Ayakkabı Trendleri"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-lg">
                             <div class="text-xs text-gray-500 mt-1">Orijinal:
-                                <?= htmlspecialchars($original_data['title']) ?></div>
+                                <?= htmlspecialchars($original_data['title']) ?>
+                            </div>
                         </div>
 
                         <!-- Excerpt -->
@@ -298,7 +299,7 @@ include 'includes/header.php';
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="space-y-6 order-1 lg:order-2">
 
                 <!-- Category and Tags -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -355,9 +356,9 @@ include 'includes/header.php';
                                 <i class="fas fa-image mr-2"></i>Resim URL'si
                             </label>
                             <input type="url" id="image_url" name="image_url"
-                                value="<?= htmlspecialchars($blog['image_url'] ?? '') ?>" placeholder="https:
-                                   class=" w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2
-                                focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                value="<?= htmlspecialchars($blog['image_url'] ?? '') ?>"
+                                placeholder="https://example.com/image.jpg"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Unsplash, Pexels gibi sitelerden resim URL'si
                                 kullanabilirsiniz</p>
                         </div>

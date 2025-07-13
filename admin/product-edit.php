@@ -86,18 +86,18 @@ include 'includes/header.php';
         </div>
 
         <!-- Wizard Navigation -->
-        <div class="wizard-navigation pt-6 border-t flex justify-between items-center">
+        <div class="wizard-navigation pt-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
             <button type="button" id="prev-step-btn"
-                class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                class="w-full sm:w-auto px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
                 disabled>
                 <i class="fas fa-arrow-left mr-2"></i> Önceki
             </button>
             <button type="button" id="next-step-btn"
-                class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                 Sonraki <i class="fas fa-arrow-right ml-2"></i>
             </button>
             <button type="submit" id="save-product-btn" name="action" value="update_product"
-                class="hidden px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                class="hidden w-full sm:w-auto px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
                 <i class="fas fa-save mr-2"></i> Ürünü Kaydet
             </button>
         </div>
