@@ -130,12 +130,17 @@ class ContactService
     }
 
 
-    public function getSocialMediaLinks()
+    public function getSocialMediaLinks($only_active = true)
     {
+        $cache_key = $only_active ? 'social_media_links_active' : 'social_media_links_all';
 
-        return CacheConfig::get('social_media_links', function () {
+        return CacheConfig::get($cache_key, function () use ($only_active) {
             try {
-                return $this->db->select('social_media_links', ['is_active' => 1], '*', ['order' => 'order_index ASC']);
+                $conditions = [];
+                if ($only_active) {
+                    $conditions['is_active'] = 1;
+                }
+                return $this->db->select('social_media_links', $conditions, '*', ['order' => 'order_index ASC']);
             } catch (Exception $e) {
                 error_log("Sosyal medya linklerini getirme hatası: " . $e->getMessage());
                 return [];
@@ -271,7 +276,8 @@ class ContactService
 
 
             if ($result !== false) {
-                CacheConfig::clear('social_media_links');
+                CacheConfig::clear('social_media_links_active');
+                CacheConfig::clear('social_media_links_all');
                 CacheConfig::clear('footer_info');
             }
 
@@ -290,7 +296,8 @@ class ContactService
 
 
             if ($result !== false) {
-                CacheConfig::clear('social_media_links');
+                CacheConfig::clear('social_media_links_active');
+                CacheConfig::clear('social_media_links_all');
                 CacheConfig::clear('footer_info');
             }
 
@@ -319,7 +326,8 @@ class ContactService
 
 
             if ($result !== false) {
-                CacheConfig::clear('social_media_links');
+                CacheConfig::clear('social_media_links_active');
+                CacheConfig::clear('social_media_links_all');
                 CacheConfig::clear('footer_info');
             }
 
@@ -331,18 +339,6 @@ class ContactService
     }
 
 
-    public function getAllSocialMediaLinks()
-    {
-
-        return CacheConfig::get('all_social_media_links', function () {
-            try {
-                return $this->db->select('social_media_links', [], '*', ['order' => 'order_index ASC']);
-            } catch (Exception $e) {
-                error_log("Tüm sosyal medya linklerini getirme hatası: " . $e->getMessage());
-                return [];
-            }
-        }, 900);
-    }
 }
 
 

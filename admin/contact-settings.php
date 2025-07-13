@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 $contact_info = $contactService->getContactInfo();
-$social_links = $contactService->getAllSocialMediaLinks();
+$social_links = $contactService->getSocialMediaLinks(false);
 $footer_info = $contactService->getFooterInfo();
 
 
@@ -452,7 +452,7 @@ include 'includes/header.php';
                                         <i class="fas fa-save"></i>
                                     </button>
                                     <button type="button"
-                                        onclick="deleteSocialLink(<?= $link['id'] ?>, '<?= htmlspecialchars($link['platform']) ?>')"
+                                        onclick="confirmDelete(<?= $link['id'] ?>, '<?= htmlspecialchars($link['platform']) ?>')"
                                         class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -645,10 +645,11 @@ include 'includes/header.php';
         activeButton.classList.add('border-primary-500', 'text-primary-600');
     }
 
-    function deleteSocialLink(linkId, platform) {
+    function confirmDelete(linkId, platform) {
         if (confirm(`"${platform}" sosyal medya linkini silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz.`)) {
-            document.getElementById('deleteLinkId').value = linkId;
-            document.getElementById('deleteSocialForm').submit();
+            const form = document.getElementById('deleteSocialForm');
+            form.querySelector('#deleteLinkId').value = linkId;
+            form.submit();
         }
     }
 

@@ -1,122 +1,103 @@
 <?php
 
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 class CacheConfig
 {
+    private static $db;
+    private static $cacheTimeout = 3600; // 1 saat
 
-
-    private static $cacheTimeout = 300;
-
+    private static function init()
+    {
+        if (self::$db === null) {
+            self::$db = database();
+        }
+    }
 
     public static function get($key, $dataCallback, $timeout = null)
     {
+        self::init();
+        self::clearExpired();
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            return $dataCallback();
+        $cacheKey = md5($key);
+
+        try {
+            $result = self::$db->select('cache', ['cache_key' => $cacheKey], '*', ['limit' => 1]);
+
+            if (!empty($result)) {
+                $cachedItem = $result[0];
+                if ($cachedItem['expires_at'] >= time()) {
+                    $data = unserialize($cachedItem['cache_value']);
+                    if ($data !== false) {
+                        return $data;
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            // Tablo yoksa veya başka bir DB hatası varsa, cache'i atla
+            error_log("Cache get error: " . $e->getMessage());
         }
-
-
-        $cacheKey = 'cache_' . md5($key);
-
-
-        if (self::hasValidCache($cacheKey, $timeout)) {
-            return $_SESSION[$cacheKey]['data'];
-        }
-
 
         $data = $dataCallback();
-
-
         self::set($key, $data, $timeout);
-
         return $data;
     }
 
-
     public static function set($key, $data, $timeout = null)
     {
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            return;
-        }
-
-        $cacheKey = 'cache_' . md5($key);
+        self::init();
+        $cacheKey = md5($key);
         $expireTime = time() + ($timeout ?: self::$cacheTimeout);
+        $serializedData = serialize($data);
 
-        $_SESSION[$cacheKey] = [
-            'data' => $data,
-            'expire' => $expireTime
-        ];
+        try {
+            $existing = self::$db->select('cache', ['cache_key' => $cacheKey], 'cache_key', ['limit' => 1]);
+
+            $payload = [
+                'cache_value' => $serializedData,
+                'expires_at' => $expireTime
+            ];
+
+            if (!empty($existing)) {
+                self::$db->update('cache', $payload, ['cache_key' => $cacheKey]);
+            } else {
+                $payload['cache_key'] = $cacheKey;
+                self::$db->insert('cache', $payload);
+            }
+        } catch (Exception $e) {
+            error_log("Cache set error: " . $e->getMessage());
+        }
     }
-
 
     public static function clear($key = null)
     {
-
-        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION) || !is_array($_SESSION)) {
-            return;
-        }
-
-        if ($key === null) {
-
-            foreach ($_SESSION as $sessionKey => $value) {
-                if (strpos($sessionKey, 'cache_') === 0) {
-                    unset($_SESSION[$sessionKey]);
-                }
+        self::init();
+        try {
+            if ($key === null) {
+                // Tüm cache'i temizle
+                self::$db->delete('cache', []);
+            } else {
+                $cacheKey = md5($key);
+                self::$db->delete('cache', ['cache_key' => $cacheKey]);
             }
-        } else {
-
-            $cacheKey = 'cache_' . md5($key);
-            if (isset($_SESSION[$cacheKey])) {
-                unset($_SESSION[$cacheKey]);
-            }
+        } catch (Exception $e) {
+            error_log("Cache clear error: " . $e->getMessage());
         }
     }
 
-
-    private static function hasValidCache($cacheKey, $timeout = null)
+    public static function clearExpired()
     {
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            return false;
-        }
-
-        if (!isset($_SESSION[$cacheKey]) || !isset($_SESSION[$cacheKey]['expire'])) {
-            return false;
-        }
-
-        $expireTime = $_SESSION[$cacheKey]['expire'];
-        $currentTime = time();
-
-
-        if ($currentTime > $expireTime) {
-            unset($_SESSION[$cacheKey]);
-            return false;
-        }
-
-        return true;
-    }
-
-
-    public static function clearExpiredCache()
-    {
-
-        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION) || !is_array($_SESSION)) {
-            return;
-        }
-
-        $currentTime = time();
-
-        foreach ($_SESSION as $key => $value) {
-            if (strpos($key, 'cache_') === 0 && isset($value['expire']) && $currentTime > $value['expire']) {
-                unset($_SESSION[$key]);
-            }
+        self::init();
+        try {
+            self::$db->delete('cache', ['expires_at' => ['<', time()]]);
+        } catch (Exception $e) {
+            error_log("Cache clearExpired error: " . $e->getMessage());
         }
     }
-
 
     public static function getStats()
     {
+        self::init();
         $stats = [
             'total' => 0,
             'active' => 0,
@@ -124,18 +105,13 @@ class CacheConfig
             'items' => []
         ];
 
+        try {
+            $all_items = self::$db->select('cache');
+            $currentTime = time();
 
-        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION) || !is_array($_SESSION)) {
-            return $stats;
-        }
-
-        $currentTime = time();
-
-        foreach ($_SESSION as $key => $value) {
-            if (strpos($key, 'cache_') === 0) {
+            foreach ($all_items as $item) {
                 $stats['total']++;
-
-                $isExpired = isset($value['expire']) && $currentTime > $value['expire'];
+                $isExpired = $item['expires_at'] < $currentTime;
 
                 if ($isExpired) {
                     $stats['expired']++;
@@ -144,17 +120,17 @@ class CacheConfig
                 }
 
                 $stats['items'][] = [
-                    'key' => $key,
-                    'expire' => isset($value['expire']) ? date('Y-m-d H:i:s', $value['expire']) : null,
+                    'key' => $item['cache_key'],
+                    'expire' => date('Y-m-d H:i:s', $item['expires_at']),
                     'is_expired' => $isExpired,
-                    'size' => strlen(serialize($value['data'] ?? null))
+                    'size' => strlen($item['cache_value'])
                 ];
             }
+
+        } catch (Exception $e) {
+            error_log("Cache getStats error: " . $e->getMessage());
         }
 
         return $stats;
     }
 }
-
-
-CacheConfig::clearExpiredCache();

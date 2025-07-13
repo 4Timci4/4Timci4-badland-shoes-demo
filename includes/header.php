@@ -217,28 +217,6 @@ if (!empty($breadcrumbs)) {
         header nav a {
             transition: all 0.3s ease;
         }
-
-        #mobile-menu {
-            transition: all 0.3s ease;
-            transform: translateY(-10px);
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        #mobile-menu.show {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-
-        #mobile-menu.hidden {
-            display: none !important;
-        }
-
-        /* Mobil menü içindeki tıklamaları engelleme */
-        #mobile-menu nav {
-            pointer-events: auto;
-        }
     </style>
 </head>
 
@@ -444,144 +422,10 @@ if (!empty($breadcrumbs)) {
                             </div>
                         </div>
                     <?php endif; ?>
-                    <button id="mobile-menu-button"
-                        class="md:hidden text-gray-600 hover:text-primary focus:outline-none" type="button"
-                        aria-label="Mobil menüyü aç/kapat" aria-expanded="false">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
                 </div>
             </div>
         </div>
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
-            <nav class="flex flex-col p-4 space-y-2"
-                x-data="{ openProducts: false, activeMobileGender: '<?php echo !empty($mega_menu_genders) ? $mega_menu_genders[0]['slug'] : 'kadin'; ?>' }"
-                @click.stop>
-                <a href="/index.php"
-                    class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'index.php') ? 'bg-primary text-white' : ''; ?>">Ana
-                    Sayfa</a>
-
-                <div class="border border-gray-200 rounded-lg overflow-hidden">
-                    <button @click="openProducts = !openProducts"
-                        class="w-full flex items-center justify-between text-left text-gray-600 hover:text-primary p-3 transition-colors <?php echo ($current_page == 'products.php') ? 'bg-primary text-white' : ''; ?>">
-                        <span class="font-medium">Ürünler</span>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-200"
-                            :class="{ 'rotate-180': openProducts }"></i>
-                    </button>
-
-                    <div x-show="openProducts" x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 max-h-0" x-transition:enter-end="opacity-100 max-h-96"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 max-h-96" x-transition:leave-end="opacity-0 max-h-0"
-                        class="bg-gray-50 overflow-hidden" style="display: none;">
-
-                        <div class="border-b border-gray-200 p-3">
-                            <div class="grid grid-cols-<?php echo count($gender_categories); ?> gap-1">
-                                <?php foreach ($gender_categories as $slug => $gender): ?>
-                                    <button @click="activeMobileGender = '<?php echo $slug; ?>'"
-                                        class="px-3 py-2 text-xs rounded-lg transition-all duration-200"
-                                        :class="activeMobileGender === '<?php echo $slug; ?>' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-primary hover:text-white'">
-                                        <?php echo htmlspecialchars($gender['name']); ?>
-                                        <span
-                                            class="block text-xs opacity-75">(<?php echo $gender['product_count']; ?>)</span>
-                                    </button>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <?php foreach ($gender_categories as $slug => $gender): ?>
-                            <div x-show="activeMobileGender === '<?php echo $slug; ?>'" class="p-3">
-                                <div class="space-y-2">
-                                    <a href="/products.php?genders[]=<?php echo $slug; ?>"
-                                        class="block p-2 bg-primary text-white rounded-lg text-center text-sm font-medium hover:bg-primary-dark transition-colors">
-                                        Tüm <?php echo htmlspecialchars($gender['name']); ?> Ürünleri
-                                    </a>
-
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <?php foreach (array_slice($gender['categories'], 0, 6) as $category): ?>
-                                            <a href="/products.php?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
-                                                class="block p-2 bg-white border border-gray-200 rounded-lg text-xs text-center hover:border-primary hover:bg-primary hover:text-white transition-all duration-200">
-                                                <span
-                                                    class="font-medium"><?php echo htmlspecialchars($category['category_name']); ?></span>
-                                                <span
-                                                    class="block text-xs opacity-75 mt-1">(<?php echo $category['product_count']; ?>)</span>
-                                            </a>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-
-                        <div class="border-t border-gray-200 p-3 space-y-2">
-                            <a href="/products.php"
-                                class="block p-2 bg-gray-900 text-white rounded-lg text-center text-sm font-medium hover:bg-gray-800 transition-colors">
-                                Tüm Ürünleri Gör
-                            </a>
-                            <a href="/products.php?featured=1"
-                                class="block p-2 bg-gradient-to-r from-primary to-pink-500 text-white rounded-lg text-center text-sm font-medium hover:from-primary-dark hover:to-pink-600 transition-all">
-                                Öne Çıkanlar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <a href="/about.php"
-                    class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'about.php') ? 'bg-primary text-white' : ''; ?>">Hakkımızda</a>
-                <a href="/blog.php"
-                    class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'blog.php') ? 'bg-primary text-white' : ''; ?>">Blog</a>
-                <a href="/contact.php"
-                    class="text-gray-600 hover:text-primary p-2 rounded <?php echo ($current_page == 'contact.php') ? 'bg-primary text-white' : ''; ?>">İletişim</a>
-
-                <?php if ($is_logged_in): ?>
-                    <div class="border-t pt-2 mt-2">
-                        <div class="text-xs text-gray-500 px-2 mb-2">
-                            <?php echo htmlspecialchars($current_user['full_name'] ?? $current_user['email']); ?>
-                        </div>
-                        <a href="/user/profile.php" class="text-gray-600 hover:text-primary p-2 rounded block"
-                            data-no-transition="true" rel="nofollow">
-                            <i class="fas fa-user mr-2"></i>Profilim
-                        </a>
-                        <a href="/user/profile.php?tab=favorites" class="text-gray-600 hover:text-primary p-2 rounded block"
-                            data-no-transition="true" rel="nofollow">
-                            <i class="fas fa-heart mr-2"></i>Favorilerim
-                        </a>
-                        <form action="/logout.php" method="POST" class="w-full">
-                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                            <button type="submit"
-                                class="w-full text-left text-gray-600 hover:text-primary p-2 rounded block"
-                                data-no-transition="true" rel="nofollow">
-                                <i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap
-                            </button>
-                        </form>
-                    </div>
-                <?php else: ?>
-                    <div class="border-t pt-2 mt-2">
-                        <a href="/login.php" class="text-gray-600 hover:text-primary p-2 rounded block">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
-                        </a>
-                        <a href="/register.php" class="text-gray-600 hover:text-primary p-2 rounded block">
-                            <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </nav>
-        </div>
     </header>
 
-    <!-- Mobil menü güvenlik scripti -->
-    <script>
-        // Sayfa yüklendiğinde mobil menünün kesinlikle kapalı olmasını sağla
-        document.addEventListener('DOMContentLoaded', function () {
-            const mobileMenu = document.getElementById('mobile-menu');
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-
-            if (mobileMenu && mobileMenuButton) {
-                // Menüyü zorla kapat
-                mobileMenu.classList.add('hidden');
-                mobileMenu.classList.remove('show');
-                mobileMenu.style.display = 'none';
-                mobileMenuButton.setAttribute('aria-expanded', 'false');
-            }
-        });
-    </script>
 
     <main>

@@ -96,6 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
                             'email' => $email,
                             'subject' => $subject
                         ]);
+                        
+                        // Cache temizleme - yeni mesaj geldiğinde admin panelinde güncel sayıları görmek için
+                        require_once 'config/cache.php';
+                        CacheConfig::clear('contact_messages_count');
                     } else {
                         $form_errors[] = 'Mesaj gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
                     }
@@ -183,7 +187,7 @@ include 'includes/header.php';
                     <h3 class="font-semibold text-secondary mb-4">Sosyal Medya</h3>
                     <div class="flex space-x-4">
                         <?php 
-                        $social_links = $contactService->getSocialMediaLinks();
+                        $social_links = $contactService->getSocialMediaLinks(true);
                         foreach($social_links as $social): 
                         ?>
                             <a href="<?php echo htmlspecialchars($social['url']); ?>" 

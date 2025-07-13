@@ -7,7 +7,7 @@ $footer_info = $contactService->getFooterInfo();
 </main>
 <footer class="bg-dark text-white pt-12 pb-5">
     <div class="max-w-8xl mx-auto px-5">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             <div class="space-y-4">
                 <h2 class="text-2xl font-semibold">
                     <?= htmlspecialchars($footer_info['footer']['site_title'] ?? 'Schön') ?><span
@@ -49,7 +49,7 @@ $footer_info = $contactService->getFooterInfo();
                 <h3 class="text-lg font-semibold mb-5">İletişim</h3>
                 <div class="space-y-3">
                     <p class="text-gray-300"><i class="fas fa-map-marker-alt text-primary mr-2"></i>
-                        <?= $footer_info['contact']['address'] ?></p>
+                        <?= htmlspecialchars($footer_info['contact']['address']) ?></p>
                     <p class="text-gray-300"><i class="fas fa-phone text-primary mr-2"></i>
                         <?= htmlspecialchars($footer_info['contact']['phone']) ?></p>
                     <p class="text-gray-300"><i class="fas fa-envelope text-primary mr-2"></i>

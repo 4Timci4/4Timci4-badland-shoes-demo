@@ -397,7 +397,8 @@ include 'includes/header.php';
                                             <h4 class="font-bold text-gray-900 mb-1"><?= htmlspecialchars($value['title']) ?>
                                             </h4>
                                             <p class="text-gray-600 text-sm line-clamp-2">
-                                                <?= htmlspecialchars($value['content']) ?></p>
+                                                <?= htmlspecialchars($value['content']) ?>
+                                            </p>
                                             <p class="text-xs text-gray-400 mt-1">Sıra: <?= $value['sort_order'] ?></p>
                                         </div>
 
@@ -487,9 +488,11 @@ include 'includes/header.php';
                                             <h4 class="font-bold text-gray-900 mb-1"><?= htmlspecialchars($member['title']) ?>
                                             </h4>
                                             <p class="text-primary-600 font-semibold text-sm mb-1">
-                                                <?= htmlspecialchars($member['subtitle']) ?></p>
+                                                <?= htmlspecialchars($member['subtitle']) ?>
+                                            </p>
                                             <p class="text-gray-600 text-sm line-clamp-2">
-                                                <?= htmlspecialchars($member['content']) ?></p>
+                                                <?= htmlspecialchars($member['content']) ?>
+                                            </p>
                                             <p class="text-xs text-gray-400 mt-1">Sıra: <?= $member['sort_order'] ?></p>
                                         </div>
 
@@ -540,97 +543,97 @@ include 'includes/header.php';
 </div>
 
 <!-- Sortable.js CDN -->
-<script src="https:
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 <!-- JavaScript for enhanced UX -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const targetTab = this.getAttribute('data-tab');
-            
-            
-            tabButtons.forEach(btn => {
-                btn.classList.remove('border-primary-500', 'text-primary-600', 'bg-primary-50');
-                btn.classList.add('border-transparent', 'text-gray-500');
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const targetTab = this.getAttribute('data-tab');
+
+
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('border-primary-500', 'text-primary-600', 'bg-primary-50');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                });
+                this.classList.add('border-primary-500', 'text-primary-600', 'bg-primary-50');
+                this.classList.remove('border-transparent', 'text-gray-500');
+
+
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(targetTab + '-tab').classList.remove('hidden');
+
+
+                const url = new URL(window.location);
+                url.searchParams.set('tab', targetTab);
+                window.history.pushState({}, '', url);
             });
-            this.classList.add('border-primary-500', 'text-primary-600', 'bg-primary-50');
-            this.classList.remove('border-transparent', 'text-gray-500');
-            
-            
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById(targetTab + '-tab').classList.remove('hidden');
-            
-            
-            const url = new URL(window.location);
-            url.searchParams.set('tab', targetTab);
-            window.history.pushState({}, '', url);
         });
-    });
-    
-    
-    ['values', 'team'].forEach(section => {
-        const list = document.getElementById(section + '-list');
-        if (list) {
-            new Sortable(list, {
-                handle: '.cursor-move',
-                animation: 150,
-                ghostClass: 'opacity-50',
-                onEnd: function(evt) {
-                    
-                    const orderData = {};
-                    const items = list.querySelectorAll('[data-block-id]');
-                    
-                    items.forEach((item, index) => {
-                        const blockId = item.getAttribute('data-block-id');
-                        orderData[blockId] = index + 1;
-                    });
-                    
-                    
-                    const formData = new FormData();
-                    formData.append('csrf_token', '<?= generate_csrf_token() ?>');
-                    formData.append('action', 'update_content_order');
-                    formData.append('section', section);
-                    formData.append('order_data', JSON.stringify(orderData));
-                    formData.append('current_tab', section);
-                    
-                    fetch('about.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.text())
-                    .then(() => {
-                        console.log('Order updated successfully');
-                    })
-                    .catch(error => {
-                        console.error('Error updating order:', error);
-                        window.location.reload();
-                    });
-                }
-            });
-        }
-    });
-    
-    
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type=" submit"]'); if (submitBtn && !submitBtn.onclick) {
-    const btnText=submitBtn.innerHTML; submitBtn.disabled=true;
-    submitBtn.innerHTML='<i class="fas fa-spinner animate-spin mr-1"></i>İşleniyor...' ; setTimeout(()=> {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = btnText;
-        }, 5000);
+
+
+        ['values', 'team'].forEach(section => {
+            const list = document.getElementById(section + '-list');
+            if (list) {
+                new Sortable(list, {
+                    handle: '.cursor-move',
+                    animation: 150,
+                    ghostClass: 'opacity-50',
+                    onEnd: function (evt) {
+
+                        const orderData = {};
+                        const items = list.querySelectorAll('[data-block-id]');
+
+                        items.forEach((item, index) => {
+                            const blockId = item.getAttribute('data-block-id');
+                            orderData[blockId] = index + 1;
+                        });
+
+
+                        const formData = new FormData();
+                        formData.append('csrf_token', '<?= generate_csrf_token() ?>');
+                        formData.append('action', 'update_content_order');
+                        formData.append('section', section);
+                        formData.append('order_data', JSON.stringify(orderData));
+                        formData.append('current_tab', section);
+
+                        fetch('about.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.text())
+                            .then(() => {
+                                console.log('Order updated successfully');
+                            })
+                            .catch(error => {
+                                console.error('Error updating order:', error);
+                                window.location.reload();
+                            });
+                    }
+                });
             }
         });
+
+
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                const submitBtn = this.querySelector('button[type=" submit"]'); if (submitBtn && !submitBtn.onclick) {
+                    const btnText = submitBtn.innerHTML; submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i>İşleniyor...'; setTimeout(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = btnText;
+                    }, 5000);
+                }
+            });
+        });
     });
-});
-    </script>
+</script>
 
 <?php
 

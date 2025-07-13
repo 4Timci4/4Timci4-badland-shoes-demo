@@ -135,8 +135,6 @@ include 'includes/header.php';
                                 Cinsiyet</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                 Kategori</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                Fiyat</th>
                             <th
                                 class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-22">
                                 Durum</th>
@@ -165,7 +163,8 @@ include 'includes/header.php';
                                         </div>
                                         <div class="min-w-0">
                                             <h4 class="font-semibold text-gray-900 truncate">
-                                                <?= htmlspecialchars($product['name']) ?></h4>
+                                                <?= htmlspecialchars($product['name']) ?>
+                                            </h4>
                                             <p class="text-sm text-gray-500">ID: #<?= $product['id'] ?></p>
                                         </div>
                                     </div>
