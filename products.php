@@ -13,8 +13,8 @@ require_once 'services/GenderService.php';
 require_once 'services/SettingsService.php';
 $settingsService = new SettingsService();
 
-$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = $settingsService->getSiteSetting('products_per_page', 3);
+$page = 1;
+$limit = 12; // İlk yüklemede gösterilecek ürün sayısı
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
 $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
@@ -44,7 +44,6 @@ $products_result = $product_api_service->getProductsForApi([
 
 $products = $products_result['products'];
 $total_products = $products_result['total'];
-$total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
 
 ?>
 <!DOCTYPE html>
@@ -193,7 +192,8 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                         <img src="<?php echo htmlspecialchars($product['primary_image'] ?? 'assets/images/placeholder.svg'); ?>"
                                              alt="<?php echo htmlspecialchars($product['name']); ?>"
                                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                             loading="lazy">
+                                             loading="lazy"
+                                             onerror="if(this.src !== 'assets/images/placeholder.svg') this.src = 'assets/images/placeholder.svg';">
                                         <?php if ($product['is_featured']): ?>
                                             <span class="absolute top-3 left-3 bg-primary text-white text-xs px-2 py-1 rounded">Öne Çıkan</span>
                                         <?php endif; ?>
@@ -241,44 +241,19 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                         <?php endif; ?>
                     </div>
                     
-                    <?php if ($total_pages > 1): ?>
-                        <div class="flex justify-center mt-12">
-                            <nav class="flex items-center gap-2" id="pagination-container">
-                                <?php if ($page > 1): ?>
-                                    <?php
-                                    $prev_params = $_GET;
-                                    $prev_params['page'] = $page - 1;
-                                    ?>
-                                    <a href="products.php?<?php echo http_build_query($prev_params); ?>" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>
-                                <?php endif; ?>
-                                
-                                <?php
-                                $start_page = max(1, $page - 2);
-                                $end_page = min($total_pages, $page + 2);
-                                if ($end_page - $start_page < 4 && $total_pages > 5) {
-                                    if ($start_page === 1) $end_page = min(5, $total_pages);
-                                    else if ($end_page === $total_pages) $start_page = max(1, $total_pages - 4);
-                                }
-                                ?>
-                                
-                                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
-                                    <?php
-                                    $page_params = $_GET;
-                                    $page_params['page'] = $i;
-                                    ?>
-                                    <a href="products.php?<?php echo http_build_query($page_params); ?>" class="px-4 py-2 rounded transition-all <?php echo ($i === $page) ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white'; ?>"><?php echo $i; ?></a>
-                                <?php endfor; ?>
-                                
-                                <?php if ($page < $total_pages): ?>
-                                    <?php
-                                    $next_params = $_GET;
-                                    $next_params['page'] = $page + 1;
-                                    ?>
-                                    <a href="products.php?<?php echo http_build_query($next_params); ?>" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>
-                                <?php endif; ?>
-                            </nav>
+                    <!-- Loading indicator for infinite scroll -->
+                    <div id="loading-indicator" class="hidden flex justify-center items-center py-8">
+                        <div class="flex items-center space-x-2 text-gray-600">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                            <span>Daha fazla ürün yükleniyor...</span>
                         </div>
-                    <?php endif; ?>
+                    </div>
+                    
+                    <!-- End of products indicator -->
+                    <div id="end-of-products" class="hidden text-center py-8 text-gray-500">
+                        <i class="fas fa-check-circle text-2xl mb-2"></i>
+                        <p>Tüm ürünler gösterildi</p>
+                    </div>
                 </main>
             </div>
             </form>
@@ -334,20 +309,24 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                     closeMobileFilterPanel();
                 }
             });
-
-            // Auto-submit form when filters change (desktop only)
-            const filterInputs = document.querySelectorAll('#filter-panel input[type="checkbox"], #filter-panel select');
-            filterInputs.forEach(input => {
-                input.addEventListener('change', function() {
-                    if (window.innerWidth >= 1024) { // Only auto-submit on desktop
-                        document.getElementById('filter-form').submit();
-                    }
-                });
-            });
         });
     </script>
     
     <script src="assets/js/script.js"></script>
     <script src="assets/js/products-filter.js" defer></script>
+    
+    <script>
+        // Ana sayfa yüklendiğinde resim hatalarını yakala
+        document.addEventListener('DOMContentLoaded', function() {
+            const productImages = document.querySelectorAll('#product-grid img');
+            productImages.forEach(img => {
+                img.addEventListener('error', function() {
+                    if (this.src !== 'assets/images/placeholder.svg') {
+                        this.src = 'assets/images/placeholder.svg';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

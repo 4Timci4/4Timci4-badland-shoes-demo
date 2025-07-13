@@ -11,7 +11,7 @@ require_once '../services/SettingsService.php';
 
 $settingsService = new SettingsService();
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = $settingsService->getSiteSetting('products_per_page', 3);
+$limit = isset($_GET['limit']) ? max(1, intval($_GET['limit'])) : 12;
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
 $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
@@ -36,16 +36,13 @@ $products = $products_result['products'];
 $total_products = $products_result['total'];
 $total_pages = isset($products_result['pages']) ? $products_result['pages'] : ceil($total_products / $limit);
 
-
+// Infinite scroll için ürün HTML'ini oluştur
 ob_start();
-
-
 if (!empty($products)) {
     foreach ($products as $product) {
-
         echo '<div class="product-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">';
         echo '    <div class="relative overflow-hidden bg-gray-100 aspect-square">';
-        echo '        <img src="' . htmlspecialchars($product['primary_image'] ?? 'assets/images/placeholder.svg') . '" alt="' . htmlspecialchars($product['name']) . '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">';
+        echo '        <img src="' . htmlspecialchars($product['primary_image'] ?? 'assets/images/placeholder.svg') . '" alt="' . htmlspecialchars($product['name']) . '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" onerror="if(this.src !== \'assets/images/placeholder.svg\') this.src = \'assets/images/placeholder.svg\';">';
         if ($product['is_featured']) {
             echo '        <span class="absolute top-3 left-3 bg-primary text-white text-xs px-2 py-1 rounded">Öne Çıkan</span>';
         }
@@ -72,56 +69,13 @@ if (!empty($products)) {
         echo '    </div>';
         echo '</div>';
     }
-} else {
-    echo '<div class="col-span-full text-center py-12">';
-    echo '    <div class="text-gray-500 mb-4"><i class="fas fa-search text-4xl"></i></div>';
-    echo '    <h3 class="text-xl font-semibold text-gray-700 mb-2">Ürün Bulunamadı</h3>';
-    echo '    <p class="text-gray-600 mb-4">Aradığınız kriterlere uygun ürün bulunamadı.</p>';
-    echo '    <a href="products.php" class="bg-primary text-white px-6 py-2 rounded hover:bg-primary-dark transition-colors">Tüm Ürünler</a>';
-    echo '</div>';
 }
 $products_html = ob_get_clean();
 
-
-ob_start();
-if ($total_pages > 1) {
-    $start_page = max(1, $page - 2);
-    $end_page = min($total_pages, $page + 2);
-
-    if ($end_page - $start_page < 4 && $total_pages > 5) {
-        if ($start_page === 1) {
-            $end_page = min(5, $total_pages);
-        } else if ($end_page === $total_pages) {
-            $start_page = max(1, $total_pages - 4);
-        }
-    }
-
-    if ($page > 1) {
-        $prev_params = $_GET;
-        $prev_params['page'] = $page - 1;
-        echo '<a href="products.php?' . http_build_query($prev_params) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>';
-    }
-
-    for ($i = $start_page; $i <= $end_page; $i++) {
-        $page_params = $_GET;
-        $page_params['page'] = $i;
-        echo '<a href="products.php?' . http_build_query($page_params) . '" class="px-4 py-2 rounded transition-all ' . ($i === $page ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white') . '">' . $i . '</a>';
-    }
-
-    if ($page < $total_pages) {
-        $next_params = $_GET;
-        $next_params['page'] = $page + 1;
-        echo '<a href="products.php?' . http_build_query($next_params) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>';
-    }
-}
-$pagination_html = ob_get_clean();
-
-
-
+// Ürün sayısı HTML'i
 ob_start();
 echo '<strong>' . number_format($total_products) . '</strong> ürün bulundu';
 $count_html = ob_get_clean();
-
 
 // Filtre sayılarını hesapla
 $filter_counts = $product_api_service->getFilterCounts([
@@ -130,10 +84,15 @@ $filter_counts = $product_api_service->getFilterCounts([
     'featured' => $featured_filter
 ]);
 
+// Infinite scroll için gerekli bilgileri döndür
 header('Content-Type: application/json');
 echo json_encode([
     'products_html' => $products_html,
-    'pagination_html' => $pagination_html,
     'count_html' => $count_html,
-    'filter_counts' => $filter_counts
+    'filter_counts' => $filter_counts,
+    'current_page' => $page,
+    'total_pages' => $total_pages,
+    'total_products' => $total_products,
+    'has_more' => $page < $total_pages,
+    'products_count' => count($products)
 ]);
