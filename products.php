@@ -10,8 +10,11 @@ require_once 'services/Product/ProductApiService.php';
 require_once 'services/GenderService.php';
 
 
+require_once 'services/SettingsService.php';
+$settingsService = new SettingsService();
+
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = 9;
+$limit = $settingsService->getSiteSetting('products_per_page', 9);
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
 $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
@@ -78,6 +81,7 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
     <section class="py-8 bg-white">
         <div class="max-w-7xl mx-auto px-5">
             <form method="GET" action="products.php" id="filter-form">
+                <input type="hidden" name="limit" value="<?php echo htmlspecialchars($limit); ?>">
                 <div class="flex flex-col lg:flex-row gap-8">
                     
                     <aside class="lg:w-1/4">

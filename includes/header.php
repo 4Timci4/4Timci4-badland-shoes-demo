@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config/bootstrap.php';
 require_once __DIR__ . '/../lib/SEOManager.php';
 require_once __DIR__ . '/../services/AuthService.php';
 require_once __DIR__ . '/../services/GenderService.php';

@@ -6,10 +6,12 @@ require_once __DIR__ . '/api_bootstrap.php';
 require_once '../services/CategoryService.php';
 require_once '../services/Product/ProductApiService.php';
 require_once '../services/GenderService.php';
+require_once '../services/SettingsService.php';
 
 
+$settingsService = new SettingsService();
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = 9;
+$limit = $settingsService->getSiteSetting('products_per_page', 9);
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
 $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
@@ -96,17 +98,20 @@ if ($total_pages > 1) {
 
     if ($page > 1) {
         echo '<a href="?page=' . ($page - 1) . '&' . http_build_query(array_filter($_GET, function ($k) {
-            return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>';
+            return $k !== 'page';
+        }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>';
     }
 
     for ($i = $start_page; $i <= $end_page; $i++) {
         echo '<a href="?page=' . $i . '&' . http_build_query(array_filter($_GET, function ($k) {
-            return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-4 py-2 rounded transition-all ' . ($i === $page ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white') . '">' . $i . '</a>';
+            return $k !== 'page';
+        }, ARRAY_FILTER_USE_KEY)) . '" class="px-4 py-2 rounded transition-all ' . ($i === $page ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white') . '">' . $i . '</a>';
     }
 
     if ($page < $total_pages) {
         echo '<a href="?page=' . ($page + 1) . '&' . http_build_query(array_filter($_GET, function ($k) {
-            return $k !== 'page'; }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>';
+            return $k !== 'page';
+        }, ARRAY_FILTER_USE_KEY)) . '" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>';
     }
 }
 $pagination_html = ob_get_clean();

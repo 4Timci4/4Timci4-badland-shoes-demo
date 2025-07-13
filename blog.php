@@ -43,8 +43,11 @@ include 'includes/header.php';
             }
 
 
+            require_once 'services/SettingsService.php';
+            $settingsService = new SettingsService();
+
             $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-            $perPage = 6;
+            $perPage = $settingsService->getSiteSetting('blogs_per_page', 6);
             $category = isset($_GET['category']) ? trim($_GET['category']) : null;
             $tag = isset($_GET['tag']) ? trim($_GET['tag']) : null;
 
