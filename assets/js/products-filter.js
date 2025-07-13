@@ -5,6 +5,44 @@ document.addEventListener('DOMContentLoaded', function () {
     const paginationContainer = document.getElementById('pagination-container');
     const productCountDisplay = document.getElementById('product-count-display');
 
+    /**
+     * Filtre sayılarını günceller
+     * @param {Object} filterCounts Filtre sayıları
+     */
+    function updateFilterCounts(filterCounts) {
+        // Cinsiyet sayılarını güncelle
+        if (filterCounts.gender_counts) {
+            filterCounts.gender_counts.forEach(gender => {
+                // Cinsiyet checkbox'larını bul
+                const genderCheckboxes = document.querySelectorAll(`input[name="genders[]"][value="${gender.slug}"]`);
+                
+                // Her bir checkbox için yanındaki sayıyı güncelle
+                genderCheckboxes.forEach(checkbox => {
+                    const countElement = checkbox.closest('label').querySelector('.text-gray-500');
+                    if (countElement) {
+                        countElement.textContent = `(${gender.product_count})`;
+                    }
+                });
+            });
+        }
+        
+        // Kategori sayılarını güncelle
+        if (filterCounts.category_counts) {
+            filterCounts.category_counts.forEach(category => {
+                // Kategori checkbox'larını bul
+                const categoryCheckboxes = document.querySelectorAll(`input[name="categories[]"][value="${category.slug}"]`);
+                
+                // Her bir checkbox için yanındaki sayıyı güncelle
+                categoryCheckboxes.forEach(checkbox => {
+                    const countElement = checkbox.closest('label').querySelector('.text-gray-500');
+                    if (countElement) {
+                        countElement.textContent = `(${category.product_count})`;
+                    }
+                });
+            });
+        }
+    }
+
     function fetchProducts(apiUrl, historyUrl, updateHistory = true) {
         
         productGrid.style.opacity = '0.5';
@@ -31,7 +69,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (productCountDisplay) {
                 productCountDisplay.innerHTML = data.count_html;
             }
-
+            
+            // Filtre sayılarını güncelle
+            if (data.filter_counts) {
+                updateFilterCounts(data.filter_counts);
+            }
             
             if (updateHistory) {
                 history.pushState({path: historyUrl}, '', historyUrl);
@@ -42,7 +84,6 @@ document.addEventListener('DOMContentLoaded', function () {
             
         })
         .finally(() => {
-            
             productGrid.style.opacity = '1';
         });
     }

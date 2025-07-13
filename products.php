@@ -14,7 +14,7 @@ require_once 'services/SettingsService.php';
 $settingsService = new SettingsService();
 
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = $settingsService->getSiteSetting('products_per_page', 9);
+$limit = $settingsService->getSiteSetting('products_per_page', 3);
 $category_filters = isset($_GET['categories']) ? (is_array($_GET['categories']) ? $_GET['categories'] : [$_GET['categories']]) : [];
 $gender_filters = isset($_GET['genders']) ? (is_array($_GET['genders']) ? $_GET['genders'] : [$_GET['genders']]) : [];
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : 'created_at-desc';
@@ -245,7 +245,11 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                         <div class="flex justify-center mt-12">
                             <nav class="flex items-center gap-2" id="pagination-container">
                                 <?php if ($page > 1): ?>
-                                    <a href="?page=<?php echo ($page - 1); ?>&<?php echo http_build_query(array_filter($_GET, fn($k) => $k !== 'page', ARRAY_FILTER_USE_KEY)); ?>" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>
+                                    <?php
+                                    $prev_params = $_GET;
+                                    $prev_params['page'] = $page - 1;
+                                    ?>
+                                    <a href="products.php?<?php echo http_build_query($prev_params); ?>" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-left"></i></a>
                                 <?php endif; ?>
                                 
                                 <?php
@@ -258,11 +262,19 @@ $total_pages = $products_result['pages'] ?? ceil($total_products / $limit);
                                 ?>
                                 
                                 <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
-                                    <a href="?page=<?php echo $i; ?>&<?php echo http_build_query(array_filter($_GET, fn($k) => $k !== 'page', ARRAY_FILTER_USE_KEY)); ?>" class="px-4 py-2 rounded transition-all <?php echo ($i === $page) ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white'; ?>"><?php echo $i; ?></a>
+                                    <?php
+                                    $page_params = $_GET;
+                                    $page_params['page'] = $i;
+                                    ?>
+                                    <a href="products.php?<?php echo http_build_query($page_params); ?>" class="px-4 py-2 rounded transition-all <?php echo ($i === $page) ? 'bg-primary text-white' : 'text-gray-600 hover:bg-primary hover:text-white'; ?>"><?php echo $i; ?></a>
                                 <?php endfor; ?>
                                 
                                 <?php if ($page < $total_pages): ?>
-                                    <a href="?page=<?php echo ($page + 1); ?>&<?php echo http_build_query(array_filter($_GET, fn($k) => $k !== 'page', ARRAY_FILTER_USE_KEY)); ?>" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>
+                                    <?php
+                                    $next_params = $_GET;
+                                    $next_params['page'] = $page + 1;
+                                    ?>
+                                    <a href="products.php?<?php echo http_build_query($next_params); ?>" class="px-3 py-2 text-gray-600 hover:text-primary transition-colors"><i class="fas fa-chevron-right"></i></a>
                                 <?php endif; ?>
                             </nav>
                         </div>

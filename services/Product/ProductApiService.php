@@ -371,6 +371,167 @@ class ProductApiService
             $this->db->clearCache();
         }
     }
+
+    /**
+     * Filtrelenmiş ürünlere göre cinsiyet ve kategori sayılarını hesaplar
+     *
+     * @param array $params Filtre parametreleri
+     * @return array Cinsiyet ve kategori sayıları
+     */
+    public function getFilterCounts($params = [])
+    {
+        $start_time = microtime(true);
+
+        $categories = $params['categories'] ?? [];
+        $genders = $params['genders'] ?? [];
+        $featured = $params['featured'] ?? null;
+
+        try {
+            $dbType = DatabaseFactory::getCurrentType();
+
+            if ($dbType === 'supabase') {
+                return $this->getFilterCountsSupabase($params, $start_time);
+            } else {
+                return $this->getFilterCountsMariaDB($params, $start_time);
+            }
+
+        } catch (Exception $e) {
+            error_log("ProductApiService Error (getFilterCounts): " . $e->getMessage());
+            $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+            return ['gender_counts' => [], 'category_counts' => []];
+        }
+    }
+
+    /**
+     * MariaDB için filtrelenmiş ürünlere göre cinsiyet ve kategori sayılarını hesaplar
+     */
+    private function getFilterCountsMariaDB($params, $start_time)
+    {
+        $categories = $params['categories'] ?? [];
+        $genders = $params['genders'] ?? [];
+        $featured = $params['featured'] ?? null;
+
+        // Temel sorgu
+        $baseQuery = "FROM product_api_summary p
+                     LEFT JOIN product_categories pc ON p.id = pc.product_id
+                     LEFT JOIN categories c ON pc.category_id = c.id
+                     LEFT JOIN product_genders pg ON p.id = pg.product_id
+                     LEFT JOIN genders g ON pg.gender_id = g.id";
+
+        $whereConditions = [];
+        $whereParams = [];
+
+        // Kategori filtresi
+        if (!empty($categories)) {
+            $categoryPlaceholders = implode(',', array_fill(0, count($categories), '?'));
+            $whereConditions[] = "c.slug IN ($categoryPlaceholders)";
+            $whereParams = array_merge($whereParams, $categories);
+        }
+
+        // Cinsiyet filtresi
+        if (!empty($genders)) {
+            $genderPlaceholders = implode(',', array_fill(0, count($genders), '?'));
+            $whereConditions[] = "g.slug IN ($genderPlaceholders)";
+            $whereParams = array_merge($whereParams, $genders);
+        }
+
+        // Öne çıkan filtresi
+        if ($featured !== null) {
+            $whereConditions[] = "p.is_featured = ?";
+            $whereParams[] = (bool) $featured;
+        }
+
+        // WHERE koşulu oluştur
+        $whereClause = !empty($whereConditions) ? " WHERE " . implode(' AND ', $whereConditions) : "";
+
+        // Cinsiyet sayılarını hesapla
+        $genderCountsQuery = "SELECT g.id, g.name, g.slug, COUNT(DISTINCT p.id) as product_count
+                             $baseQuery
+                             $whereClause
+                             GROUP BY g.id, g.name, g.slug
+                             ORDER BY g.name";
+
+        // Kategori sayılarını hesapla
+        $categoryCountsQuery = "SELECT c.id, c.name, c.slug, COUNT(DISTINCT p.id) as product_count
+                               $baseQuery
+                               $whereClause
+                               GROUP BY c.id, c.name, c.slug
+                               ORDER BY c.name";
+
+        // Cinsiyet filtresi olmadan cinsiyet sayılarını hesapla
+        $genderCountsWithoutGenderFilter = $genderCountsQuery;
+        $paramsWithoutGenderFilter = $whereParams;
+
+        if (!empty($genders)) {
+            // Cinsiyet filtresini kaldır
+            $whereConditionsWithoutGenderFilter = array_filter($whereConditions, function ($condition) {
+                return strpos($condition, "g.slug IN") === false;
+            });
+
+            $whereClauseWithoutGenderFilter = !empty($whereConditionsWithoutGenderFilter)
+                ? " WHERE " . implode(' AND ', $whereConditionsWithoutGenderFilter)
+                : "";
+
+            $genderCountsWithoutGenderFilter = "SELECT g.id, g.name, g.slug, COUNT(DISTINCT p.id) as product_count
+                                              $baseQuery
+                                              $whereClauseWithoutGenderFilter
+                                              GROUP BY g.id, g.name, g.slug
+                                              ORDER BY g.name";
+
+            $paramsWithoutGenderFilter = array_diff($whereParams, $genders);
+        }
+
+        // Kategori filtresi olmadan kategori sayılarını hesapla
+        $categoryCountsWithoutCategoryFilter = $categoryCountsQuery;
+        $paramsWithoutCategoryFilter = $whereParams;
+
+        if (!empty($categories)) {
+            // Kategori filtresini kaldır
+            $whereConditionsWithoutCategoryFilter = array_filter($whereConditions, function ($condition) {
+                return strpos($condition, "c.slug IN") === false;
+            });
+
+            $whereClauseWithoutCategoryFilter = !empty($whereConditionsWithoutCategoryFilter)
+                ? " WHERE " . implode(' AND ', $whereConditionsWithoutCategoryFilter)
+                : "";
+
+            $categoryCountsWithoutCategoryFilter = "SELECT c.id, c.name, c.slug, COUNT(DISTINCT p.id) as product_count
+                                                  $baseQuery
+                                                  $whereClauseWithoutCategoryFilter
+                                                  GROUP BY c.id, c.name, c.slug
+                                                  ORDER BY c.name";
+
+            $paramsWithoutCategoryFilter = array_diff($whereParams, $categories);
+        }
+
+        // Sorguları çalıştır
+        $genderCounts = $this->db->executeRawSql($genderCountsWithoutGenderFilter, $paramsWithoutGenderFilter);
+        $this->performance_metrics['queries_executed']++;
+
+        $categoryCounts = $this->db->executeRawSql($categoryCountsWithoutCategoryFilter, $paramsWithoutCategoryFilter);
+        $this->performance_metrics['queries_executed']++;
+
+        $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+
+        return [
+            'gender_counts' => $genderCounts,
+            'category_counts' => $categoryCounts
+        ];
+    }
+
+    /**
+     * Supabase için filtrelenmiş ürünlere göre cinsiyet ve kategori sayılarını hesaplar
+     */
+    private function getFilterCountsSupabase($params, $start_time)
+    {
+        // Supabase implementasyonu burada olacak
+        // Şimdilik boş bir array döndürüyoruz
+        $this->performance_metrics['execution_time_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+        return [
+            'gender_counts' => [],
+            'category_counts' => []
+        ];
+    }
 }
 
 

@@ -13,21 +13,19 @@ $genderService = gender_service();
 $categoryService = category_service();
 
 $mega_menu_genders = $genderService->getGendersWithProductCounts();
-$mega_menu_categories = $categoryService->getCategoriesWithProductCountsOptimized(true);
 
 $gender_categories = [];
 foreach ($mega_menu_genders as $gender) {
+    // Her cinsiyet için o cinsiyete özel kategori sayılarını hesapla
+    $gender_specific_categories = $categoryService->getCategoriesWithProductCountsByGender($gender['slug'], false);
+
     $gender_categories[$gender['slug']] = [
         'id' => $gender['id'],
         'name' => $gender['name'],
         'slug' => $gender['slug'],
         'product_count' => $gender['product_count'],
-        'categories' => []
+        'categories' => array_slice($gender_specific_categories, 0, 8)
     ];
-}
-
-foreach ($mega_menu_genders as $gender) {
-    $gender_categories[$gender['slug']]['categories'] = array_slice($mega_menu_categories, 0, 8);
 }
 
 $authService->checkSessionSecurity();
