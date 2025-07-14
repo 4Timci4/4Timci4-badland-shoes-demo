@@ -57,12 +57,12 @@ if (empty($posts)) {
     foreach ($posts as $post) {
         $post = (array) $post;
 
-        $post['id'] ??= 0;
-        $post['title'] ??= 'Başlık Yok';
-        $post['excerpt'] ??= 'Özet yok...';
-        $post['image_url'] ??= '/assets/images/placeholder.svg';
-        $post['category'] ??= 'Genel';
-        $post['created_at'] ??= date('Y-m-d H:i:s');
+        $post['id'] = $post['id'] ?? 0;
+        $post['title'] = $post['title'] ?? 'Başlık Yok';
+        $post['excerpt'] = $post['excerpt'] ?? 'Özet yok...';
+        $post['image_url'] = $post['image_url'] ?? '/assets/images/placeholder.svg';
+        $post['category'] = $post['category'] ?? 'Genel';
+        $post['created_at'] = $post['created_at'] ?? date('Y-m-d H:i:s');
 
         echo '<div class="blog-card bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">';
         echo '    <a href="/blog-detail.php?id=' . $post['id'] . '" class="block">';
@@ -116,9 +116,8 @@ if ($totalPages > 1) {
     for ($i = 1; $i <= $totalPages; $i++) {
         $page_params = array_filter(['page' => $i, 'category' => $category, 'tag' => $tag]);
         $active_class = ($i == $page) ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400';
-        $queryString = http_build_query($page_params);
-        echo "<a href=\"?{$queryString}\" class=\"w-10 h-10 flex items-center justify-center rounded-full border font-semibold transition-all duration-300 {$active_class}\">";
-        echo "    {$i}";
+        echo '<a href="?' . http_build_query($page_params) . '" class="w-10 h-10 flex items-center justify-center rounded-full border font-semibold transition-all duration-300 ' . $active_class . '">';
+        echo '    ' . $i;
         echo '</a>';
     }
 
