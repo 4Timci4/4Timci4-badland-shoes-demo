@@ -1,3 +1,7 @@
 /.vscode/
 
 /sessions/
+
+# Memory Bank Documentation System
+/memory_bank_data/
+/memory-bank-mcp/
