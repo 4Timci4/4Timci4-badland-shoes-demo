@@ -2,19 +2,11 @@
     <div>
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-secondary mb-2"><?php echo $product['name']; ?></h1>
-            <?php if ($is_logged_in): ?>
-                <button id="favorite-btn"
-                    class="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                    title="Favorilere ekle/çıkar">
-                    <i class="far fa-heart text-xl text-gray-600" id="favorite-icon"></i>
-                </button>
-            <?php else: ?>
-                <a href="/login.php"
-                    class="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                    title="Favorilere eklemek için giriş yapın">
-                    <i class="far fa-heart text-xl text-gray-400"></i>
-                </a>
-            <?php endif; ?>
+            <button id="favorite-btn"
+                class="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                title="Favorilere ekle/çıkar">
+                <i class="far fa-heart text-xl text-gray-600" id="favorite-icon"></i>
+            </button>
         </div>
         <p class="text-gray-600"><?php echo htmlspecialchars($product['categories'][0]['name'] ?? 'Kategori Yok'); ?>
         </p>

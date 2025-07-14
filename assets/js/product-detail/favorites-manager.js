@@ -1,17 +1,26 @@
-
 export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notificationManager) {
     let isFavoriteLoading = false;
     
+    // Çerezlerden mevcut favorileri yükle
+    function loadFavoritesFromCookies() {
+        if (typeof window.FavoritesManager !== 'undefined') {
+            return window.FavoritesManager.getFavoriteVariantIds();
+        }
+        return [];
+    }
     
+    // Favori durumunu güncelle
     function updateFavoriteStatus() {
-        if (!isLoggedIn || !state.currentSelectedVariantId) return;
+        if (!state.currentSelectedVariantId) return;
         
         const favoriteBtn = document.getElementById('favorite-btn');
         const favoriteIcon = document.getElementById('favorite-icon');
         
         if (!favoriteBtn || !favoriteIcon) return;
         
-        const isFavorite = favoriteVariantIds.includes(state.currentSelectedVariantId);
+        // Çerezlerden güncel favori listesini al
+        const currentFavorites = loadFavoritesFromCookies();
+        const isFavorite = currentFavorites.includes(state.currentSelectedVariantId);
         
         if (isFavorite) {
             favoriteIcon.classList.remove('far', 'text-gray-600');
@@ -24,14 +33,15 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
         }
     }
     
-    
+    // Favori butonunu başlat
     function initFavoriteButton() {
         const favoriteBtn = document.getElementById('favorite-btn');
         
-        if (!favoriteBtn || !isLoggedIn) {
+        if (!favoriteBtn) {
             return;
         }
         
+        // Artık giriş kontrolü yok - herkes favori ekleyebilir
         favoriteBtn.addEventListener('click', function() {
             if (isFavoriteLoading || !state.currentSelectedVariantId) {
                 return;
@@ -41,7 +51,7 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
         });
     }
     
-    
+    // Favori toggle işlemi
     function toggleFavorite() {
         if (!state.currentSelectedVariantId) {
             notificationManager.showNotification('Lütfen renk ve beden seçin', 'error');
@@ -49,6 +59,12 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
         }
         
         if (isFavoriteLoading) {
+            return;
+        }
+        
+        // FavoritesManager'ın yüklendiğinden emin ol
+        if (typeof window.FavoritesManager === 'undefined') {
+            notificationManager.showNotification('Favori sistemi yüklenemedi', 'error');
             return;
         }
         
@@ -61,76 +77,44 @@ export function initializeFavorites(state, favoriteVariantIds, isLoggedIn, notif
             return;
         }
         
-        
+        // Loading durumunu göster
         favoriteBtn.disabled = true;
         favoriteIcon.classList.add('fa-spin');
         
-        const isFavorite = favoriteVariantIds.includes(state.currentSelectedVariantId);
-        const action = isFavorite ? 'remove' : 'add';
+        // Çerez tabanlı favori toggle işlemi
+        const result = window.FavoritesManager.toggleFavorite(
+            state.currentSelectedVariantId,
+            state.selectedColor
+        );
         
-        fetch('/api/favorites.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: action,
-                variantId: state.currentSelectedVariantId,
-                colorId: state.selectedColor
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Sunucu yanıt vermedi');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                if (action === 'add') {
-                    favoriteVariantIds.push(state.currentSelectedVariantId);
-                } else {
-                    const index = favoriteVariantIds.indexOf(state.currentSelectedVariantId);
-                    if (index > -1) {
-                        favoriteVariantIds.splice(index, 1);
-                    }
-                }
-                updateFavoriteStatus();
-                
-                
-                notificationManager.showNotification(data.message || 'İşlem başarılı', 'success');
-            } else {
-                notificationManager.showNotification(data.message || 'İşlem başarısız', 'error');
-                
-                
-                if (data.error_code === 'user_not_found' || data.redirect) {
-                    setTimeout(() => {
-                        window.location.href = data.redirect || 'logout.php';
-                    }, 2000);
-                }
-            }
-        })
-        .catch(error => {
-            notificationManager.showNotification('Bir hata oluştu: ' + error.message, 'error');
-        })
-        .finally(() => {
-            isFavoriteLoading = false;
-            favoriteBtn.disabled = false;
-            favoriteIcon.classList.remove('fa-spin');
-        });
+        // Sonucu işle
+        if (result.success) {
+            updateFavoriteStatus();
+            notificationManager.showNotification(result.message, 'success');
+        } else {
+            notificationManager.showNotification(result.message, 'error');
+        }
+        
+        // Loading durumunu kaldır
+        isFavoriteLoading = false;
+        favoriteBtn.disabled = false;
+        favoriteIcon.classList.remove('fa-spin');
     }
     
-    
+    // Varyant seçildiğinde favori durumunu güncelle
     document.addEventListener('variantSelected', function(event) {
         updateFavoriteStatus();
     });
     
-    
+    // Favori butonunu başlat
     initFavoriteButton();
     
+    // İlk yüklemede favori durumunu güncelle
+    updateFavoriteStatus();
     
     return {
         updateFavoriteStatus: updateFavoriteStatus,
-        toggleFavorite: toggleFavorite
+        toggleFavorite: toggleFavorite,
+        loadFavoritesFromCookies: loadFavoritesFromCookies
     };
 }

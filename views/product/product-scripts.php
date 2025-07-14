@@ -39,6 +39,7 @@ echo json_encode($colorImageData);
 
     window.productSizesData = <?php echo json_encode($available_sizes ?? []); ?>;
 </script>
+<script src="/assets/js/cookie-manager.js"></script>
 <script type="module" src="/assets/js/product-detail/main.js"></script>
 
 
