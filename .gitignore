@@ -4,4 +4,6 @@
 
 # Memory Bank Documentation System
 /memory_bank_data/
-/memory-bank-mcp/
+/memory-bank-mcp/node_modules/
+/memory-bank-mcp/dist/
+/memory-bank-mcp/.env
