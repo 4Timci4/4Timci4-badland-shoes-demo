@@ -26,13 +26,13 @@ define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
 
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
 
-define('MAIL_HOST', getenv('MAIL_HOST') ?: 'mail.badlandshoes.com.tr');
-define('MAIL_PORT', getenv('MAIL_PORT') ?: 587);
-define('MAIL_USERNAME', getenv('MAIL_USERNAME') ?: 'mail@badlandshoes.com.tr');
-define('MAIL_PASSWORD', getenv('MAIL_PASSWORD') ?: 'Parola28!');
+define('MAIL_HOST', getenv('MAIL_HOST') ?: 'MAIL_HOST');
+define('MAIL_PORT', getenv('MAIL_PORT') ?: MAIL_PORT);
+define('MAIL_USERNAME', getenv('MAIL_USERNAME') ?: 'MAIL_USERNAME');
+define('MAIL_PASSWORD', getenv('MAIL_PASSWORD') ?: 'MAIL_PASSWORD');
 define('MAIL_ENCRYPTION', getenv('MAIL_ENCRYPTION') ?: 'tls');
-define('MAIL_FROM_ADDRESS', getenv('MAIL_FROM_ADDRESS') ?: 'mail@badlandshoes.com.tr');
-define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Application');
+define('MAIL_FROM_ADDRESS', getenv('MAIL_FROM_ADDRESS') ?: 'MAIL_FROM_ADDRESS');
+define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'MAIL_FROM_NAME');
 
 function debug_connection_info()
 {
