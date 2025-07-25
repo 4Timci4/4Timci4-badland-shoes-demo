@@ -14,8 +14,8 @@ if (file_exists($envFile)) {
 
 define('DB_TYPE', getenv('DB_TYPE') ?: 'supabase');
 
-define('SUPABASE_URL', getenv('SUPABASE_URL') ?: 'https://rfxleyiyvpygdpdbnmib.supabase.co');
-define('SUPABASE_KEY', getenv('SUPABASE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmeGxleWl5dnB5Z2RwZGJubWliIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTQ1NDU4NiwiZXhwIjoyMDY3MDMwNTg2fQ.MX3WymdKFlrk7LnYX4qRFgRhfSEyK0aIGLzjua6j2iU');
+define('SUPABASE_URL', getenv('SUPABASE_URL') ?: 'SUPABASE_URL');
+define('SUPABASE_KEY', getenv('SUPABASE_KEY') ?: 'SUPABASE_KEY');
 
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_PORT', getenv('DB_PORT') ?: 3306);
