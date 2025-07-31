@@ -518,7 +518,7 @@ include 'includes/header.php';
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Ana Sayfa URL</label>
                                     <input type="text" name="home_url"
-                                        value="<?= htmlspecialchars($footer_info['links']['home_url'] ?? '/index.php') ?>"
+                                        value="<?= htmlspecialchars($footer_info['links']['home_url'] ?? '/') ?>"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                                 </div>
                             </div>
@@ -533,7 +533,7 @@ include 'includes/header.php';
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Ürünler URL</label>
                                     <input type="text" name="products_url"
-                                        value="<?= htmlspecialchars($footer_info['links']['products_url'] ?? '/products.php') ?>"
+                                        value="<?= htmlspecialchars($footer_info['links']['products_url'] ?? '/products') ?>"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                                 </div>
                             </div>
@@ -563,7 +563,7 @@ include 'includes/header.php';
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Blog URL</label>
                                     <input type="text" name="blog_url"
-                                        value="<?= htmlspecialchars($footer_info['links']['blog_url'] ?? '/blog.php') ?>"
+                                        value="<?= htmlspecialchars($footer_info['links']['blog_url'] ?? '/blog') ?>"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                                 </div>
                             </div>
@@ -578,7 +578,7 @@ include 'includes/header.php';
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">İletişim URL</label>
                                     <input type="text" name="contact_url"
-                                        value="<?= htmlspecialchars($footer_info['links']['contact_url'] ?? '/contact.php') ?>"
+                                        value="<?= htmlspecialchars($footer_info['links']['contact_url'] ?? '/contact') ?>"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                                 </div>
                             </div>

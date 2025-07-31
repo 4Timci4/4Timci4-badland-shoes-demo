@@ -24,7 +24,7 @@ function requireLogin()
 
     if (!$isLoggedIn) {
 
-        header('Location: /login.php');
+        header('Location: /login');
         exit;
     }
 }
@@ -46,7 +46,7 @@ if ($maintenance_mode === 'true') {
     $is_admin_logged_in = (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true);
 
     if (!$is_maintenance_page && !$is_admin_page && !$is_login_page && !$is_admin_logged_in) {
-        header('Location: /maintenance.php');
+        header('Location: /maintenance');
         exit;
     }
 }

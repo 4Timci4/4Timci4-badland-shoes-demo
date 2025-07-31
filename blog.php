@@ -155,7 +155,7 @@ include 'includes/header.php';
                     $post['created_at'] = $post['created_at'] ?? date('Y-m-d H:i:s');
                     ?>
                     <div class="blog-card bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                        <a href="/blog-detail.php?id=<?php echo $post['id']; ?>" class="block">
+                        <a href="/blog-detail?id=<?php echo $post['id']; ?>" class="block">
                             <div class="blog-image relative h-60">
                                 <img src="<?php echo htmlspecialchars($post['image_url']); ?>"
                                     alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover"
@@ -174,13 +174,13 @@ include 'includes/header.php';
                                 </span>
                             </div>
                             <h2 class="font-display text-xl font-semibold mb-3 leading-tight">
-                                <a href="/blog-detail.php?id=<?php echo $post['id']; ?>"
+                                <a href="/blog-detail?id=<?php echo $post['id']; ?>"
                                     class="text-gray-900 hover:text-primary transition-colors duration-300">
                                     <?php echo htmlspecialchars($post['title']); ?>
                                 </a>
                             </h2>
                             <p class="text-gray-600 mb-4 line-clamp-3"><?php echo htmlspecialchars($post['excerpt']); ?></p>
-                            <a href="/blog-detail.php?id=<?php echo $post['id']; ?>"
+                            <a href="/blog-detail?id=<?php echo $post['id']; ?>"
                                 class="read-more inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all duration-300">
                                 Devamını Oku <i class="fas fa-arrow-right text-sm"></i>
                             </a>

@@ -5,7 +5,7 @@ require_once 'services/BlogService.php';
 $blog_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($blog_id <= 0) {
-    header("Location: blog.php");
+    header("Location: /blog");
     exit;
 }
 
@@ -14,7 +14,7 @@ $blogService = new BlogService();
 $post = $blogService->get_post_by_id($blog_id);
 
 if (!$post) {
-    header("Location: blog.php");
+    header("Location: /blog");
     exit;
 }
 
@@ -75,7 +75,7 @@ $seo->addArticleSchema($article_schema);
 
 $breadcrumbs = [
     ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
-    ['name' => 'Blog', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/blog.php'],
+    ['name' => 'Blog', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/blog'],
     ['name' => $post['title'], 'url' => $current_url]
 ];
 $seo->addBreadcrumbSchema($breadcrumbs);
@@ -89,7 +89,7 @@ include 'includes/header.php';
             <ol class="flex items-center space-x-2 text-gray-500">
                 <li><a href="/" class="hover:text-primary transition-colors">Ana Sayfa</a></li>
                 <li class="text-gray-400">></li>
-                <li><a href="/blog.php" class="hover:text-primary transition-colors">Blog</a></li>
+                <li><a href="/blog" class="hover:text-primary transition-colors">Blog</a></li>
                 <li class="text-gray-400">></li>
                 <li class="text-secondary font-medium"><?php echo htmlspecialchars($post['title']); ?></li>
             </ol>
@@ -160,7 +160,7 @@ include 'includes/header.php';
                         <span class="text-sm font-medium text-gray-700">Etiketler:</span>
                         <div class="flex flex-wrap gap-1">
                             <?php foreach ($tags as $tag): ?>
-                                <a href="/blog.php?tag=<?php echo urlencode(trim($tag)); ?>"
+                                <a href="/blog?tag=<?php echo urlencode(trim($tag)); ?>"
                                     class="blog-tag inline-block px-2 py-1 text-xs rounded">
                                     #<?php echo htmlspecialchars(trim($tag)); ?>
                                 </a>
@@ -251,7 +251,7 @@ include 'includes/header.php';
                     $related_post['image_url'] = $related_post['featured_image'] ?? $related_post['image_url'] ?? '/assets/images/placeholder.svg';
                     ?>
                     <article class="related-post-card">
-                        <a href="/blog-detail.php?id=<?php echo $related_post['id']; ?>" class="block">
+                        <a href="/blog-detail?id=<?php echo $related_post['id']; ?>" class="block">
                             <div class="post-image">
                                 <img src="<?php echo htmlspecialchars($related_post['image_url']); ?>"
                                      alt="<?php echo htmlspecialchars($related_post['title']); ?>"
@@ -266,7 +266,7 @@ include 'includes/header.php';
                                 <span><?php echo date('d.m.Y', strtotime($related_post['created_at'])); ?></span>
                             </div>
                             <h3 class="text-xl font-semibold text-secondary mb-3 line-clamp-2">
-                                <a href="/blog-detail.php?id=<?php echo $related_post['id']; ?>"
+                                <a href="/blog-detail?id=<?php echo $related_post['id']; ?>"
                                     class="hover:text-primary transition-colors">
                                     <?php echo htmlspecialchars($related_post['title']); ?>
                                 </a>
@@ -274,7 +274,7 @@ include 'includes/header.php';
                             <p class="text-gray-600 text-sm line-clamp-3 mb-4">
                                 <?php echo htmlspecialchars($related_post['excerpt']); ?>
                             </p>
-                            <a href="/blog-detail.php?id=<?php echo $related_post['id']; ?>"
+                            <a href="/blog-detail?id=<?php echo $related_post['id']; ?>"
                                 class="inline-flex items-center text-primary hover:text-primary/80 font-medium text-sm">
                                 Devamını Oku
                                 <i class="fas fa-arrow-right ml-2 text-xs"></i>
@@ -285,7 +285,7 @@ include 'includes/header.php';
             </div>
 
             <div class="text-center mt-12">
-                <a href="/blog.php"
+                <a href="/blog"
                     class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
                     <i class="fas fa-list mr-2"></i>
                     Tüm Blog Yazıları

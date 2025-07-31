@@ -130,7 +130,7 @@ include 'includes/header.php';
             <p class="text-gray-600">Slider bilgilerini düzenleyin ve güncelleyin</p>
         </div>
         <div class="mt-4 lg:mt-0 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-            <a href="../index.php" target="_blank"
+            <a href="../" target="_blank"
                 class="inline-flex items-center px-6 py-3 bg-green-100 text-green-700 font-semibold rounded-xl hover:bg-green-200 transition-colors">
                 <i class="fas fa-eye mr-2"></i>
                 Ana Sayfayı Gör
@@ -238,7 +238,7 @@ include 'includes/header.php';
                             </label>
                             <input type="text" id="button_url" name="button_url" required
                                 value="<?= htmlspecialchars($_POST['button_url'] ?? '') ?>"
-                                placeholder="/products.php veya https://..."
+                                placeholder="/products veya https://..."
                                 class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Dahili sayfa için "/" ile başlayın, harici link için
                                 "https://" kullanın.</p>

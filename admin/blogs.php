@@ -97,7 +97,7 @@ include 'includes/header.php';
                 <i class="fas fa-plus mr-2"></i>
                 Yeni Blog Yazısı
             </a>
-            <a href="../blog.php" target="_blank"
+            <a href="../blog" target="_blank"
                 class="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base">
                 <i class="fas fa-external-link-alt mr-2"></i>
                 Blog Sayfasını Gör

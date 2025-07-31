@@ -57,27 +57,27 @@ switch ($current_page) {
     case 'products.php':
         $seo->setTitle('Ayakkabı Koleksiyonu')
             ->setDescription('Geniş ayakkabı koleksiyonumuzdan size uygun modeli bulun. Spor, klasik, casual ve özel tasarım ayakkabılar.')
-            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/products.php')
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/products')
             ->setOpenGraph(['type' => 'website']);
         break;
 
     case 'about.php':
         $seo->setTitle('Hakkımızda')
             ->setDescription('Bandland Shoes\'un hikayesi, değerleri ve kalite anlayışı. Müşteri memnuniyeti odaklı hizmet yaklaşımımız.')
-            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/about.php');
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/about');
         break;
 
     case 'blog.php':
         $seo->setTitle('Blog')
             ->setDescription('Ayakkabı bakımı, moda trendleri ve stil önerileri hakkında güncel yazılarımızı okuyun.')
-            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/blog.php')
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/blog')
             ->setOpenGraph(['type' => 'website']);
         break;
 
     case 'contact.php':
         $seo->setTitle('İletişim')
             ->setDescription('Bizimle iletişime geçin. Mağaza adresimiz, telefon numaralarımız ve iletişim formu.')
-            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/contact.php');
+            ->setCanonical('https://' . $_SERVER['HTTP_HOST'] . '/contact');
         break;
 
     default:
@@ -91,25 +91,25 @@ switch ($current_page) {
     case 'products.php':
         $breadcrumbs = [
             ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
-            ['name' => 'Ürünler', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/products.php']
+            ['name' => 'Ürünler', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/products']
         ];
         break;
     case 'about.php':
         $breadcrumbs = [
             ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
-            ['name' => 'Hakkımızda', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/about.php']
+            ['name' => 'Hakkımızda', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/about']
         ];
         break;
     case 'blog.php':
         $breadcrumbs = [
             ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
-            ['name' => 'Blog', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/blog.php']
+            ['name' => 'Blog', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/blog']
         ];
         break;
     case 'contact.php':
         $breadcrumbs = [
             ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
-            ['name' => 'İletişim', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/contact.php']
+            ['name' => 'İletişim', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/contact']
         ];
         break;
 }
@@ -251,7 +251,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
         <div class="max-w-8xl mx-auto px-4">
             <div class="flex justify-between items-center py-4">
                 <div class="logo flex-shrink-0">
-                    <a href="/index.php">
+                    <a href="/">
                         <img src="<?php echo htmlspecialchars($site_logo); ?>"
                             alt="<?php echo htmlspecialchars($settingsService->getSiteSetting('site_name', 'Bandland Shoes')); ?> Logo"
                             class="h-8 w-auto">
@@ -261,7 +261,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                 <div class="flex-grow flex items-center justify-center">
                     <!-- Desktop Navigation -->
                     <nav class="hidden md:flex items-center space-x-6">
-                        <a href="/index.php"
+                        <a href="/"
                             class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'index.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Ana
                             Sayfa</a>
 
@@ -271,7 +271,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                         openTimeout: null,
                         closeTimeout: null
                     }" class="relative group">
-                            <a href="/products.php"
+                            <a href="/products"
                                 @mouseenter="clearTimeout(closeTimeout); openTimeout = setTimeout(() => open = true, 150)"
                                 @mouseleave="clearTimeout(openTimeout); closeTimeout = setTimeout(() => open = false, 300)"
                                 class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 flex items-center gap-1 <?php echo ($current_page == 'products.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">
@@ -315,7 +315,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                             </div>
 
                                             <div class="mt-6 pt-4 border-t border-gray-200">
-                                                <a href="/products.php"
+                                                <a href="/products"
                                                     class="block w-full text-center px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium">
                                                     Tüm Ürünleri Gör
                                                 </a>
@@ -335,7 +335,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                                     </h3>
                                                     <div class="grid grid-cols-2 gap-3">
                                                         <?php foreach ($gender['categories'] as $category): ?>
-                                                            <a href="/products.php?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
+                                                            <a href="/products?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
                                                                 class="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-primary hover:bg-primary hover:text-white transition-all duration-200 group/cat">
                                                                 <div>
                                                                     <span
@@ -350,7 +350,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                                     </div>
 
                                                     <div class="mt-4">
-                                                        <a href="/products.php?genders[]=<?php echo $slug; ?>"
+                                                        <a href="/products?genders[]=<?php echo $slug; ?>"
                                                             class="inline-flex items-center text-primary hover:text-primary-dark font-medium text-sm transition-colors duration-200">
                                                             Tüm <?php echo htmlspecialchars($gender['name']); ?> Ürünleri
                                                             <i class="fas fa-arrow-right ml-2 text-xs"></i>
@@ -374,7 +374,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                                     <p class="text-sm mb-4 opacity-90">2025 Bahar koleksiyonumuz
                                                         yayında!
                                                     </p>
-                                                    <a href="/products.php?featured=1"
+                                                    <a href="/products?featured=1"
                                                         class="inline-block bg-white text-primary px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
                                                         Keşfet
                                                     </a>
@@ -394,11 +394,11 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                             </div>
                         </div>
 
-                        <a href="/about.php"
+                        <a href="/about"
                             class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'about.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Hakkımızda</a>
-                        <a href="/blog.php"
+                        <a href="/blog"
                             class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'blog.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">Blog</a>
-                        <a href="/contact.php"
+                        <a href="/contact"
                             class="text-gray-600 hover:text-primary transition-colors duration-300 font-medium pb-2 border-b-2 <?php echo ($current_page == 'contact.php') ? 'border-primary text-primary' : 'border-transparent'; ?>">İletişim</a>
                     </nav>
                 </div>
@@ -435,7 +435,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                 <a href="/user/profile.php?tab=favorites"
                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                     data-no-transition="true" rel="nofollow">Favorilerim</a>
-                                <form action="/logout.php" method="POST" class="w-full">
+                                <form action="/logout" method="POST" class="w-full">
                                     <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                     <button type="submit"
                                         class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -457,9 +457,9 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                 x-transition:leave-end="transform opacity-0 scale-95"
                                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5"
                                 style="display: none;">
-                                <a href="/login.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Giriş
+                                <a href="/login" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Giriş
                                     Yap</a>
-                                <a href="/register.php"
+                                <a href="/register"
                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Kayıt Ol</a>
                             </div>
                         </div>
@@ -508,7 +508,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
             <div class="p-4">
                 <!-- Main Navigation -->
                 <nav class="space-y-2">
-                    <a href="/index.php"
+                    <a href="/"
                         class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'index.php') ? 'bg-primary text-white' : ''; ?>">
                         <i class="fas fa-home w-5 mr-3"></i>Ana Sayfa
                     </a>
@@ -528,7 +528,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                             x-transition:leave-start="opacity-100 max-h-96" x-transition:leave-end="opacity-0 max-h-0"
                             class="overflow-hidden" style="display: none;">
                             <div class="mt-2 ml-4 space-y-2">
-                                <a href="/products.php"
+                                <a href="/products"
                                     class="block py-2 px-4 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors">
                                     Tüm Ürünler
                                 </a>
@@ -543,12 +543,12 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                             </span>
                                         </div>
                                         <div class="space-y-1">
-                                            <a href="/products.php?genders[]=<?php echo $slug; ?>"
+                                            <a href="/products?genders[]=<?php echo $slug; ?>"
                                                 class="block py-1 px-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary rounded transition-colors">
                                                 Tüm <?php echo htmlspecialchars($gender['name']); ?> Ürünleri
                                             </a>
                                             <?php foreach (array_slice($gender['categories'], 0, 4) as $category): ?>
-                                                <a href="/products.php?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
+                                                <a href="/products?genders[]=<?php echo $slug; ?>&categories[]=<?php echo htmlspecialchars($category['category_slug']); ?>"
                                                     class="block py-1 px-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary rounded transition-colors">
                                                     <?php echo htmlspecialchars($category['category_name']); ?>
                                                     (<?php echo $category['product_count']; ?>)
@@ -559,7 +559,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                 <?php endforeach; ?>
 
                                 <div class="pt-2 border-t border-gray-100">
-                                    <a href="/products.php?featured=1"
+                                    <a href="/products?featured=1"
                                         class="block py-2 px-4 text-sm text-primary font-medium hover:bg-primary hover:text-white rounded-lg transition-colors">
                                         <i class="fas fa-fire mr-2"></i>Öne Çıkanlar
                                     </a>
@@ -568,17 +568,17 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                         </div>
                     </div>
 
-                    <a href="/about.php"
+                    <a href="/about"
                         class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'about.php') ? 'bg-primary text-white' : ''; ?>">
                         <i class="fas fa-info-circle w-5 mr-3"></i>Hakkımızda
                     </a>
 
-                    <a href="/blog.php"
+                    <a href="/blog"
                         class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'blog.php') ? 'bg-primary text-white' : ''; ?>">
                         <i class="fas fa-blog w-5 mr-3"></i>Blog
                     </a>
 
-                    <a href="/contact.php"
+                    <a href="/contact"
                         class="block py-3 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors <?php echo ($current_page == 'contact.php') ? 'bg-primary text-white' : ''; ?>">
                         <i class="fas fa-envelope w-5 mr-3"></i>İletişim
                     </a>
@@ -608,7 +608,7 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                                 <i class="fas fa-heart w-5 mr-3"></i>Favorilerim
                             </a>
 
-                            <form action="/logout.php" method="POST" class="w-full">
+                            <form action="/logout" method="POST" class="w-full">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                 <button type="submit"
                                     class="w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors">
@@ -618,12 +618,12 @@ $site_favicon = $settingsService->getSiteSetting('site_favicon', '/favicon.ico')
                         </div>
                     <?php else: ?>
                         <div class="space-y-2">
-                            <a href="/login.php"
+                            <a href="/login"
                                 class="block py-3 px-4 bg-primary text-white text-center rounded-lg hover:bg-primary-dark transition-colors font-medium">
                                 <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
                             </a>
 
-                            <a href="/register.php"
+                            <a href="/register"
                                 class="block py-3 px-4 border border-primary text-primary text-center rounded-lg hover:bg-primary hover:text-white transition-colors font-medium">
                                 <i class="fas fa-user-plus mr-2"></i>Kayıt Ol
                             </a>

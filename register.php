@@ -4,7 +4,7 @@ $authService = new AuthService();
 
 
 if ($authService->isLoggedIn()) {
-    header('Location: /user/profile.php');
+    header('Location: /user/profile');
     exit;
 }
 
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </h2>
                 <p class="mt-2 text-sm text-gray-600">
                     Zaten bir hesabınız var mı?
-                    <a href="login.php" class="font-medium text-primary hover:text-primary-dark">
+                    <a href="/login" class="font-medium text-primary hover:text-primary-dark">
                         Giriş yapın
                     </a>
                 </p>
@@ -78,11 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="font-bold">Başarılı</p>
                     <p><?php echo $success_message; ?></p>
                     <p class="mt-2">
-                        <a href="login.php" class="text-green-800 underline">Giriş sayfasına gidin</a>
+                        <a href="/login" class="text-green-800 underline">Giriş sayfasına gidin</a>
                     </p>
                 </div>
             <?php else: ?>
-                <form class="mt-8 space-y-6" action="register.php" method="POST">
+                <form class="mt-8 space-y-6" action="/register" method="POST">
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

@@ -9,7 +9,7 @@ $authService->startSession();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
-    header('Location: index.php');
+    header('Location: /');
     exit();
 }
 
@@ -20,7 +20,7 @@ $sessionToken = $_SESSION['csrf_token'] ?? '';
 if (empty($submittedToken) || empty($sessionToken) || !hash_equals($sessionToken, $submittedToken)) {
 
 
-    header('Location: index.php');
+    header('Location: /');
     exit();
 }
 
@@ -33,5 +33,5 @@ if ($authService->isLoggedIn()) {
 unset($_SESSION['csrf_token']);
 
 
-header('Location: login.php?logout=success');
+header('Location: /login?logout=success');
 exit();

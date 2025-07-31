@@ -184,7 +184,7 @@ include 'includes/header.php';
                             </label>
                             <input type="text" id="button_url" name="button_url" required
                                 value="<?= htmlspecialchars($_POST['button_url'] ?? '') ?>"
-                                placeholder="/products.php veya https://"
+                                placeholder="/products veya https://"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Dahili sayfa için "/" ile başlayın, harici link için
                                 "https:

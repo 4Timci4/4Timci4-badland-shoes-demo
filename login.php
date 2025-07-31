@@ -4,7 +4,7 @@ $authService = new AuthService();
 
 
 if ($authService->isLoggedIn()) {
-    header('Location: /user/profile.php');
+    header('Location: /user/profile');
     exit;
 }
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result['success']) {
 
-        header('Location: /user/profile.php');
+        header('Location: /user/profile');
         exit;
     } else {
         $error_message = $result['message'];
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-600">
                     veya
-                    <a href="register.php" class="font-medium text-primary hover:text-primary-dark">
+                    <a href="/register" class="font-medium text-primary hover:text-primary-dark">
                         yeni bir hesap oluşturun
                     </a>
                 </p>
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form class="mt-8 space-y-6" action="login.php" method="POST">
+            <form class="mt-8 space-y-6" action="/login" method="POST">
                 <div class="rounded-md shadow-sm -space-y-px">
                     <div>
                         <label for="email-address" class="sr-only">E-posta adresi</label>
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="text-sm">
-                        <a href="forgot-password.php" class="font-medium text-primary hover:text-primary-dark">
+                        <a href="/forgot-password" class="font-medium text-primary hover:text-primary-dark">
                             Şifrenizi mi unuttunuz?
                         </a>
                     </div>

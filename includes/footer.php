@@ -15,15 +15,15 @@ if (!$footer_info || empty($footer_info)) {
             'site_description' => 'Kaliteli ve şık ayakkabıların adresi. En yeni trendlerden klasik tasarımlara kadar geniş ürün yelpazemizle ayakkabı ihtiyacınızı karşılıyoruz.'
         ],
         'links' => [
-            'home_url' => '/index.php',
+            'home_url' => '/',
             'home_text' => 'Ana Sayfa',
-            'products_url' => '/products.php',
+            'products_url' => '/products',
             'products_text' => 'Ürünler',
-            'about_url' => '/about.php',
+            'about_url' => '/about',
             'about_text' => 'Hakkımızda',
-            'blog_url' => '/blog.php',
+            'blog_url' => '/blog',
             'blog_text' => 'Blog',
-            'contact_url' => '/contact.php',
+            'contact_url' => '/contact',
             'contact_text' => 'İletişim'
         ],
         'contact' => [
@@ -90,19 +90,19 @@ if (empty($footer_info['social_links'])) {
             <div class="space-y-4">
                 <h3 class="text-lg font-semibold mb-5">Hızlı Erişim</h3>
                 <ul class="space-y-2">
-                    <li><a href="<?= htmlspecialchars($footer_info['links']['home_url'] ?? '/index.php') ?>"
+                    <li><a href="<?= htmlspecialchars($footer_info['links']['home_url'] ?? '/') ?>"
                             class="text-gray-300 hover:text-primary transition-colors duration-300"><?= htmlspecialchars($footer_info['links']['home_text'] ?? 'Ana Sayfa') ?></a>
                     </li>
-                    <li><a href="<?= htmlspecialchars($footer_info['links']['products_url'] ?? '/products.php') ?>"
+                    <li><a href="<?= htmlspecialchars($footer_info['links']['products_url'] ?? '/products') ?>"
                             class="text-gray-300 hover:text-primary transition-colors duration-300"><?= htmlspecialchars($footer_info['links']['products_text'] ?? 'Ürünler') ?></a>
                     </li>
-                    <li><a href="<?= htmlspecialchars($footer_info['links']['about_url'] ?? '/about.php') ?>"
+                    <li><a href="<?= htmlspecialchars($footer_info['links']['about_url'] ?? '/about') ?>"
                             class="text-gray-300 hover:text-primary transition-colors duration-300"><?= htmlspecialchars($footer_info['links']['about_text'] ?? 'Hakkımızda') ?></a>
                     </li>
-                    <li><a href="<?= htmlspecialchars($footer_info['links']['blog_url'] ?? '/blog.php') ?>"
+                    <li><a href="<?= htmlspecialchars($footer_info['links']['blog_url'] ?? '/blog') ?>"
                             class="text-gray-300 hover:text-primary transition-colors duration-300"><?= htmlspecialchars($footer_info['links']['blog_text'] ?? 'Blog') ?></a>
                     </li>
-                    <li><a href="<?= htmlspecialchars($footer_info['links']['contact_url'] ?? '/contact.php') ?>"
+                    <li><a href="<?= htmlspecialchars($footer_info['links']['contact_url'] ?? '/contact') ?>"
                             class="text-gray-300 hover:text-primary transition-colors duration-300"><?= htmlspecialchars($footer_info['links']['contact_text'] ?? 'İletişim') ?></a>
                     </li>
                 </ul>
@@ -198,8 +198,9 @@ if (isset($seo)) {
                 }
 
 
-                if (href && (href.includes('logout.php') || href.includes('user/profile.php') || href.includes('about.php') ||
-                    href.includes('blog.php') || href.includes('contact.php') || href.includes('products.php') ||
+                if (href && (href.includes('logout.php') || href.includes('logout') || href.includes('user/profile.php') || href.includes('user/profile') ||
+                    href.includes('about.php') || href.includes('about') || href.includes('blog.php') || href.includes('blog') ||
+                    href.includes('contact.php') || href.includes('contact') || href.includes('products.php') || href.includes('products') ||
                     href.includes('index.php') || href === '/' || href === '/index.php')) {
                     return;
                 }
@@ -226,13 +227,13 @@ if (isset($seo)) {
             }
 
 
-            if (href.includes('user/profile.php') ||
-                href.includes('logout.php') ||
-                href.includes('login.php') ||
-                href.includes('about.php') ||
-                href.includes('blog.php') ||
-                href.includes('contact.php') ||
-                href.includes('products.php') ||
+            if (href.includes('user/profile.php') || href.includes('user/profile') ||
+                href.includes('logout.php') || href.includes('logout') ||
+                href.includes('login.php') || href.includes('login') ||
+                href.includes('about.php') || href.includes('about') ||
+                href.includes('blog.php') || href.includes('blog') ||
+                href.includes('contact.php') || href.includes('contact') ||
+                href.includes('products.php') || href.includes('products') ||
                 href.includes('index.php') ||
                 href === '/' ||
                 href === '/index.php') {

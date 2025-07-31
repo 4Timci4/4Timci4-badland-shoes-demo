@@ -7,7 +7,7 @@ $authService = new AuthService();
 
 $authService->checkSessionSecurity();
 if (!$authService->isLoggedIn()) {
-    header('Location: ../login.php');
+    header('Location: ../login');
     exit;
 }
 

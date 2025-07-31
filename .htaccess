@@ -1,0 +1,69 @@
+RewriteEngine On
+
+# Clean URLs - Remove .php extension and redirect
+RewriteCond %{THE_REQUEST} \s/+(.+)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# Internal rewrites for clean URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Homepage
+RewriteRule ^$ index.php [L]
+
+# Page rewrites
+RewriteRule ^about/?$ about.php [L]
+RewriteRule ^blog-detail/?$ blog-detail.php [L,QSA]
+RewriteRule ^blog/?$ blog.php [L]
+RewriteRule ^contact/?$ contact.php [L]
+RewriteRule ^forgot-password/?$ forgot-password.php [L]
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L]
+RewriteRule ^maintenance/?$ maintenance.php [L]
+RewriteRule ^product-details/?$ product-details.php [L,QSA]
+RewriteRule ^products/?$ products.php [L,QSA]
+RewriteRule ^register/?$ register.php [L]
+RewriteRule ^reset-password/?$ reset-password.php [L]
+
+# User section
+RewriteRule ^user/profile/?$ user/profile.php [L]
+RewriteRule ^user/favorites/?$ user/favorites.php [L]
+
+# Admin section - Keep .php extensions for admin panel
+RewriteCond %{REQUEST_URI} !^/admin/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Security - Deny access to sensitive files
+<Files ".env">
+    Deny from all
+</Files>
+
+<Files "*.sql">
+    Deny from all
+</Files>
+
+# Cache control for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>

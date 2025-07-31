@@ -11,7 +11,7 @@ require_once 'services/Product/FavoriteService.php';
 
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if (!$product_id) {
-    header("Location: products.php");
+    header("Location: /products");
     exit;
 }
 
@@ -102,7 +102,7 @@ if (!$db) {
 } else {
     $product_data = $db->select('product_details_view', ['id' => ['eq', $product_id]]);
     if (empty($product_data)) {
-        header("Location: products.php");
+        header("Location: /products");
         exit;
     }
 

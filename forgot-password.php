@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <?php if (empty($success_message)): ?>
-                <form method="POST" action="forgot-password.php" class="mt-8 space-y-6">
+                <form method="POST" action="/forgot-password" class="mt-8 space-y-6">
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">E-posta Adresi</label>
                         <input type="email" id="email" name="email" required
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <div class="text-sm text-center">
-                <a href="login.php" class="font-medium text-primary hover:text-primary-dark">
+                <a href="/login" class="font-medium text-primary hover:text-primary-dark">
                     Giriş ekranına geri dön
                 </a>
             </div>

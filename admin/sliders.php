@@ -102,7 +102,7 @@ include 'includes/header.php';
                 <i class="fas fa-plus mr-2"></i>
                 Yeni Slider
             </a>
-            <a href="../index.php" target="_blank"
+            <a href="../" target="_blank"
                 class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
                 <i class="fas fa-external-link-alt mr-2"></i>
                 Ana Sayfayı Gör

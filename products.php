@@ -79,7 +79,7 @@ $total_products = $products_result['total'];
 
     <section class="py-8 bg-white">
         <div class="max-w-7xl mx-auto px-5">
-            <form method="GET" action="products.php" id="filter-form">
+            <form method="GET" action="/products" id="filter-form">
                 <input type="hidden" name="limit" value="<?php echo htmlspecialchars($limit); ?>">
                 
                 <!-- Mobile Filter Toggle Button -->
@@ -198,7 +198,7 @@ $total_products = $products_result['total'];
                                             <span class="absolute top-3 left-3 bg-primary text-white text-xs px-2 py-1 rounded">Öne Çıkan</span>
                                         <?php endif; ?>
                                         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                                            <a href="product-details.php?id=<?php echo $product['id']; ?>"
+                                            <a href="/product-details?id=<?php echo $product['id']; ?>"
                                                class="w-10 h-10 bg-white rounded-full hover:bg-primary hover:text-white transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"
                                                title="Ürün Detayı">
                                                 <i class="fas fa-eye"></i>
@@ -208,7 +208,7 @@ $total_products = $products_result['total'];
                                     
                                     <div class="p-4 text-center flex flex-col flex-grow">
                                         <h3 class="text-lg font-medium text-secondary mb-3 min-h-[3.5rem] flex items-center justify-center">
-                                            <a href="product-details.php?id=<?php echo $product['id']; ?>" class="text-inherit hover:text-primary transition-colors line-clamp-2">
+                                            <a href="/product-details?id=<?php echo $product['id']; ?>" class="text-inherit hover:text-primary transition-colors line-clamp-2">
                                                 <?php echo htmlspecialchars($product['name']); ?>
                                             </a>
                                         </h3>
@@ -236,7 +236,7 @@ $total_products = $products_result['total'];
                                 <div class="text-gray-500 mb-4"><i class="fas fa-search text-4xl"></i></div>
                                 <h3 class="text-xl font-semibold text-gray-700 mb-2">Ürün Bulunamadı</h3>
                                 <p class="text-gray-600 mb-4">Aradığınız kriterlere uygun ürün bulunamadı.</p>
-                                <a href="products.php" class="bg-primary text-white px-6 py-2 rounded hover:bg-primary-dark transition-colors">Tüm Ürünler</a>
+                                <a href="/products" class="bg-primary text-white px-6 py-2 rounded hover:bg-primary-dark transition-colors">Tüm Ürünler</a>
                             </div>
                         <?php endif; ?>
                     </div>
