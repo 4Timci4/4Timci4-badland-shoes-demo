@@ -5,27 +5,86 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/services/SettingsService.php';
 $contactService = new ContactService();
 $settingsService = new SettingsService();
 $footer_info = $contactService->getFooterInfo();
-$copyright_text = $settingsService->getSiteSetting('footer_copyright', '© 2025 Schön. Tüm hakları saklıdır.');
+$copyright_text = $settingsService->getSiteSetting('footer_copyright', '© 2025 Bandland Shoes. Tüm hakları saklıdır.');
+
+// Demo mode için eksik bilgileri kontrol et ve tamamla
+if (!$footer_info || empty($footer_info)) {
+    $footer_info = [
+        'footer' => [
+            'site_title' => 'Bandland Shoes',
+            'site_description' => 'Kaliteli ve şık ayakkabıların adresi. En yeni trendlerden klasik tasarımlara kadar geniş ürün yelpazemizle ayakkabı ihtiyacınızı karşılıyoruz.'
+        ],
+        'links' => [
+            'home_url' => '/index.php',
+            'home_text' => 'Ana Sayfa',
+            'products_url' => '/products.php',
+            'products_text' => 'Ürünler',
+            'about_url' => '/about.php',
+            'about_text' => 'Hakkımızda',
+            'blog_url' => '/blog.php',
+            'blog_text' => 'Blog',
+            'contact_url' => '/contact.php',
+            'contact_text' => 'İletişim'
+        ],
+        'contact' => [
+            'address' => 'Örnek Mahallesi, Ayakkabı Caddesi No:123, Kadıköy/İstanbul',
+            'phone' => '+90 216 555 0123',
+            'email' => 'info@bandlandshoes.com'
+        ],
+        'social_links' => []
+    ];
+}
+
+// Sosyal medya linklerini kontrol et
+if (empty($footer_info['social_links'])) {
+    $footer_info['social_links'] = [
+        [
+            'platform' => 'Facebook',
+            'url' => 'https://facebook.com/bandlandshoes',
+            'icon_class' => 'fab fa-facebook-f'
+        ],
+        [
+            'platform' => 'Instagram',
+            'url' => 'https://instagram.com/bandlandshoes',
+            'icon_class' => 'fab fa-instagram'
+        ],
+        [
+            'platform' => 'Twitter',
+            'url' => 'https://twitter.com/bandlandshoes',
+            'icon_class' => 'fab fa-twitter'
+        ],
+        [
+            'platform' => 'YouTube',
+            'url' => 'https://youtube.com/bandlandshoes',
+            'icon_class' => 'fab fa-youtube'
+        ]
+    ];
+}
 ?>
 </main>
-<footer class="bg-dark text-white pt-12 pb-5">
+<footer class="bg-gray-900 text-white pt-12 pb-5">
     <div class="max-w-8xl mx-auto px-5">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             <div class="space-y-4">
                 <h2 class="text-2xl font-semibold">
-                    <?= htmlspecialchars($footer_info['footer']['site_title'] ?? 'Schön') ?><span
+                    <?= htmlspecialchars($footer_info['footer']['site_title'] ?? 'Bandland Shoes') ?><span
                         class="text-primary">.</span>
                 </h2>
                 <p class="text-gray-300 leading-relaxed">
-                    <?= htmlspecialchars($footer_info['footer']['site_description'] ?? '') ?>
+                    <?= htmlspecialchars($footer_info['footer']['site_description'] ?? 'Kaliteli ve şık ayakkabıların adresi. En yeni trendlerden klasik tasarımlara kadar geniş ürün yelpazemizle ayakkabı ihtiyacınızı karşılıyoruz.') ?>
                 </p>
                 <div class="flex space-x-4 mt-5">
-                    <?php foreach ($footer_info['social_links'] as $social): ?>
-                        <a href="<?= htmlspecialchars($social['url']) ?>"
-                            class="inline-block text-white text-xl hover:text-primary transition-colors duration-300">
-                            <i class="<?= htmlspecialchars($social['icon_class']) ?>"></i>
-                        </a>
-                    <?php endforeach; ?>
+                    <?php if (!empty($footer_info['social_links'])): ?>
+                        <?php foreach ($footer_info['social_links'] as $social): ?>
+                            <a href="<?= htmlspecialchars($social['url']) ?>"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-block text-white text-xl hover:text-primary transition-colors duration-300"
+                                title="<?= htmlspecialchars($social['platform']) ?>">
+                                <i class="<?= htmlspecialchars($social['icon_class']) ?>"></i>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="space-y-4">
@@ -52,11 +111,11 @@ $copyright_text = $settingsService->getSiteSetting('footer_copyright', '© 2025 
                 <h3 class="text-lg font-semibold mb-5">İletişim</h3>
                 <div class="space-y-3">
                     <p class="text-gray-300"><i class="fas fa-map-marker-alt text-primary mr-2"></i>
-                        <?= htmlspecialchars($footer_info['contact']['address']) ?></p>
+                        <?= htmlspecialchars($footer_info['contact']['address'] ?? '') ?></p>
                     <p class="text-gray-300"><i class="fas fa-phone text-primary mr-2"></i>
-                        <?= htmlspecialchars($footer_info['contact']['phone']) ?></p>
+                        <?= htmlspecialchars($footer_info['contact']['phone'] ?? '') ?></p>
                     <p class="text-gray-300"><i class="fas fa-envelope text-primary mr-2"></i>
-                        <?= htmlspecialchars($footer_info['contact']['email']) ?></p>
+                        <?= htmlspecialchars($footer_info['contact']['email'] ?? '') ?></p>
                 </div>
             </div>
         </div>

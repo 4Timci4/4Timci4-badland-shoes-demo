@@ -13,6 +13,10 @@ class AdminAuthService
 
     public function login($username, $password)
     {
+        if (!$this->db) {
+            return $this->getDemoLoginResponse($username, $password);
+        }
+        
         try {
             $admins = $this->db->select('admins', [
                 'username' => $username,
@@ -23,7 +27,7 @@ class AdminAuthService
                 return false;
             }
 
-            $admin = $admins[0];
+            $admin = $admins;
 
             if (!password_verify($password, $admin['password_hash'])) {
                 return false;
@@ -43,6 +47,10 @@ class AdminAuthService
 
     public function getAdminById($admin_id)
     {
+        if (!$this->db) {
+            return $this->getDemoAdminById($admin_id);
+        }
+        
         try {
             $admins = $this->db->select('admins', [
                 'id' => intval($admin_id),
@@ -63,6 +71,10 @@ class AdminAuthService
 
     public function getAdminByUsername($username)
     {
+        if (!$this->db) {
+            return $this->getDemoAdminByUsername($username);
+        }
+        
         try {
             $admins = $this->db->select('admins', [
                 'username' => $username,
@@ -83,6 +95,10 @@ class AdminAuthService
 
     public function updateLastLogin($admin_id)
     {
+        if (!$this->db) {
+            return false; // Demo modunda güncelleme devre dışı
+        }
+        
         try {
             $result = $this->db->update('admins', [
                 'last_login_at' => date('Y-m-d H:i:s')
@@ -98,6 +114,10 @@ class AdminAuthService
 
     public function updatePassword($admin_id, $new_password)
     {
+        if (!$this->db) {
+            return false; // Demo modunda şifre güncelleme devre dışı
+        }
+        
         try {
 
             $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
@@ -181,6 +201,10 @@ class AdminAuthService
 
     public function getAllAdmins()
     {
+        if (!$this->db) {
+            return $this->getDemoAllAdmins();
+        }
+        
         try {
             return $this->db->select(
                 'admins',
@@ -220,6 +244,10 @@ class AdminAuthService
 
     public function createAdmin($data)
     {
+        if (!$this->db) {
+            return ['error' => 'Demo modunda admin oluşturma işlemi devre dışıdır.'];
+        }
+        
         try {
 
             $existing = $this->getAdminByUsername($data['username']);
@@ -257,6 +285,10 @@ class AdminAuthService
 
     public function updateAdmin($admin_id, $data)
     {
+        if (!$this->db) {
+            return ['error' => 'Demo modunda admin güncelleme işlemi devre dışıdır.'];
+        }
+        
         try {
 
             $existing = $this->getAdminById($admin_id);
@@ -320,6 +352,10 @@ class AdminAuthService
 
     public function deleteAdmin($admin_id)
     {
+        if (!$this->db) {
+            return ['error' => 'Demo modunda admin silme işlemi devre dışıdır.'];
+        }
+        
         try {
 
             $current_admin = $this->getCurrentAdmin();
@@ -350,6 +386,10 @@ class AdminAuthService
 
     public function getAdminCount()
     {
+        if (!$this->db) {
+            return $this->getDemoAdminCount();
+        }
+        
         try {
             $admins = $this->db->select('admins', [], 'id');
             return count($admins);
@@ -379,6 +419,93 @@ class AdminAuthService
         if (isset($update_data['email'])) {
             $_SESSION['admin_email'] = $update_data['email'];
         }
+    }
+
+    /**
+     * Demo login yanıtı - Güvenlik için login'e izin verilmiyor
+     */
+    private function getDemoLoginResponse($username, $password)
+    {
+        error_log("DEMO MODE: Admin login denemesi - Username: $username (GÜVENLİK NEDENİYLE REDDEDILDI)");
+        
+        // Güvenlik açısından demo modunda admin girişine izin verilmiyor
+        return false;
+    }
+
+    /**
+     * Demo admin bilgileri ID ile
+     */
+    private function getDemoAdminById($admin_id)
+    {
+        $admins = $this->getDemoAllAdmins();
+        
+        foreach ($admins as $admin) {
+            if ($admin['id'] == $admin_id) {
+                return $admin;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Demo admin bilgileri username ile
+     */
+    private function getDemoAdminByUsername($username)
+    {
+        $admins = $this->getDemoAllAdmins();
+        
+        foreach ($admins as $admin) {
+            if ($admin['username'] === $username) {
+                return $admin;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Demo tüm adminler
+     */
+    private function getDemoAllAdmins()
+    {
+        return [
+            [
+                'id' => 1,
+                'username' => 'admin',
+                'full_name' => 'Demo Admin',
+                'email' => 'admin@demo.com',
+                'is_active' => 1,
+                'last_login_at' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+                'created_at' => date('Y-m-d H:i:s', strtotime('-30 days'))
+            ],
+            [
+                'id' => 2,
+                'username' => 'moderator',
+                'full_name' => 'Demo Moderatör',
+                'email' => 'moderator@demo.com',
+                'is_active' => 1,
+                'last_login_at' => date('Y-m-d H:i:s', strtotime('-3 hours')),
+                'created_at' => date('Y-m-d H:i:s', strtotime('-15 days'))
+            ],
+            [
+                'id' => 3,
+                'username' => 'manager',
+                'full_name' => 'Demo Yönetici',
+                'email' => 'manager@demo.com',
+                'is_active' => 0,
+                'last_login_at' => date('Y-m-d H:i:s', strtotime('-1 week')),
+                'created_at' => date('Y-m-d H:i:s', strtotime('-45 days'))
+            ]
+        ];
+    }
+
+    /**
+     * Demo admin sayısı
+     */
+    private function getDemoAdminCount()
+    {
+        return count($this->getDemoAllAdmins());
     }
 }
 ?>

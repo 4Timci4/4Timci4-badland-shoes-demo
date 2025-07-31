@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/Product/FavoriteService.php';
 require_once __DIR__ . '/EmailService.php';
+require_once __DIR__ . '/../lib/DatabaseFactory.php';
 
 class AuthService
 {
@@ -68,7 +69,9 @@ class AuthService
 
 
             if (!isset($_SESSION['last_activity_update']) || (time() - $_SESSION['last_activity_update'] > 300)) {
-                SessionConfig::updateSessionActivity($_SESSION['user_id'], $this->db);
+                if ($this->db) {
+                    SessionConfig::updateSessionActivity($_SESSION['user_id'], $this->db);
+                }
                 $_SESSION['last_activity_update'] = time();
             }
         }
@@ -78,6 +81,10 @@ class AuthService
 
     public function register($email, $password, $options = [])
     {
+        if (!$this->db) {
+            return $this->getDemoRegisterResponse($email, $password, $options);
+        }
+        
         try {
             $existingUser = $this->db->select('users', ['email' => $email], '*', ['limit' => 1]);
             if (!empty($existingUser)) {
@@ -127,6 +134,10 @@ class AuthService
 
     public function login($email, $password, $rememberMe = false)
     {
+        if (!$this->db) {
+            return $this->getDemoLoginResponse($email, $password, $rememberMe);
+        }
+        
         try {
 
             $users = $this->db->select('users', ['email' => $email], '*', ['limit' => 1]);
@@ -165,6 +176,15 @@ class AuthService
     {
         $userId = $_SESSION['user_id'] ?? null;
 
+        if (!$this->db) {
+            // Demo modunda session temizliği
+            if (isset($_COOKIE['remember_me'])) {
+                setcookie('remember_me', '', time() - 3600, '/');
+            }
+            SessionConfig::destroySession($isUserLogout);
+            return ['success' => true, 'message' => 'Çıkış yapıldı (Demo Modu).'];
+        }
+
 
         if (isset($_COOKIE['remember_me'])) {
             list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
@@ -196,6 +216,10 @@ class AuthService
 
     private function createRememberMeToken($userId)
     {
+        if (!$this->db) {
+            return; // Demo modunda remember me token oluşturulmaz
+        }
+        
         $selector = bin2hex(random_bytes(16));
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = password_hash($validator, PASSWORD_DEFAULT);
@@ -213,6 +237,10 @@ class AuthService
 
     public function loginWithRememberMeCookie()
     {
+        if (!$this->db) {
+            return false; // Demo modunda remember me çalışmaz
+        }
+        
         if (isset($_COOKIE['remember_me'])) {
             list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
 
@@ -279,6 +307,10 @@ class AuthService
 
     public function getUserProfile($userId)
     {
+        if (!$this->db) {
+            return $this->getDemoUserProfile($userId);
+        }
+        
         try {
             $users = $this->db->select('users', ['id' => $userId], 'id,email,first_name,last_name,phone_number,gender,created_at', ['limit' => 1]);
             return $users[0] ?? null;
@@ -291,6 +323,10 @@ class AuthService
 
     public function updateUserProfile($userId, $data)
     {
+        if (!$this->db) {
+            return $this->getDemoUpdateProfile($userId, $data);
+        }
+        
         try {
 
             $currentUser = $this->getCurrentUser();
@@ -332,6 +368,10 @@ class AuthService
 
     public function createPasswordResetToken($email)
     {
+        if (!$this->db) {
+            return $this->getDemoPasswordReset($email);
+        }
+        
         try {
 
             $users = $this->db->select('users', ['email' => $email], '*', ['limit' => 1]);
@@ -388,6 +428,10 @@ class AuthService
 
     public function resetPassword($token, $newPassword)
     {
+        if (!$this->db) {
+            return $this->getDemoResetPassword($token, $newPassword);
+        }
+        
         try {
 
             $tokenData = $this->db->select('password_resets', ['token' => $token], '*', ['limit' => 1]);
@@ -507,6 +551,10 @@ class AuthService
 
     public function getActiveSessions($userId)
     {
+        if (!$this->db) {
+            return $this->getDemoActiveSessions($userId);
+        }
+        
         try {
             return $this->db->select('user_sessions', ['user_id' => $userId], '*');
         } catch (Exception $e) {
@@ -518,6 +566,10 @@ class AuthService
 
     public function terminateSession($userId, $sessionId)
     {
+        if (!$this->db) {
+            return false; // Demo modunda session sonlandırma devre dışı
+        }
+        
         try {
             $result = $this->db->delete('user_sessions', [
                 'user_id' => $userId,
@@ -534,5 +586,148 @@ class AuthService
             error_log("Terminate session error: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Demo kullanıcı kaydı yanıtı
+     */
+    private function getDemoRegisterResponse($email, $password, $options)
+    {
+        error_log("DEMO MODE: Kullanıcı kaydı denemesi - Email: $email (GÜVENLİK NEDENİYLE REDDEDILDI)");
+        
+        return [
+            'success' => false,
+            'message' => 'Demo modunda kullanıcı kaydı devre dışıdır. Demo için mevcut hesapları kullanabilirsiniz.',
+            'demo_info' => [
+                'demo_users' => [
+                    'demo@example.com',
+                    'test@example.com',
+                    'user@demo.com'
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Demo giriş yanıtı
+     */
+    private function getDemoLoginResponse($email, $password, $rememberMe)
+    {
+        error_log("DEMO MODE: Kullanıcı girişi denemesi - Email: $email (GÜVENLİK NEDENİYLE REDDEDILDI)");
+        
+        return [
+            'success' => false,
+            'message' => 'Demo modunda kullanıcı girişi devre dışıdır. Site demo kullanıcısı olarak gezebilirsiniz.',
+            'demo_info' => [
+                'demo_message' => 'Demo modunda çalışıyorsunuz',
+                'available_features' => [
+                    'Ürün görüntüleme',
+                    'Kategori gezinme',
+                    'Blog okuma',
+                    'İletişim bilgilerini görme'
+                ],
+                'disabled_features' => [
+                    'Kullanıcı kaydı',
+                    'Kullanıcı girişi',
+                    'Sepet işlemleri',
+                    'Sipariş verme'
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Demo kullanıcı profili
+     */
+    private function getDemoUserProfile($userId)
+    {
+        $demoUsers = [
+            'demo-user-1' => [
+                'id' => 'demo-user-1',
+                'email' => 'demo@example.com',
+                'first_name' => 'Demo',
+                'last_name' => 'Kullanıcı',
+                'phone_number' => '+90 555 123 4567',
+                'gender' => 'erkek',
+                'created_at' => date('Y-m-d H:i:s', strtotime('-30 days'))
+            ],
+            'demo-user-2' => [
+                'id' => 'demo-user-2',
+                'email' => 'test@example.com',
+                'first_name' => 'Test',
+                'last_name' => 'Kullanıcısı',
+                'phone_number' => '+90 555 987 6543',
+                'gender' => 'kadın',
+                'created_at' => date('Y-m-d H:i:s', strtotime('-15 days'))
+            ]
+        ];
+
+        return $demoUsers[$userId] ?? null;
+    }
+
+    /**
+     * Demo profil güncelleme
+     */
+    private function getDemoUpdateProfile($userId, $data)
+    {
+        return [
+            'success' => false,
+            'message' => 'Demo modunda profil güncelleme devre dışıdır.',
+            'demo_info' => [
+                'user_id' => $userId,
+                'attempted_update' => $data
+            ]
+        ];
+    }
+
+    /**
+     * Demo şifre sıfırlama
+     */
+    private function getDemoPasswordReset($email)
+    {
+        error_log("DEMO MODE: Şifre sıfırlama talebi - Email: $email (DEMO MOD)");
+        return false; // Demo modunda şifre sıfırlama çalışmaz
+    }
+
+    /**
+     * Demo şifre sıfırlama token
+     */
+    private function getDemoResetPassword($token, $newPassword)
+    {
+        return [
+            'success' => false,
+            'message' => 'Demo modunda şifre sıfırlama devre dışıdır.',
+            'demo_info' => [
+                'token' => substr($token, 0, 10) . '...',
+                'mode' => 'demo'
+            ]
+        ];
+    }
+
+    /**
+     * Demo aktif sessionlar
+     */
+    private function getDemoActiveSessions($userId)
+    {
+        return [
+            [
+                'id' => 1,
+                'user_id' => $userId,
+                'session_id' => 'demo-session-1',
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'Demo Browser',
+                'created_at' => date('Y-m-d H:i:s', strtotime('-2 hours')),
+                'last_activity' => date('Y-m-d H:i:s', strtotime('-5 minutes'))
+            ],
+            [
+                'id' => 2,
+                'user_id' => $userId,
+                'session_id' => 'demo-session-2',
+                'ip_address' => '192.168.1.100',
+                'user_agent' => 'Demo Mobile Browser',
+                'created_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'last_activity' => date('Y-m-d H:i:s', strtotime('-30 minutes'))
+            ]
+        ];
     }
 }

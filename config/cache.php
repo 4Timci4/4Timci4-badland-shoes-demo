@@ -17,6 +17,11 @@ class CacheConfig
     public static function get($key, $dataCallback, $timeout = null)
     {
         self::init();
+
+        if (!self::$db) {
+            return $dataCallback();
+        }
+
         self::clearExpired();
 
         $cacheKey = md5($key);
@@ -25,7 +30,7 @@ class CacheConfig
             $result = self::$db->select('cache', ['cache_key' => $cacheKey], '*', ['limit' => 1]);
 
             if (!empty($result)) {
-                $cachedItem = $result[0];
+                $cachedItem = $result;
                 if ($cachedItem['expires_at'] >= time()) {
                     $data = unserialize($cachedItem['cache_value']);
                     if ($data !== false) {

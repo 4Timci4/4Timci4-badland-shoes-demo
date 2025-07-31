@@ -27,7 +27,7 @@ define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
 
 define('MAIL_HOST', getenv('MAIL_HOST') ?: 'MAIL_HOST');
-define('MAIL_PORT', getenv('MAIL_PORT') ?: MAIL_PORT);
+define('MAIL_PORT', getenv('MAIL_PORT') ?: 587);
 define('MAIL_USERNAME', getenv('MAIL_USERNAME') ?: 'MAIL_USERNAME');
 define('MAIL_PASSWORD', getenv('MAIL_PASSWORD') ?: 'MAIL_PASSWORD');
 define('MAIL_ENCRYPTION', getenv('MAIL_ENCRYPTION') ?: 'tls');

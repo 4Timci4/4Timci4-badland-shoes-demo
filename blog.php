@@ -52,6 +52,7 @@ include 'includes/header.php';
             $tag = isset($_GET['tag']) ? trim($_GET['tag']) : null;
 
 
+            require_once 'services/BlogService.php';
             $blogService = blogService();
             $blogData = $blogService->get_posts($page, $perPage, $category, $tag);
 
@@ -149,7 +150,7 @@ include 'includes/header.php';
                     $post['id'] = $post['id'] ?? 0;
                     $post['title'] = $post['title'] ?? 'Başlık Yok';
                     $post['excerpt'] = $post['excerpt'] ?? 'Özet yok...';
-                    $post['image_url'] = $post['image_url'] ?? '/assets/images/placeholder.svg';
+                    $post['image_url'] = $post['featured_image'] ?? $post['image_url'] ?? '/assets/images/placeholder.svg';
                     $post['category'] = $post['category'] ?? 'Genel';
                     $post['created_at'] = $post['created_at'] ?? date('Y-m-d H:i:s');
                     ?>

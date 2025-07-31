@@ -6,10 +6,42 @@ $authService = new AuthService();
 require_once 'config/database.php';
 require_once 'services/ContactService.php';
 require_once 'lib/SecurityManager.php';
+require_once 'lib/SEOManager.php';
 
 $contactService = new ContactService();
 $security = security();
 $contact_info = $contactService->getContactInfo();
+
+// Demo mode için eksik alanları kontrol et ve düzelt
+if (!$contact_info || empty($contact_info)) {
+    $contact_info = [
+        'banner' => [
+            'title' => 'İletişim',
+            'subtitle' => 'Sizinle tanışmak ve sorularınızı yanıtlamak için buradayız'
+        ],
+        'contact' => [
+            'title' => 'İletişim Bilgileri',
+            'description' => 'Size en iyi hizmeti verebilmek için her zaman ulaşılabilir durumdayız.',
+            'address' => 'Örnek Mahallesi, Ayakkabı Caddesi No:123, Kadıköy/İstanbul',
+            'phone1' => '+90 216 555 0123',
+            'phone2' => '+90 216 555 0124',
+            'email1' => 'info@bandlandshoes.com',
+            'email2' => 'destek@bandlandshoes.com',
+            'working_hours1' => 'Pazartesi - Cumartesi: 09:00 - 18:00',
+            'working_hours2' => 'Pazar: 11:00 - 17:00'
+        ],
+        'form' => [
+            'title' => 'Bize Mesaj Gönderin',
+            'success_title' => 'Mesajınız Başarıyla Gönderildi!',
+            'success_message' => 'En kısa sürede size geri dönüş yapacağız.',
+            'success_button' => 'Yeni Mesaj Gönder'
+        ],
+        'map' => [
+            'title' => 'Bizi Ziyaret Edin',
+            'embed_code' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3010.2461!2d29.0247!3d40.9925!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDU5JzMzLjAiTiAyOcKwMDEnMjkuMCJF!5e0!3m2!1str!2str!4v1635789123456!5m2!1str!2str'
+        ]
+    ];
+}
 
 
 $form_submitted = false;
@@ -109,7 +141,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_contact'])) {
     }
 }
 
-include 'includes/header.php'; 
+// SEO ayarları
+$seo = seo();
+$current_url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+$seo->setTitle($contact_info['banner']['title'] ?? 'İletişim - Bandland Shoes')
+    ->setDescription($contact_info['banner']['subtitle'] ?? 'Bandland Shoes ile iletişime geçin. Müşteri hizmetlerimiz, mağaza bilgilerimiz ve iletişim formu ile size yardımcı olmaya hazırız.')
+    ->setCanonical($current_url)
+    ->setOpenGraph([
+        'type' => 'website',
+        'image' => '/assets/images/og-contact.jpg',
+        'site_name' => 'Bandland Shoes'
+    ])
+    ->setTwitterCard([
+        'image' => '/assets/images/og-contact.jpg'
+    ]);
+
+// Breadcrumb schema
+$breadcrumbs = [
+    ['name' => 'Ana Sayfa', 'url' => 'https://' . $_SERVER['HTTP_HOST'] . '/'],
+    ['name' => 'İletişim', 'url' => $current_url]
+];
+$seo->addBreadcrumbSchema($breadcrumbs);
+
+include 'includes/header.php';
 ?>
 
 <section class="relative bg-gradient-to-r from-primary to-purple-600 text-white py-16 overflow-hidden">

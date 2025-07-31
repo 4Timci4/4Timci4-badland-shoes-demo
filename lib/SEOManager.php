@@ -38,6 +38,11 @@ class SEOManager
             'robots' => 'index, follow'
         ];
 
+        if (!$this->db) {
+            $this->all_settings = $defaults;
+            return;
+        }
+
         try {
             $site_settings_raw = $this->db->select('site_settings', [], '*');
             $seo_settings_raw = $this->db->select('seo_settings', [], '*');

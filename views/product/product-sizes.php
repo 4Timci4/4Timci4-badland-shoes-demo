@@ -11,7 +11,26 @@
 
         $product_sizes = [];
         if (!empty($product_size_ids)) {
-            $product_sizes = $db->select('sizes', ['id' => ['in', $product_size_ids]]);
+            if (!$db) {
+                // Database bağlantısı yoksa demo size data
+                $demo_sizes = [
+                    ['id' => 1, 'size_value' => '36'],
+                    ['id' => 2, 'size_value' => '37'],
+                    ['id' => 3, 'size_value' => '38'],
+                    ['id' => 4, 'size_value' => '39'],
+                    ['id' => 5, 'size_value' => '40'],
+                    ['id' => 6, 'size_value' => '41'],
+                    ['id' => 7, 'size_value' => '42'],
+                    ['id' => 8, 'size_value' => '43'],
+                    ['id' => 9, 'size_value' => '44'],
+                    ['id' => 10, 'size_value' => '45']
+                ];
+                $product_sizes = array_filter($demo_sizes, function($size) use ($product_size_ids) {
+                    return in_array($size['id'], $product_size_ids);
+                });
+            } else {
+                $product_sizes = $db->select('sizes', ['id' => ['in', $product_size_ids]]);
+            }
             usort($product_sizes, fn($a, $b) => strnatcmp($a['size_value'], $b['size_value']));
         }
 

@@ -18,7 +18,7 @@ $collections = $seasonalCollectionsService->getActiveCollections();
     <?php if (!empty($slides)): ?>
         <?php foreach ($slides as $index => $slide): ?>
             <div class="slide absolute inset-0 w-full h-full transition-opacity duration-1000 <?php echo $index === 0 ? 'opacity-100' : 'opacity-0'; ?>"
-                style="background-color: <?php echo htmlspecialchars($slide['bg_color']); ?>;">
+                style="background-color: <?php echo htmlspecialchars($slide['background_color']); ?>;">
 
                 <?php if (!empty($slide['image_url'])): ?>
                     <div class="absolute inset-0 bg-cover bg-center"

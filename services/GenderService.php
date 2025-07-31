@@ -13,6 +13,9 @@ class GenderService
 
     public function getAllGenders()
     {
+        if (!$this->db) {
+            return $this->getDemoGenders();
+        }
         try {
             return $this->db->select('genders', [], '*', ['order' => 'id ASC']);
         } catch (Exception $e) {
@@ -191,6 +194,9 @@ class GenderService
 
     public function getGendersWithProductCounts()
     {
+        if (!$this->db) {
+            return $this->getDemoGendersWithProductCounts();
+        }
         try {
 
             return $this->db->select('gender_product_counts', [], '*', ['order' => 'name ASC']);
@@ -198,6 +204,57 @@ class GenderService
             error_log("Error getting genders with product counts from view: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Demo cinsiyetleri döndürür
+     */
+    private function getDemoGenders()
+    {
+        return [
+            [
+                'id' => 1,
+                'name' => 'Erkek',
+                'slug' => 'erkek'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Kadın',
+                'slug' => 'kadin'
+            ],
+            [
+                'id' => 3,
+                'name' => 'Unisex',
+                'slug' => 'unisex'
+            ]
+        ];
+    }
+
+    /**
+     * Demo cinsiyetleri ürün sayılarıyla döndürür
+     */
+    private function getDemoGendersWithProductCounts()
+    {
+        return [
+            [
+                'id' => 1,
+                'name' => 'Erkek',
+                'slug' => 'erkek',
+                'product_count' => 7
+            ],
+            [
+                'id' => 2,
+                'name' => 'Kadın',
+                'slug' => 'kadin',
+                'product_count' => 6
+            ],
+            [
+                'id' => 3,
+                'name' => 'Unisex',
+                'slug' => 'unisex',
+                'product_count' => 2
+            ]
+        ];
     }
 }
 

@@ -14,6 +14,10 @@ class ProductQueryService
 
     public function getProductModel($model_id)
     {
+        if (!$this->db) {
+            return $this->getDemoProductModel($model_id);
+        }
+        
         try {
             $model_id = intval($model_id);
             if ($model_id <= 0) {
@@ -108,6 +112,10 @@ class ProductQueryService
 
     public function getProductVariants($model_id, $active_only = true)
     {
+        if (!$this->db) {
+            return $this->getDemoProductVariants($model_id, $active_only);
+        }
+        
         try {
             $model_id = intval($model_id);
             if ($model_id <= 0) {
@@ -132,6 +140,10 @@ class ProductQueryService
 
     public function getProductImages($model_id)
     {
+        if (!$this->db) {
+            return $this->getDemoProductImages($model_id);
+        }
+        
         try {
             $model_id = intval($model_id);
             if ($model_id <= 0) {
@@ -293,6 +305,210 @@ class ProductQueryService
             error_log("Varyant görselleri getirme hatası: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Demo ürün detayını döndürür
+     */
+    private function getDemoProductModel($model_id)
+    {
+        $model_id = intval($model_id);
+        
+        $demoProducts = [
+            1 => [
+                'id' => 1,
+                'name' => 'Nike Air Max 270',
+                'slug' => 'nike-air-max-270',
+                'description' => 'Rahat ve stilin bir arada. Nike Air Max 270 ile her adımda konfor yaşayın. Bu ayakkabı, maksimum hava yastıklama teknolojisi ile donatılmış olup, günlük kullanım için ideal bir seçimdir.',
+                'price' => 899.99,
+                'is_featured' => true,
+                'created_at' => '2024-01-15 10:00:00',
+                'image_url' => 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop&crop=center',
+                'categories' => [
+                    ['id' => 1, 'name' => 'Sneaker', 'slug' => 'sneaker']
+                ],
+                'genders' => [
+                    ['id' => 1, 'name' => 'Erkek', 'slug' => 'erkek'],
+                    ['id' => 2, 'name' => 'Kadın', 'slug' => 'kadin']
+                ],
+                'images' => [
+                    [
+                        'id' => 1,
+                        'model_id' => 1,
+                        'image_url' => 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop&crop=center',
+                        'is_primary' => 1,
+                        'color_id' => null
+                    ],
+                    [
+                        'id' => 2,
+                        'model_id' => 1,
+                        'image_url' => 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&h=400&fit=crop&crop=center',
+                        'is_primary' => 0,
+                        'color_id' => null
+                    ]
+                ],
+                'category_name' => 'Sneaker',
+                'category_slug' => 'sneaker'
+            ],
+            2 => [
+                'id' => 2,
+                'name' => 'Adidas Ultraboost 22',
+                'slug' => 'adidas-ultraboost-22',
+                'description' => 'Yenilikçi teknoloji ile maksimum performans. Adidas Ultraboost 22, koşu ve antrenman için mükemmel bir seçimdir.',
+                'price' => 1299.99,
+                'is_featured' => true,
+                'created_at' => '2024-01-14 09:30:00',
+                'image_url' => 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop&crop=center',
+                'categories' => [
+                    ['id' => 2, 'name' => 'Koşu Ayakkabısı', 'slug' => 'kosu-ayakkabisi']
+                ],
+                'genders' => [
+                    ['id' => 1, 'name' => 'Erkek', 'slug' => 'erkek']
+                ],
+                'images' => [
+                    [
+                        'id' => 3,
+                        'model_id' => 2,
+                        'image_url' => 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop&crop=center',
+                        'is_primary' => 1,
+                        'color_id' => null
+                    ]
+                ],
+                'category_name' => 'Koşu Ayakkabısı',
+                'category_slug' => 'kosu-ayakkabisi'
+            ]
+        ];
+
+        if (isset($demoProducts[$model_id])) {
+            return [$demoProducts[$model_id]];
+        }
+
+        return [];
+    }
+
+    /**
+     * Demo ürün varyantlarını döndürür
+     */
+    private function getDemoProductVariants($model_id, $active_only = true)
+    {
+        $model_id = intval($model_id);
+        
+        $demoVariants = [
+            1 => [
+                [
+                    'id' => 1,
+                    'model_id' => 1,
+                    'color_id' => 1,
+                    'size_id' => 1,
+                    'sku' => 'NIKE-AM270-BLK-40',
+                    'stock_quantity' => 10,
+                    'price' => 899.99,
+                    'is_active' => true
+                ],
+                [
+                    'id' => 2,
+                    'model_id' => 1,
+                    'color_id' => 1,
+                    'size_id' => 2,
+                    'sku' => 'NIKE-AM270-BLK-41',
+                    'stock_quantity' => 8,
+                    'price' => 899.99,
+                    'is_active' => true
+                ],
+                [
+                    'id' => 3,
+                    'model_id' => 1,
+                    'color_id' => 2,
+                    'size_id' => 1,
+                    'sku' => 'NIKE-AM270-WHT-40',
+                    'stock_quantity' => 5,
+                    'price' => 899.99,
+                    'is_active' => true
+                ]
+            ],
+            2 => [
+                [
+                    'id' => 4,
+                    'model_id' => 2,
+                    'color_id' => 1,
+                    'size_id' => 1,
+                    'sku' => 'ADIDAS-UB22-BLK-40',
+                    'stock_quantity' => 12,
+                    'price' => 1299.99,
+                    'is_active' => true
+                ]
+            ]
+        ];
+
+        if (isset($demoVariants[$model_id])) {
+            $variants = $demoVariants[$model_id];
+            
+            if ($active_only) {
+                $variants = array_filter($variants, function($variant) {
+                    return $variant['is_active'];
+                });
+            }
+            
+            return $variants;
+        }
+
+        return [];
+    }
+
+    /**
+     * Demo ürün görsellerini döndürür
+     */
+    private function getDemoProductImages($model_id)
+    {
+        $model_id = intval($model_id);
+        
+        $demoImages = [
+            1 => [
+                [
+                    'id' => 1,
+                    'model_id' => 1,
+                    'image_url' => 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop&crop=center',
+                    'is_primary' => 1,
+                    'color_id' => null
+                ],
+                [
+                    'id' => 2,
+                    'model_id' => 1,
+                    'image_url' => 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&h=400&fit=crop&crop=center',
+                    'is_primary' => 0,
+                    'color_id' => null
+                ],
+                [
+                    'id' => 3,
+                    'model_id' => 1,
+                    'image_url' => 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&h=400&fit=crop&crop=center',
+                    'is_primary' => 0,
+                    'color_id' => null
+                ]
+            ],
+            2 => [
+                [
+                    'id' => 4,
+                    'model_id' => 2,
+                    'image_url' => 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop&crop=center',
+                    'is_primary' => 1,
+                    'color_id' => null
+                ],
+                [
+                    'id' => 5,
+                    'model_id' => 2,
+                    'image_url' => 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop&crop=center',
+                    'is_primary' => 0,
+                    'color_id' => null
+                ]
+            ]
+        ];
+
+        if (isset($demoImages[$model_id])) {
+            return $demoImages[$model_id];
+        }
+
+        return [];
     }
 }
 

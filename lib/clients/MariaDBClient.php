@@ -17,34 +17,14 @@ class MariaDBClient implements DatabaseInterface {
     private $cacheExpiry = 1; // 5 dakika
     
     public function __construct($config) {
-        $this->config = $config;
-        $this->connect();
+        // Veritabanı bağlantısı kaldırıldı.
     }
     
     /**
      * Veritabanına bağlan
      */
     private function connect() {
-        try {
-            $dsn = sprintf(
-                'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-                $this->config['host'],
-                $this->config['port'],
-                $this->config['database'],
-                $this->config['charset']
-            );
-            
-            $this->pdo = new PDO(
-                $dsn,
-                $this->config['username'],
-                $this->config['password'],
-                $this->config['options']
-            );
-            
-        } catch (PDOException $e) {
-            $this->lastError = $e->getMessage();
-            throw new Exception("MariaDB bağlantı hatası: " . $e->getMessage());
-        }
+        // Veritabanı bağlantısı kaldırıldı.
     }
     
     /**

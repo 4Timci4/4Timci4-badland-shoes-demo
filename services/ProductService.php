@@ -33,6 +33,9 @@ class ProductService
 
     public function getProductModels($limit = 20, $offset = 0, $filters = [])
     {
+        if (!$this->db) {
+            return [];
+        }
 
         $params = [
             'page' => 1,

@@ -18,6 +18,9 @@ class VariantService
 
     public function getAllColors()
     {
+        if (!$this->db) {
+            return $this->getDemoColors();
+        }
         try {
             return $this->db->select('colors', [], '*', ['order' => 'name ASC']);
         } catch (Exception $e) {
@@ -29,6 +32,9 @@ class VariantService
 
     public function getAllSizes()
     {
+        if (!$this->db) {
+            return $this->getDemoSizes();
+        }
         try {
             return $this->db->select('sizes', [], '*', ['order' => 'size_value ASC']);
         } catch (Exception $e) {
@@ -40,6 +46,9 @@ class VariantService
 
     public function getProductVariants($model_id)
     {
+        if (!$this->db) {
+            return $this->getDemoProductVariants($model_id);
+        }
         try {
 
             $variants = $this->db->select(
@@ -80,6 +89,9 @@ class VariantService
 
     public function createVariant($data)
     {
+        if (!$this->db) {
+            return false; // Demo modunda varyant oluşturma devre dışı
+        }
         try {
 
             if (!empty($data['model_id']) && !empty($data['color_id']) && !empty($data['size_id'])) {
@@ -128,6 +140,9 @@ class VariantService
 
     public function updateVariant($variant_id, $data)
     {
+        if (!$this->db) {
+            return false; // Demo modunda güncelleme devre dışı
+        }
         try {
             $result = $this->db->update('product_variants', $data, ['id' => intval($variant_id)]);
             return $result !== false;
@@ -140,6 +155,9 @@ class VariantService
 
     public function deleteVariant($variant_id)
     {
+        if (!$this->db) {
+            return false; // Demo modunda silme devre dışı
+        }
         try {
             $result = $this->db->delete('product_variants', ['id' => intval($variant_id)]);
             return $result !== false;
@@ -152,6 +170,9 @@ class VariantService
 
     public function createBulkVariants($model_id, $variants)
     {
+        if (!$this->db) {
+            return []; // Demo modunda bulk işlem devre dışı
+        }
         $results = [];
 
         foreach ($variants as $variant) {
@@ -176,6 +197,9 @@ class VariantService
 
     public function updateStock($variant_id, $quantity)
     {
+        if (!$this->db) {
+            return false; // Demo modunda stok güncelleme devre dışı
+        }
         try {
             $data = [
                 'stock_quantity' => intval($quantity),
@@ -192,6 +216,9 @@ class VariantService
 
     public function getVariantById($variant_id)
     {
+        if (!$this->db) {
+            return $this->getDemoVariantById($variant_id);
+        }
         try {
             $dbType = DatabaseFactory::getCurrentType();
 
@@ -244,6 +271,9 @@ class VariantService
 
     public function getTotalStock($model_id)
     {
+        if (!$this->db) {
+            return $this->getDemoTotalStock($model_id);
+        }
         try {
             $variants = $this->db->select(
                 'product_variants',
@@ -266,6 +296,9 @@ class VariantService
 
     public function getProductColors($model_id)
     {
+        if (!$this->db) {
+            return $this->getDemoProductColors($model_id);
+        }
         try {
             $variants = $this->db->select(
                 'product_variants',
@@ -291,6 +324,9 @@ class VariantService
 
     public function getProductSizes($model_id)
     {
+        if (!$this->db) {
+            return $this->getDemoProductSizes($model_id);
+        }
         try {
             $variants = $this->db->select(
                 'product_variants',
@@ -316,6 +352,9 @@ class VariantService
 
     public function addVariant($model_id, $color_id, $size_id, $stock_quantity, $is_active)
     {
+        if (!$this->db) {
+            return false; // Demo modunda ekleme devre dışı
+        }
         $data = [
             'model_id' => $model_id,
             'color_id' => $color_id,
@@ -329,6 +368,9 @@ class VariantService
 
     public function getVariantsByProductAndColor($model_id, $color_id)
     {
+        if (!$this->db) {
+            return $this->getDemoVariantsByProductAndColor($model_id, $color_id);
+        }
         try {
             $dbType = DatabaseFactory::getCurrentType();
 
@@ -370,6 +412,278 @@ class VariantService
             error_log("Ürün ve renk varyantları getirme hatası: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Demo renkler
+     */
+    private function getDemoColors()
+    {
+        return [
+            [
+                'id' => 1,
+                'name' => 'Siyah',
+                'hex_code' => '#000000'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Beyaz',
+                'hex_code' => '#FFFFFF'
+            ],
+            [
+                'id' => 3,
+                'name' => 'Kırmızı',
+                'hex_code' => '#FF0000'
+            ],
+            [
+                'id' => 4,
+                'name' => 'Mavi',
+                'hex_code' => '#0000FF'
+            ],
+            [
+                'id' => 5,
+                'name' => 'Yeşil',
+                'hex_code' => '#008000'
+            ],
+            [
+                'id' => 6,
+                'name' => 'Gri',
+                'hex_code' => '#808080'
+            ],
+            [
+                'id' => 7,
+                'name' => 'Kahverengi',
+                'hex_code' => '#8B4513'
+            ],
+            [
+                'id' => 8,
+                'name' => 'Lacivert',
+                'hex_code' => '#000080'
+            ]
+        ];
+    }
+
+    /**
+     * Demo bedenler
+     */
+    private function getDemoSizes()
+    {
+        return [
+            [
+                'id' => 1,
+                'size_value' => '36',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 2,
+                'size_value' => '37',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 3,
+                'size_value' => '38',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 4,
+                'size_value' => '39',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 5,
+                'size_value' => '40',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 6,
+                'size_value' => '41',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 7,
+                'size_value' => '42',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 8,
+                'size_value' => '43',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 9,
+                'size_value' => '44',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 10,
+                'size_value' => '45',
+                'size_type' => 'EU'
+            ]
+        ];
+    }
+
+    /**
+     * Demo ürün varyantları
+     */
+    private function getDemoProductVariants($model_id)
+    {
+        // Basit demo varyantları - gerçek uygulamada her ürün için farklı olurdu
+        $variants = [
+            [
+                'id' => ($model_id * 10) + 1,
+                'model_id' => $model_id,
+                'color_id' => 1,
+                'size_id' => 4,
+                'color_name' => 'Siyah',
+                'color_hex' => '#000000',
+                'size_value' => '39',
+                'size_type' => 'EU',
+                'stock_quantity' => 15,
+                'price' => 299.99,
+                'is_active' => 1,
+                'sku' => "PRD{$model_id}-C1-S4"
+            ],
+            [
+                'id' => ($model_id * 10) + 2,
+                'model_id' => $model_id,
+                'color_id' => 1,
+                'size_id' => 5,
+                'color_name' => 'Siyah',
+                'color_hex' => '#000000',
+                'size_value' => '40',
+                'size_type' => 'EU',
+                'stock_quantity' => 20,
+                'price' => 299.99,
+                'is_active' => 1,
+                'sku' => "PRD{$model_id}-C1-S5"
+            ],
+            [
+                'id' => ($model_id * 10) + 3,
+                'model_id' => $model_id,
+                'color_id' => 2,
+                'size_id' => 4,
+                'color_name' => 'Beyaz',
+                'color_hex' => '#FFFFFF',
+                'size_value' => '39',
+                'size_type' => 'EU',
+                'stock_quantity' => 12,
+                'price' => 299.99,
+                'is_active' => 1,
+                'sku' => "PRD{$model_id}-C2-S4"
+            ],
+            [
+                'id' => ($model_id * 10) + 4,
+                'model_id' => $model_id,
+                'color_id' => 2,
+                'size_id' => 5,
+                'color_name' => 'Beyaz',
+                'color_hex' => '#FFFFFF',
+                'size_value' => '40',
+                'size_type' => 'EU',
+                'stock_quantity' => 18,
+                'price' => 299.99,
+                'is_active' => 1,
+                'sku' => "PRD{$model_id}-C2-S5"
+            ]
+        ];
+
+        return $variants;
+    }
+
+    /**
+     * Demo varyant ID ile getir
+     */
+    private function getDemoVariantById($variant_id)
+    {
+        // Basit demo - gerçek uygulamada varyant ID'ye göre arama yapılırdu
+        return [
+            'id' => $variant_id,
+            'model_id' => 1,
+            'color_id' => 1,
+            'size_id' => 4,
+            'color_name' => 'Siyah',
+            'color_hex' => '#000000',
+            'size_value' => '39',
+            'size_type' => 'EU',
+            'stock_quantity' => 15,
+            'price' => 299.99,
+            'is_active' => 1,
+            'sku' => "PRD1-C1-S4"
+        ];
+    }
+
+    /**
+     * Demo toplam stok
+     */
+    private function getDemoTotalStock($model_id)
+    {
+        $variants = $this->getDemoProductVariants($model_id);
+        $total = 0;
+        foreach ($variants as $variant) {
+            if ($variant['is_active']) {
+                $total += $variant['stock_quantity'];
+            }
+        }
+        return $total;
+    }
+
+    /**
+     * Demo ürün renkleri
+     */
+    private function getDemoProductColors($model_id)
+    {
+        return [
+            [
+                'id' => 1,
+                'name' => 'Siyah',
+                'hex_code' => '#000000'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Beyaz',
+                'hex_code' => '#FFFFFF'
+            ]
+        ];
+    }
+
+    /**
+     * Demo ürün bedenleri
+     */
+    private function getDemoProductSizes($model_id)
+    {
+        return [
+            [
+                'id' => 4,
+                'size_value' => '39',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 5,
+                'size_value' => '40',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 6,
+                'size_value' => '41',
+                'size_type' => 'EU'
+            ],
+            [
+                'id' => 7,
+                'size_value' => '42',
+                'size_type' => 'EU'
+            ]
+        ];
+    }
+
+    /**
+     * Demo ürün ve renk varyantları
+     */
+    private function getDemoVariantsByProductAndColor($model_id, $color_id)
+    {
+        $all_variants = $this->getDemoProductVariants($model_id);
+        return array_filter($all_variants, function($variant) use ($color_id) {
+            return $variant['color_id'] == $color_id;
+        });
     }
 }
 

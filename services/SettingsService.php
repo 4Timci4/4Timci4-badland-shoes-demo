@@ -15,11 +15,14 @@ class SettingsService
 
     public function getSiteSetting($key, $default = '')
     {
+        if (!$this->db) {
+            return $this->getDemoSiteSetting($key, $default);
+        }
         try {
             $result = $this->db->select('site_settings', ['setting_key' => $key], 'setting_value', ['limit' => 1]);
 
             if (!empty($result)) {
-                return $result[0]['setting_value'];
+                return $result['setting_value'];
             }
         } catch (Exception $e) {
             error_log("Site ayarı getirme hatası: " . $e->getMessage());
@@ -31,6 +34,9 @@ class SettingsService
 
     public function updateSiteSetting($key, $value, $group = 'general', $description = '')
     {
+        if (!$this->db) {
+            return false;
+        }
         try {
             $existing = $this->db->select('site_settings', ['setting_key' => $key], 'setting_key', ['limit' => 1]);
 
@@ -59,6 +65,9 @@ class SettingsService
 
     public function getSettingsByGroup($group)
     {
+        if (!$this->db) {
+            return $this->getDemoSettingsByGroup($group);
+        }
         require_once __DIR__ . '/../config/cache.php';
 
         $cacheKey = "settings_{$group}";
@@ -211,7 +220,7 @@ class SettingsService
             'site_name' => 'Bandland Shoes',
             'site_tagline' => 'Premium Ayakkabı Mağazası',
             'site_description' => 'Kaliteli ve şık ayakkabılar için doğru adres. En yeni modeller ve uygun fiyatlar ile hizmetinizdeyiz.',
-            'site_logo' => 'assets/images/logo.png',
+            'site_logo' => '/assets/images/mt-logo.png',
             'site_favicon' => 'assets/images/favicon.ico',
             'primary_color' => '#e91e63',
             'secondary_color' => '#2c2c54',
@@ -333,6 +342,114 @@ class SettingsService
                 'availability_schema_enabled' => 'true'
             ]
         ];
+    }
+
+    /**
+     * Demo site ayarı
+     */
+    private function getDemoSiteSetting($key, $default = '')
+    {
+        $settings = $this->getDemoAllSiteSettings();
+        return $settings[$key] ?? $default;
+    }
+
+    /**
+     * Demo grup ayarları
+     */
+    private function getDemoSettingsByGroup($group)
+    {
+        $demoSettings = [
+            'general' => [
+                'site_name' => 'Bandland Shoes',
+                'site_tagline' => 'Premium Ayakkabı Deneyimi',
+                'site_description' => 'Kaliteli ve şık ayakkabıların adresi. En yeni trendlerden klasik tasarımlara kadar geniş ürün yelpazemizle ayakkabı ihtiyacınızı karşılıyoruz.',
+                'site_logo' => '/assets/images/mt-logo.png',
+                'site_favicon' => 'assets/images/favicon.ico',
+                'primary_color' => '#e91e63',
+                'secondary_color' => '#2c2c54',
+                'footer_copyright' => '© 2025 Bandland Shoes. Tüm hakları saklıdır.',
+                'products_per_page' => '12',
+                'blogs_per_page' => '6',
+                'maintenance_mode' => 'false',
+                'site_language' => 'tr',
+                'timezone' => 'Europe/Istanbul'
+            ],
+            'seo' => [
+                'meta_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+                'meta_description' => 'Kaliteli ve şık ayakkabılar için doğru adres. En yeni modeller ve uygun fiyatlar ile hizmetinizdeyiz.',
+                'meta_keywords' => 'ayakkabı, spor ayakkabı, klasik ayakkabı, kadın ayakkabı, erkek ayakkabı, çocuk ayakkabı',
+                'canonical_url' => 'https://bandlandshoes.com',
+                'robots_txt' => "User-agent: *\nDisallow: /admin/\nDisallow: /api/\nSitemap: /sitemap.xml",
+                'og_title' => 'Bandland Shoes - Premium Ayakkabı Mağazası',
+                'og_description' => 'Kaliteli ve şık ayakkabılar için doğru adres.',
+                'og_image' => 'assets/images/og-image.jpg',
+                'twitter_card' => 'summary_large_image',
+                'twitter_site' => '@bandlandshoes'
+            ],
+            'analytics' => [
+                'google_analytics_id' => '',
+                'google_tag_manager_id' => '',
+                'facebook_pixel_id' => '',
+                'hotjar_id' => '',
+                'google_site_verification' => '',
+                'bing_site_verification' => '',
+                'yandex_site_verification' => ''
+            ],
+            'contact' => [
+                'contact_email' => 'info@bandlandshoes.com',
+                'contact_phone' => '+90 216 555 0123',
+                'contact_address' => 'Örnek Mahallesi, Ayakkabı Caddesi No:123, Kadıköy/İstanbul',
+                'business_hours' => 'Pazartesi - Cumartesi: 09:00 - 18:00',
+                'whatsapp_number' => '+90 533 123 45 67',
+                'support_email' => 'destek@bandlandshoes.com'
+            ],
+            'ecommerce' => [
+                'currency' => 'TRY',
+                'currency_symbol' => '₺',
+                'tax_rate' => '18',
+                'free_shipping_limit' => '500',
+                'stock_alert_limit' => '10',
+                'enable_reviews' => 'true',
+                'enable_wishlist' => 'true',
+                'enable_compare' => 'true'
+            ],
+            'email' => [
+                'mail_host' => '',
+                'mail_port' => '587',
+                'mail_username' => '',
+                'mail_password' => '',
+                'mail_encryption' => 'tls',
+                'mail_from_address' => 'noreply@bandlandshoes.com',
+                'mail_from_name' => 'Bandland Shoes'
+            ],
+            'social' => [
+                'facebook_url' => 'https://facebook.com/bandlandshoes',
+                'instagram_url' => 'https://instagram.com/bandlandshoes',
+                'twitter_url' => 'https://twitter.com/bandlandshoes',
+                'youtube_url' => 'https://youtube.com/bandlandshoes',
+                'linkedin_url' => 'https://linkedin.com/company/bandlandshoes',
+                'pinterest_url' => 'https://pinterest.com/bandlandshoes',
+                'tiktok_url' => 'https://tiktok.com/@bandlandshoes'
+            ]
+        ];
+
+        return $demoSettings[$group] ?? [];
+    }
+
+    /**
+     * Demo tüm site ayarları
+     */
+    private function getDemoAllSiteSettings()
+    {
+        $allSettings = [];
+        $groups = ['general', 'seo', 'analytics', 'contact', 'ecommerce', 'email', 'social'];
+        
+        foreach ($groups as $group) {
+            $groupSettings = $this->getDemoSettingsByGroup($group);
+            $allSettings = array_merge($allSettings, $groupSettings);
+        }
+        
+        return $allSettings;
     }
 }
 

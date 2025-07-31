@@ -18,6 +18,9 @@ if (!$post) {
     exit;
 }
 
+// Demo mode için image_url anahtarını düzelt
+$post['image_url'] = $post['featured_image'] ?? $post['image_url'] ?? '/assets/images/placeholder.svg';
+
 $related_posts = $blogService->get_related_posts($blog_id, $post['category'], 3);
 
 
@@ -243,12 +246,16 @@ include 'includes/header.php';
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <?php foreach ($related_posts as $related_post): ?>
+                    <?php
+                    // Demo mode için related post image_url anahtarını düzelt
+                    $related_post['image_url'] = $related_post['featured_image'] ?? $related_post['image_url'] ?? '/assets/images/placeholder.svg';
+                    ?>
                     <article class="related-post-card">
                         <a href="/blog-detail.php?id=<?php echo $related_post['id']; ?>" class="block">
                             <div class="post-image">
                                 <img src="<?php echo htmlspecialchars($related_post['image_url']); ?>"
-                                    alt="<?php echo htmlspecialchars($related_post['title']); ?>"
-                                    class="w-full h-48 object-cover">
+                                     alt="<?php echo htmlspecialchars($related_post['title']); ?>"
+                                     class="w-full h-48 object-cover">
                             </div>
                         </a>
                         <div class="p-6">
