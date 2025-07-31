@@ -1,124 +1,109 @@
 <?php
+// Simple PHP Router for clean URLs
+// Works with both Apache and PHP built-in server
 
-require_once 'services/AuthService.php';
-$authService = new AuthService();
+// Get the request URI and clean it
+$request_uri = $_SERVER['REQUEST_URI'];
+$request_path = parse_url($request_uri, PHP_URL_PATH);
+$request_path = rtrim($request_path, '/'); // Remove trailing slash
 
-include 'includes/header.php';
-require_once 'services/SliderService.php';
-require_once 'services/SeasonalCollectionsService.php';
+// If empty path, show homepage
+if ($request_path === '' || $request_path === '/') {
+    include 'index-content.php';
+    exit;
+}
 
-$sliderService = new SliderService();
-$slides = $sliderService->getActiveSliders();
+// Define routes mapping
+$routes = [
+    '/about' => 'about.php',
+    '/blog' => 'blog.php',
+    '/blog-detail' => 'blog-detail.php',
+    '/contact' => 'contact.php',
+    '/forgot-password' => 'forgot-password.php',
+    '/login' => 'login.php',
+    '/logout' => 'logout.php',
+    '/maintenance' => 'maintenance.php',
+    '/product-details' => 'product-details.php',
+    '/products' => 'products.php',
+    '/register' => 'register.php',
+    '/reset-password' => 'reset-password.php',
+    '/user/profile' => 'user/profile.php',
+    '/user/favorites' => 'user/favorites.php'
+];
 
-$seasonalCollectionsService = new SeasonalCollectionsService();
-$collections = $seasonalCollectionsService->getActiveCollections();
+// Check if the route exists
+if (array_key_exists($request_path, $routes)) {
+    $file_path = $routes[$request_path];
+    
+    // Check if file exists
+    if (file_exists($file_path)) {
+        include $file_path;
+        exit;
+    }
+}
+
+// If no route matches, check for static files or admin panel
+// Admin panel should work with .php extensions
+if (strpos($request_path, '/admin/') === 0) {
+    // Let Apache handle admin panel normally
+    // For PHP built-in server, we need to let it handle PHP files
+    $admin_file = ltrim($request_path, '/');
+    if (file_exists($admin_file)) {
+        include $admin_file;
+        exit;
+    }
+}
+
+// Check for assets (CSS, JS, images)
+if (strpos($request_path, '/assets/') === 0) {
+    // Let the server handle static files normally
+    return false; // For PHP built-in server
+}
+
+// Check for API endpoints
+if (strpos($request_path, '/api/') === 0) {
+    $api_file = ltrim($request_path, '/');
+    if (file_exists($api_file)) {
+        include $api_file;
+        exit;
+    }
+}
+
+// If nothing matches, show 404 page or redirect to homepage
+http_response_code(404);
 ?>
-
-<section class="relative h-[600px] overflow-hidden">
-    <?php if (!empty($slides)): ?>
-        <?php foreach ($slides as $index => $slide): ?>
-            <div class="slide absolute inset-0 w-full h-full transition-opacity duration-1000 <?php echo $index === 0 ? 'opacity-100' : 'opacity-0'; ?>"
-                style="background-color: <?php echo htmlspecialchars($slide['background_color']); ?>;">
-
-                <?php if (!empty($slide['image_url'])): ?>
-                    <div class="absolute inset-0 bg-cover bg-center"
-                        style="background-image: url('<?php echo htmlspecialchars($slide['image_url']); ?>');"></div>
-                    <div class="absolute inset-0 bg-black opacity-40"></div>
-                <?php endif; ?>
-
-                <div class="relative z-10 h-full flex items-center justify-center text-center text-white">
-                    <div class="slide-content max-w-4xl px-5">
-                        <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-5">
-                            <?php echo htmlspecialchars($slide['title']); ?>
-                        </h2>
-                        <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
-                            <?php echo htmlspecialchars($slide['description']); ?>
-                        </p>
-                        <a href="<?php echo htmlspecialchars($slide['button_url']); ?>"
-                            class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold uppercase text-sm tracking-wide hover:bg-opacity-80 transition-all duration-300">
-                            <?php echo htmlspecialchars($slide['button_text']); ?>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-
-        <div class="slider-dots absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-            <?php foreach ($slides as $index => $slide): ?>
-                <span
-                    class="dot w-3 h-3 bg-white <?php echo $index === 0 ? 'bg-opacity-100' : 'bg-opacity-50'; ?> rounded-full cursor-pointer"></span>
-            <?php endforeach; ?>
-        </div>
-    <?php else: ?>
-        <div class="flex items-center justify-center h-full">
-            <p class="text-xl text-gray-500">Slider bulunamadı.</p>
-        </div>
-    <?php endif; ?>
-</section>
-
-<section class="py-20 bg-white">
-    <div class="max-w-8xl mx-auto px-5">
-        <div class="text-center mb-16">
-            <h2 class="text-4xl font-display font-bold mb-3 text-secondary">Sezonluk Koleksiyonlar</h2>
-            <p class="text-gray-600">Her mevsime özel, stilinizi tamamlayacak tasarımlar.</p>
-        </div>
-
-        <?php if (!empty($collections)): ?>
-            <?php foreach ($collections as $index => $collection): ?>
-                <div
-                    class="flex flex-col md:flex-row<?php echo $collection['layout_type'] === 'right' ? '-reverse' : ''; ?> items-center gap-12<?php echo $index < count($collections) - 1 ? ' mb-20' : ''; ?>">
-                    <div class="flex-1 text-center">
-                        <h3 class="text-3xl font-display font-bold mb-4 text-secondary">
-                            <?php echo htmlspecialchars($collection['title']); ?>
-                        </h3>
-                        <p class="text-gray-600 leading-relaxed mb-6 max-w-md mx-auto">
-                            <?php echo htmlspecialchars($collection['description']); ?>
-                        </p>
-                        <a href="<?php echo htmlspecialchars($collection['button_url']); ?>"
-                            class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold hover:bg-opacity-80 transition-all duration-300">
-                            Koleksiyonu Gör
-                        </a>
-                    </div>
-                    <div class="flex-1">
-                        <img src="<?php echo htmlspecialchars($collection['image_url']); ?>"
-                            alt="<?php echo htmlspecialchars($collection['title']); ?>"
-                            class="w-full md:w-4/5 mx-auto rounded-lg shadow-xl">
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="text-center py-8">
-                <p class="text-gray-500">Henüz koleksiyon bulunmamaktadır.</p>
-            </div>
-        <?php endif; ?>
-    </div>
-</section>
-
-<?php
-require_once 'services/AboutService.php';
-$aboutService = new AboutService();
-$homeAbout = $aboutService->getHomePageAboutSection();
-?>
-<section class="py-20 bg-white">
-    <div class="max-w-8xl mx-auto px-5">
-        <div class="flex flex-col lg:flex-row items-center gap-12">
-            <div class="flex-1">
-                <img src="<?php echo htmlspecialchars($homeAbout['story_image_url'] ?? ''); ?>" alt="Mağaza"
-                    class="w-2/3 mx-auto rounded-lg shadow-lg">
-            </div>
-            <div class="flex-1 text-center lg:text-left">
-                <h2 class="text-4xl font-bold mb-5 text-secondary">
-                    <?php echo htmlspecialchars($homeAbout['story_content_title'] ?? 'Schön Hakkında'); ?>
-                </h2>
-                <p class="mb-8 text-gray-600 leading-relaxed">
-                    <?php echo htmlspecialchars($homeAbout['story_content_homepage'] ?? ''); ?>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayfa Bulunamadı - Bandland Shoes</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <?php include 'includes/header.php'; ?>
+    
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-5 text-center">
+            <div class="mb-8">
+                <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 mb-4"></i>
+                <h1 class="text-4xl font-bold text-secondary mb-4">404 - Sayfa Bulunamadı</h1>
+                <p class="text-gray-600 text-lg mb-8">
+                    Aradığınız sayfa mevcut değil veya taşınmış olabilir.
                 </p>
-                <a href="/about.php"
-                    class="inline-block px-8 py-3 bg-brand text-secondary rounded-full font-semibold hover:bg-opacity-80 transition-all duration-300">Daha
-                    Fazla Bilgi</a>
+                <div class="space-x-4">
+                    <a href="/" class="inline-block px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
+                        Ana Sayfa
+                    </a>
+                    <a href="/products" class="inline-block px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                        Ürünler
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
-</section>
-
-<?php include 'includes/footer.php'; ?>
+    </section>
+    
+    <?php include 'includes/footer.php'; ?>
+</body>
+</html>
