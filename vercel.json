@@ -4,6 +4,54 @@
     {
       "source": "/",
       "destination": "/index.php"
+    },
+    {
+      "source": "/about",
+      "destination": "/about.php"
+    },
+    {
+      "source": "/blog-detail",
+      "destination": "/blog-detail.php"
+    },
+    {
+      "source": "/blog",
+      "destination": "/blog.php"
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact.php"
+    },
+    {
+      "source": "/forgot-password",
+      "destination": "/forgot-password.php"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.php"
+    },
+    {
+      "source": "/logout",
+      "destination": "/logout.php"
+    },
+    {
+      "source": "/maintenance",
+      "destination": "/maintenance.php"
+    },
+    {
+      "source": "/product-details",
+      "destination": "/product-details.php"
+    },
+    {
+      "source": "/products",
+      "destination": "/products.php"
+    },
+    {
+      "source": "/register",
+      "destination": "/register.php"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/reset-password.php"
     }
   ],
   "headers": [
